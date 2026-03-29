@@ -16,6 +16,7 @@ module.exports = {
         let team = null;
         if (interaction.channelId === process.env.GRAPHIC_CHANNEL) team = "graphic";
         else if (interaction.channelId === process.env.DEV_CHANNEL) team = "dev";
+        else if (interaction.channelId === process.env.WRITER_CHANNEL) team = "writer";
         else return interaction.editReply("❌ Use this in a graphics or dev task channel.");
 
         // GET ALL TEAM TASKS
@@ -29,6 +30,9 @@ module.exports = {
         // GRAPHIC ONLY: count utilised designs
         let utilised = 0;
         if (team === "graphic") {
+            utilised = tasks.filter(t => t.selected === userId).length;
+        }
+         if (team === "writer") {
             utilised = tasks.filter(t => t.selected === userId).length;
         }
 
@@ -49,6 +53,13 @@ module.exports = {
         if (team === "graphic") {
             embed.addFields(
                 { name: "🏆 Utilised Designs", value: `${utilised}`, inline: true },
+                { name: "📜 Certificate Progress", value: bar }
+            );
+        }
+
+        if (team === "writer") {
+            embed.addFields(
+                { name: "🏆 Utilised Works", value: `${utilised}`, inline: true },
                 { name: "📜 Certificate Progress", value: bar }
             );
         }

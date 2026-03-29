@@ -2,9 +2,11 @@
   "name": "ralevel-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "src/bot.js",
+  "main": "index.js",
   "scripts": {
-    "test": "node ."
+    "test": "node .",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "Myz",
@@ -12,12 +14,17 @@
   "dependencies": {
     "@discordjs/rest": "^1.7.1",
     "@napi-rs/canvas": "^0.1.84",
+    "@upstash/redis": "^1.37.0",
     "better-sqlite3": "^8.4.0",
     "discord-api-types": "^0.37.46",
     "discord.js": "^14.11.0",
     "dotenv": "^16.3.1",
     "mongodb": "^5.6.0",
     "mongoose": "^7.8.7",
+    "next-themes": "^0.4.6",
     "quick.db": "^9.1.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

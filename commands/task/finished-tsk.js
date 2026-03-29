@@ -12,7 +12,7 @@ module.exports = {
         )
         .addStringOption(o =>
             o.setName("link")
-             .setDescription("Link to your finished work (graphics only)")
+             .setDescription("Link to your finished work (graphics and writers only)")
              .setRequired(false)
         ),
 
@@ -26,6 +26,7 @@ module.exports = {
         let team = null;
         if (interaction.channelId === process.env.GRAPHIC_CHANNEL) team = "graphic";
         else if (interaction.channelId === process.env.DEV_CHANNEL) team = "dev";
+        else if (interaction.channelId === process.env.WRITER_CHANNEL) team = "writer";
         else return interaction.editReply("❌ Use this command inside your team task channel.");
 
         const taskId = interaction.options.getString("taskid");
@@ -49,9 +50,13 @@ module.exports = {
         // ===========================
         // GRAPHIC TEAM LOGIC (link required)
         // ===========================
-        if (team === "graphic") {
-            if (!link)
-                return interaction.editReply("❌ Graphic designers must provide a link to their finished work.");
+        if (team === "graphic" || "writer") {
+            if (!link && team === "graphic")
+                return interaction.editReply("❌ Graphic designers must provide a Google Drive link to their finished work.");
+
+            if (!link && team === "writer")
+                return interaction.editReply("❌ Writers must provide a Google Docs link to their finished work.");
+
 
             task.finishedBy.push(userId);
             task.finishedLinks.push(link);

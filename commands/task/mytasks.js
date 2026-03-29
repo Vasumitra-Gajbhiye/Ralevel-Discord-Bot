@@ -14,7 +14,8 @@ module.exports = {
         let team = null;
         if (interaction.channelId === process.env.GRAPHIC_CHANNEL) team = "graphic";
         else if (interaction.channelId === process.env.DEV_CHANNEL) team = "dev";
-        else return interaction.editReply("❌ Use inside a graphics or dev task channel.");
+        else if (interaction.channelId === process.env.WRITER_CHANNEL) team = "writer";
+        else return interaction.editReply("❌ Use inside a graphics, dev or writer task channel.");
 
         const userId = interaction.user.id;
 

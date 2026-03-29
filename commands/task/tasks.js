@@ -20,9 +20,12 @@ module.exports = {
             team = "graphic";
         } else if (interaction.channelId === process.env.DEV_CHANNEL) {
             team = "dev";
-        } else {
+        } else if (interaction.channelId === process.env.WRITER_CHANNEL) {
+            team = "writer";
+        }  
+        else {
             return interaction.reply({
-                content: "❌ This command must be used inside the graphics or dev task channels.",
+                content: "❌ This command must be used inside the graphics, dev or writer task channels.",
                 ephemeral: true
             });
         }
@@ -62,7 +65,7 @@ module.exports = {
                                 ? task.finishedBy.map((id, index) => {
 
                                     // GRAPHIC TEAM → show username + link
-                                    if (task.team === "graphic") {
+                                    if (task.team === "graphic" || "writer") {
                                         const link = task.finishedLinks[index] || "No link provided";
                                         return `• <@${id}> — ${link}`;
                                     }
@@ -90,6 +93,12 @@ if (task.team === "graphic") {
     
 }
 
+// WRITER-ONLY FIELDS
+if (team === "writer") {
+    if (task.wordLimit) fields.push({ name: "Word Limit", value: task.wordLimit });
+
+}
+
 
             const embed = new EmbedBuilder()
                 .setTitle(`📌 Task Details: ${task.title}`)
@@ -108,8 +117,15 @@ return interaction.reply({ embeds: [embed], ephemeral: true });        }
             });
         }
 
+        let embedTitle;
+        if(team ==="graphic") embedTitle = "🎨 Open Graphic Tasks"
+        if(team ==="dev") embedTitle = "💻 Open Dev Tasks"
+        if(team ==="writer") embedTitle = "🖋️ Open Writer Tasks"
+
+
+
         const embed = new EmbedBuilder()
-            .setTitle(team === "graphic" ? "🎨 Open Graphic Tasks" : "💻 Open Dev Tasks")
+            .setTitle(embedTitle)
             .setDescription(tasks.map(t => `**${t.taskId}** — ${t.title}`).join("\n"))
             .setColor(team === "graphic" ? "Purple" : "Blue");
 

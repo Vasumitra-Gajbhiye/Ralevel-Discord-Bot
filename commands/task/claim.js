@@ -22,7 +22,8 @@ module.exports = {
 
         if (interaction.channelId === process.env.GRAPHIC_CHANNEL) team = "graphic";
         else if (interaction.channelId === process.env.DEV_CHANNEL) team = "dev";
-        else return interaction.editReply("❌ This command must be used inside the graphics or dev task channels.");
+        else if (interaction.channelId === process.env.WRITER_CHANNEL) team = "writer";
+        else return interaction.editReply("❌ This command must be used inside the graphics, dev or writer task channels.");
 
         const id = interaction.options.getString("taskid");
         const task = await Task.findOne({ taskId: id });
@@ -39,7 +40,7 @@ module.exports = {
         // ================================
         //     GRAPHIC TEAM BEHAVIOR
         // ================================
-        if (team === "graphic") {
+        if (team === "graphic" || "writer") {
 
             // allow multiple claimants
             if (!task.assignedTo.includes(userId)) {

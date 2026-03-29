@@ -64,6 +64,10 @@ module.exports = function qotdSystem(client) {
         `🔔 **Next up:** <@${next.id}>\n` +
         `You’re next in rotation — please start preparing.`;
 
+        console.log(
+  `[QOTD] ${dateStr} | index=${rotation.currentIndex} | current=${current.id}`
+);
+
       await channel.send({
         content: message,
         allowedMentions: {
@@ -72,8 +76,12 @@ module.exports = function qotdSystem(client) {
       });
 
       // Mark as sent for today (IST)
-      rotation.lastReminderDate = dateStr;
-      await rotation.save();
+      // Mark as sent for today (IST) AND advance rotation
+rotation.lastReminderDate = dateStr;
+rotation.currentIndex =
+  (rotation.currentIndex + 1) % rotation.modOrder.length;
+
+await rotation.save();
     } catch (err) {
       console.error("QOTD reminder error:", err);
     }

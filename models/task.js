@@ -8,7 +8,7 @@ const taskSchema = new mongoose.Schema({
 
     team: {
         type: String,
-        enum: ["graphic", "dev"],
+        enum: ["graphic", "dev", "writer"],
         required: true
     },
 
@@ -23,7 +23,7 @@ const taskSchema = new mongoose.Schema({
     // FINISHED LINKS (array matching finishedBy)
     finishedLinks: { type: [String], default: [] },
 
-    selected: { type: String, default: null }, // graphic only
+    selected: { type: String, default: null }, // graphic and writer only
 
     status: {
         type: String,
@@ -35,9 +35,13 @@ const taskSchema = new mongoose.Schema({
     resolution: { type: String, default: null },
     fileFormat: { type: String, default: null },
     notes: { type: String, default: null },
-    fileNameFormat: { type: String, default: null },    
+    fileNameFormat: { type: String, default: null },  
+    
+    // WRITER FIELDS
+    wordLimit: { type: String, default: null },
+    
 
-    // BOTH TEAMS
+    // ALL TEAMS
     deadline: { type: String, default: null },
 
     createdAt: { type: Date, default: Date.now }
