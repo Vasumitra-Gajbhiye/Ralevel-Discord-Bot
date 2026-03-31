@@ -45,7 +45,8 @@
 const redis = require("../redis");
 
 // const BOOSTER_ROLE_ID = "1117393047861346335";
-const BOOSTER_ROLE_ID = "1487420818148557011";
+// const BOOSTER_ROLE_ID = "1487420818148557011";
+const BOOSTER_ROLE_ID = process.env.BOOSTER_ROLE_ID;
 
 function getTodayDate() {
   const now = new Date();
@@ -75,7 +76,7 @@ module.exports = (client) => {
       await redis.hset(key, { booster: isBooster ? "true" : "false" });
 
       // Debug
-      console.log(`+1 → ${userId} | booster: ${isBooster}`);
+      // console.log(`+1 → ${userId} | booster: ${isBooster}`);
     } catch (err) {
       console.error("Redis error:", err);
     }

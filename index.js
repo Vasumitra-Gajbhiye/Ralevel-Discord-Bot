@@ -9,6 +9,7 @@ const qotdSystem = require("./systems/qotd");
 const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
 const messageTracker = require("./systems/messageTracker");
+const dailyFinalizeSystem = require("./systems/dailyFinalizeSystem");
 
 // Connect DB
 connectDB();
@@ -31,5 +32,6 @@ qotdSystem(client);
 welcomeSystem(client);
 confessionsSystem(client);
 messageTracker(client);
+dailyFinalizeSystem(client);
 
 client.login(process.env.TOKEN);
