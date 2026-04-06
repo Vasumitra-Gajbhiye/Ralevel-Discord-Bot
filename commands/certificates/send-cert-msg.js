@@ -8,16 +8,13 @@ const {
 } = require("discord.js");
 require("dotenv").config();
 
-
-const APPLICATION_CHANNEL = process.env.APPLICATION_CHANNEL; 
+const APPLICATION_CHANNEL = process.env.APPLICATION_CHANNEL;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("send-cert-msg")
     .setDescription("Send the certificate application panel")
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageGuild
-    ),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
     const channel = await interaction.client.channels.fetch(
@@ -34,30 +31,22 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle("🧾 Certificate Application")
       .setDescription(
-    "**__How to Apply:__**\n" +
-    "Click on the relevant application button below.\n\n" +
-
-    "**__Eligibility & Availability:__**\n" +
-    "**Helper Certification**\n" +
-    "• Maintain your Helper position for a minimum of 1 month, reach 100 Reputation, and achieve the rank of <@&1437727634711777450>.\n\n" +
-
-    "**Writer Certification**\n" +
-    "• Submit a minimum of 5 extensive and helpful blogs/pieces-of-writing to our website.\n\n" +
-
-    "**Resource Contributor Certification**\n" +
-    "• Submit a minimum of 5 informative documents or notes relevant to a subject(s).\n\n" +
-
-    "**Graphic Designer Certification**\n" +
-    "• Submit a minimum of 5 pieces of graphic design (must have been utilized) as a <@&1431092954100928583>.\n\n" +
-
-    "**Moderator Certification**\n" +
-    "• Achieve the rank of <@&1114447390724849725>.\n"  +
-    "• Eligible Moderators can directly ping <@&1114451108811767928> to apply\n\n" +
-
-    "Please ensure you meet the requirements before applying.\n" + 
-    
-    "If your DMs are closed, you'll receive updates in <#1444615091780583526> channel"
-  )
+        "**__How to Apply:__**\n" +
+          "Click on the relevant application button below.\n\n" +
+          "**__Eligibility & Availability:__**\n" +
+          "**Helper Certification**\n" +
+          "• Achieve the rank of <@&1437727634711777450> by reaching 100 reputation points.\nMaintain this position for a minimum of 1 month.\n\n" +
+          "**Writer Certification**\n" +
+          "• Submit a minimum of 5 extensive and helpful blogs/pieces-of-writing to our website.\n\n" +
+          "**Resource Contributor Certification**\n" +
+          "• Based on the work put in to the resources.\n• Final decision is made by the Administrative team after resource submission\n\n" +
+          "**Graphic Designer Certification**\n" +
+          "• Submit a minimum of 5 pieces of graphic design (must have been utilized) as a <@&1431092954100928583>.\n\n" +
+          "**Moderator Certification**\n" +
+          "• Eligable moderators will be notified by admins\n\n" +
+          "Please ensure you meet the requirements before applying.\n" +
+          "Please ensure your DM's are open so that we can send updates"
+      )
       .setColor("#2CDAF2")
       .setFooter({
         text: "Only one pending application per certificate is permitted.",
