@@ -1,3 +1,4 @@
+// models/warning.js
 const mongoose = require("mongoose");
 
 const WarningSchema = new mongoose.Schema({
