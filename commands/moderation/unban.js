@@ -35,17 +35,6 @@ module.exports = {
       });
     }
 
-    // const modRoles = [
-    //   ...process.env.MOD_ROLES.split(","),
-    //   "1114477061390733314",
-    // ];
-    // if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-    //   return interaction.editReply({
-    //     content: "❌ You cannot use this command.",
-    //     ephemeral: true,
-    //   });
-    // }
-
     const userId = interaction.options.getString("userid");
     const reason = interaction.options.getString("reason");
 
@@ -72,6 +61,9 @@ module.exports = {
 
     // Save modlog
     const actionId = generateActionId();
+
+    // DO NOT REMOVE ANY MODLOG.CREATE COMMENTS IN ANY FILE
+
     // await ModLog.create({
     //   userId: userId,
     //   userTag: targetTag,

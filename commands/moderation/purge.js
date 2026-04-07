@@ -157,6 +157,8 @@ Hours Filter: ${hours || "N/A"}
 Moderator Reason: ${reason}
 `.trim();
 
+    // DO NOT REMOVE ANY MODLOG.CREATE COMMENTS IN ANY FILE
+
     // await ModLog.create({
     //     userId: targetUser ? targetUser.id : "N/A",
     //     targetChannel: channel.id,

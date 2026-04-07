@@ -17,16 +17,16 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("audit")
     .setDescription("View server-wide moderation audit logs (paginated).")
-    .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages), // visibility handled by MOD_ROLES
+    .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages),
 
   async execute(interaction) {
     const modRoles = (process.env.MOD_ROLES || "")
       .split(",")
-      .map(s => s.trim())
+      .map((s) => s.trim())
       .filter(Boolean);
 
     // mod-only check
-    if (!interaction.member.roles.cache.some(r => modRoles.includes(r.id))) {
+    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
       return interaction.reply({
         content: "❌ You do not have permission to use this command.",
         ephemeral: true,
@@ -59,19 +59,23 @@ module.exports = {
         .setTitle("🧾 Moderation Audit")
         .setColor("#00FFFF")
         .setTimestamp()
-        .setFooter({ text: `Page ${page + 1} / ${totalPages} • ${totalLogs} total logs` });
+        .setFooter({
+          text: `Page ${page + 1} / ${totalPages} • ${totalLogs} total logs`,
+        });
 
       if (!docs || docs.length === 0) {
         embed.setDescription("No logs to show on this page.");
         return embed;
       }
 
-      const lines = docs.map(doc => {
+      const lines = docs.map((doc) => {
         // attempt to extract relevant short info from reason if structured
         const time = new Date(doc.timestamp || Date.now());
         const timeTs = `<t:${Math.floor(time.getTime() / 1000)}:f>`;
         const action = doc.action || "unknown";
-        const modTag = doc.moderatorId ? `<@${doc.moderatorId}>` : doc.moderatorId || "N/A";
+        const modTag = doc.moderatorId
+          ? `<@${doc.moderatorId}>`
+          : doc.moderatorId || "N/A";
         const target = doc.targetTag || doc.userId || "N/A";
         const channel = doc.targetChannel ? `<#${doc.targetChannel}>` : "N/A";
 
@@ -130,8 +134,11 @@ module.exports = {
 
     collector.on("collect", async (btnInt) => {
       // only allow mods from MOD_ROLES to interact
-      if (!btnInt.member.roles.cache.some(r => modRoles.includes(r.id))) {
-        return btnInt.reply({ content: "❌ You cannot interact with this paginator.", ephemeral: true });
+      if (!btnInt.member.roles.cache.some((r) => modRoles.includes(r.id))) {
+        return btnInt.reply({
+          content: "❌ You cannot interact with this paginator.",
+          ephemeral: true,
+        });
       }
 
       // only allow our buttons
@@ -169,10 +176,13 @@ module.exports = {
         // disable buttons when collector ends
         prevBtn.setDisabled(true);
         nextBtn.setDisabled(true);
-        const disabledRow = new ActionRowBuilder().addComponents(prevBtn, nextBtn);
-        await replyMsg.edit({ components: [disabledRow] }).catch(() => { });
+        const disabledRow = new ActionRowBuilder().addComponents(
+          prevBtn,
+          nextBtn
+        );
+        await replyMsg.edit({ components: [disabledRow] }).catch(() => {});
       } catch (err) {
-        // ignore
+        console.log(err);
       }
     });
   },

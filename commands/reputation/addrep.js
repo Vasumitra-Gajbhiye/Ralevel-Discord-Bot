@@ -34,7 +34,7 @@ module.exports = {
       });
     }
 
-    await interaction.deferReply(); // ✅ Prevents interaction timeout
+    await interaction.deferReply();
 
     const target = interaction.options.getUser("user");
     const amount = interaction.options.getInteger("amount");

@@ -1,6 +1,6 @@
 // systems/rankSystem.js
 
-// TESTING SERVER INFO
+// TESTING SERVER INFO - DO NOT DELTE THIS COMMENT
 // const RANKS = [
 //   { roleId: "1487448375971545250", xp: 0 },
 //   { roleId: "1487448434133827716", xp: 10 },

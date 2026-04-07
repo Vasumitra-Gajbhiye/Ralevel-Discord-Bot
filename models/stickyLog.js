@@ -32,7 +32,6 @@ const StickyLogSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Raw sticky content (optional, capped)
     content: {
       type: String,
       default: null,

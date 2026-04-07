@@ -57,6 +57,8 @@ module.exports = {
     // Create log entry
     const actionId = generateActionId();
 
+    // DO NOT REMOVE ANY MODLOG.CREATE COMMENTS IN ANY FILE
+
     // await ModLog.create({
     //   userId: interaction.user.id, // moderator as target
     //   moderatorId: interaction.user.id,

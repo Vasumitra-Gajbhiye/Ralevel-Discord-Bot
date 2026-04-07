@@ -34,7 +34,7 @@ const WarningSchema = new mongoose.Schema({
   },
   active: {
     type: Boolean,
-    default: true, // useful if you want to revoke warnings later
+    default: true, // to revoke warnings later
   },
 
   timestamp: {

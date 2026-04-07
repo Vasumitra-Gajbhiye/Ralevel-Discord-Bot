@@ -24,10 +24,10 @@ const KickSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  active: {
-    type: Boolean,
-    default: true, // useful if you want to revoke warnings later
-  },
+  // active: {
+  //   type: Boolean,
+  //   default: true, // to revoke warnings later
+  // },
 
   timestamp: {
     type: Date,

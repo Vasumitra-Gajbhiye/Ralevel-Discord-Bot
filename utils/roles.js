@@ -1,4 +1,4 @@
-// utils/roles.js
+// utils/roles.js - LEGACY FILE
 module.exports = {
   ROLE_ADMIN: "1114451108811767928",
   ROLE_BEGINNER: "1114823569864663092",

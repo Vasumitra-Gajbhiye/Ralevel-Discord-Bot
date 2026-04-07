@@ -1,15 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
 const ModLog = require("../models/modlog");
 
-// module.exports = async function logModAction({
-//   interaction,
-//   action,
-//   target,
-//   reason,
-//   actionId,
-//   targetTag
-// }) {
-
 module.exports = async function logModAction({
   interaction,
   userId = "Not Provided",
@@ -59,32 +50,6 @@ module.exports = async function logModAction({
 
   // 1. Save to DB
   try {
-    // const doc = await ModLog.create({
-    //   userId: target.id || "N/A",
-    //   moderatorId: interaction.user.id,
-    //   action,
-    //   targetTag: target.tag || target || "Everyone",
-    //   reason: reason || "No reason provided",
-    //   actionId,
-
-    //   // 🔥 structured fields
-    //   channelId: extra.channelId || null,
-    //   title: extra.title || null,
-    //   description: extra.description || null,
-    //   color: extra.color || null,
-    //   image: extra.image || null,
-    //   thumbnail: extra.thumbnail || null,
-    //   button: extra.button || null,
-    //   ping: extra.ping || null,
-
-    //   targetChannel: channel.id || null,
-
-    //   // fallback
-    //   metadata: extra,
-
-    //   timestamp: new Date(),
-    // });
-
     const doc = await ModLog.create({
       userId: userId,
       moderatorId: moderatorId,

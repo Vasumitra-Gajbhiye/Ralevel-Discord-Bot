@@ -3,14 +3,14 @@ const mongoose = require("mongoose");
 const ConfessionSchema = new mongoose.Schema(
   {
     confessionId: {
-  type: Number,
-  unique: true,
-  index: true,
-},
-threadId: {
-  type: String,
-  default: null,
-},
+      type: Number,
+      unique: true,
+      index: true,
+    },
+    threadId: {
+      type: String,
+      default: null,
+    },
     content: {
       type: String,
       required: true,
@@ -65,7 +65,7 @@ threadId: {
       default: null,
     },
   },
-  
+
   { timestamps: true }
 );
 

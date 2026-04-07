@@ -66,6 +66,9 @@ module.exports = {
 
     // Create modlog entry
     const actionId = generateActionId();
+
+    // DO NOT REMOVE ANY MODLOG.CREATE COMMENTS IN ANY FILE
+
     // await ModLog.create({
     //   userId: member.id,
     //   moderatorId: interaction.user.id,

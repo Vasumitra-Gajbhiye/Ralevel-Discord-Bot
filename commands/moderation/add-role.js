@@ -46,7 +46,7 @@ module.exports = {
       });
     }
 
-    // Check if bot can assign role (hierarchy)
+    // Check if bot can assign role
     if (role.position >= interaction.guild.members.me.roles.highest.position) {
       return interaction.reply({
         content: "❌ I cannot add that role (my role is lower).",

@@ -67,6 +67,8 @@ Moderator: ${interaction.user.tag}
 Reason: ${reason}
 `.trim();
 
+    // DO NOT REMOVE ANY MODLOG.CREATE COMMENTS IN ANY FILE
+
     // await ModLog.create({
     //     userId: member.id,
     //     targetChannel: "N/A",

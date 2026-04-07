@@ -65,7 +65,8 @@ module.exports = {
       });
     }
 
-    // Log in DB
+    // Log in DB.
+    // DO NOT REMOVE ANY MODLOG.CREATE COMMENTS IN ANY FILE
     const actionId = generateActionId();
     // await ModLog.create({
     //     userId: member.id,

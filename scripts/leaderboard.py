@@ -6,7 +6,7 @@ GUILD_ID = "1114437735692902481"
 
 TOTAL_USERS = 10000
 USERS_PER_PAGE = 100
-DELAY = 0.6  # seconds between requests (adjust if needed)
+DELAY = 0.6  
 
 
 async def main():
@@ -35,7 +35,7 @@ async def main():
                 for user in players:
                     writer.writerow([
                         rank,
-                        user.get("id"),  # 👈 THIS is the only thing you needed
+                        user.get("id"),  
                         user.get("username"),
                         user.get("level"),
                         user.get("xp"),

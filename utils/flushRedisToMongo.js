@@ -12,7 +12,7 @@ async function flush() {
   try {
     await connectDB();
 
-    const guildId = process.env.GUILD_ID; // 🔁 replace if needed
+    const guildId = process.env.GUILD_ID;
     const date = getTodayDate();
 
     const key = `messages:${guildId}:${date}`;

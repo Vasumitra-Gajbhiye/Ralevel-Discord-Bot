@@ -128,7 +128,7 @@ module.exports = {
     const type = interaction.options.getString("type");
     const guild = interaction.guild;
 
-    // ---- PERMANENT LOCKED CHANNEL IDs ----
+    // ---- PERMANENT LOCKED CHANNEL IDs FOR MAIN SERVER (NOT TESTING) ----
     const permanentLocked = new Set([
       "1122879003024433242",
       "1122878155380768878",
@@ -177,49 +177,6 @@ module.exports = {
 
       return overwrite.deny?.has("SendMessages");
     });
-
-    // // ---- BUILD EMBED ----
-    // const embed = new EmbedBuilder()
-    //   .setColor(0x2b2d31)
-    //   .setTitle("🔒 Locked Channels Status")
-    //   .setTimestamp();
-
-    // // ---- TEMPORARY LOCKS ----
-    // let tempList = temporarilyLocked.map((ch) => `🔒 <#${ch.id}>`).join("\n");
-
-    // if (!tempList) {
-    //   tempList = "No active temporary locks.";
-    // }
-
-    // // Limit to 1024 chars (Discord limit)
-    // tempList = tempList.slice(0, 1020);
-
-    // embed.addFields({
-    //   name: "🟡 Temporary Locks",
-    //   value: tempList,
-    //   inline: false,
-    // });
-
-    // // ---- PERMANENT LOCKS ----
-    // let permanentList = [...permanentLocked]
-    //   .map((id) => {
-    //     const ch = guild.channels.cache.get(id);
-    //     return ch ? `📌 <#${id}>` : `📌 [Deleted Channel: ${id}]`;
-    //   })
-    //   .join("\n");
-
-    // if (!permanentList) {
-    //   permanentList = "None";
-    // }
-
-    // // Limit to 1024 chars
-    // permanentList = permanentList.slice(0, 1020);
-
-    // embed.addFields({
-    //   name: "🔐 Permanent Locked Channels",
-    //   value: permanentList,
-    //   inline: false,
-    // });
 
     const embed = new EmbedBuilder()
       .setColor(0x2b2d31)

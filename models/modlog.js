@@ -4,7 +4,7 @@ const ModLogSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: true,
-    index: true, // faster queries for /history
+    index: true,
   },
 
   moderatorId: {
