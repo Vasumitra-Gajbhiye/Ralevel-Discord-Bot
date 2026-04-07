@@ -1,3 +1,4 @@
+// models/modlog.js
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const ModLogSchema = new mongoose.Schema({
