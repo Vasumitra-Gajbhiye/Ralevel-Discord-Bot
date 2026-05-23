@@ -1,3 +1,4 @@
+// mute command
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const ModLog = require("../../models/modlog.js");
 const generateActionId = require("../../utils/generateId.js");

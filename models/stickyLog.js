@@ -37,6 +37,11 @@ const StickyLogSchema = new mongoose.Schema(
       default: null,
       maxlength: 2000, // prevent abuse
     },
+    lineThreshold: {
+      type: Number,
+      default: null,
+      min: 1,
+    },
   },
   { timestamps: true }
 );

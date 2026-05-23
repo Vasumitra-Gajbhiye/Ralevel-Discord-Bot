@@ -1,3 +1,4 @@
+// timeout command
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,

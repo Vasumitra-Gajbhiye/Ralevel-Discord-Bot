@@ -6,6 +6,8 @@ const {
 const Sticky = require("../../models/sticky");
 const logStickyAction = require("../../utils/logStickyAction");
 
+const DEFAULT_LINE_THRESHOLD = 8;
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("edit-sticky")
@@ -22,6 +24,16 @@ module.exports = {
         .setDescription("Channel (defaults to current)")
         .setRequired(false)
     )
+    .addIntegerOption(option =>
+      option
+        .setName("line-threshold")
+        .setDescription(
+          "Number of message lines before the sticky is reposted"
+        )
+        .setMinValue(1)
+        .setMaxValue(1000)
+        .setRequired(false)
+    )
     .setDefaultMemberPermissions(
       PermissionFlagsBits.ManageMessages
     ),
@@ -33,6 +45,8 @@ module.exports = {
 
     const newContent =
       interaction.options.getString("message").replace(/\\n/g, "\n");
+    const requestedLineThreshold =
+      interaction.options.getInteger("line-threshold");
 
     if (!channel.isTextBased()) {
       return interaction.reply({
@@ -52,6 +66,11 @@ module.exports = {
       });
     }
 
+    const lineThreshold =
+      requestedLineThreshold ??
+      sticky.lineThreshold ??
+      DEFAULT_LINE_THRESHOLD;
+
     // Delete old sticky message
     if (sticky.lastMessageId) {
       try {
@@ -70,6 +89,7 @@ module.exports = {
     });
 
     sticky.content = newContent;
+    sticky.lineThreshold = lineThreshold;
     sticky.lastMessageId = sent.id;
     await sticky.save();
 
@@ -79,11 +99,12 @@ module.exports = {
     });
 
     await logStickyAction({
-  guildId: interaction.guildId,
-  channelId: channel.id,
-  moderator: interaction.user,
-  action: "EDIT",
-  content: newContent,
-});
+      guildId: interaction.guildId,
+      channelId: channel.id,
+      moderator: interaction.user,
+      action: "EDIT",
+      content: newContent,
+      lineThreshold,
+    });
   },
 };

@@ -6,6 +6,8 @@ const {
 const Sticky = require("../../models/sticky");
 const logStickyAction = require("../../utils/logStickyAction");
 
+const DEFAULT_LINE_THRESHOLD = 8;
+
 function formatSticky(content) {
   return `__**Stickied Message:**__\n\n${content}`;
 }
@@ -24,6 +26,16 @@ module.exports = {
       option
         .setName("channel")
         .setDescription("Channel (defaults to current)")
+        .setRequired(false)
+    )
+    .addIntegerOption(option =>
+      option
+        .setName("line-threshold")
+        .setDescription(
+          "Number of message lines before the sticky is reposted"
+        )
+        .setMinValue(1)
+        .setMaxValue(1000)
         .setRequired(false)
     )
     .setDefaultMemberPermissions(
@@ -61,10 +73,16 @@ module.exports = {
 
     const content =
       interaction.options.getString("message").replace(/\\n/g, "\n");
+    const requestedLineThreshold =
+      interaction.options.getInteger("line-threshold");
 
     let sticky = await Sticky.findOne({
       channelId: channel.id,
     });
+    const lineThreshold =
+      requestedLineThreshold ??
+      sticky?.lineThreshold ??
+      DEFAULT_LINE_THRESHOLD;
 
     if (sticky?.lastMessageId) {
       try {
@@ -74,27 +92,29 @@ module.exports = {
       } catch {}
     }
 
-   const formatted = formatSticky(content);
+    const formatted = formatSticky(content);
 
-const sent = await channel.send({
-  content: formatted,
-  allowedMentions: { parse: [] },
-});
-await Sticky.findOneAndUpdate(
-  { channelId: channel.id },
-  {
-    guildId: interaction.guildId,
-    channelId: channel.id,
-    content, // raw content only
-    lastMessageId: sent.id,
-    enabled: true,
-  },
-  { upsert: true }
-);
+    const sent = await channel.send({
+      content: formatted,
+      allowedMentions: { parse: [] },
+    });
+    await Sticky.findOneAndUpdate(
+      { channelId: channel.id },
+      {
+        guildId: interaction.guildId,
+        channelId: channel.id,
+        content, // raw content only
+        lineThreshold,
+        lastMessageId: sent.id,
+        enabled: true,
+      },
+      { upsert: true }
+    );
 
     interaction.client.stickies?.set(channel.id, {
       channelId: channel.id,
       content,
+      lineThreshold,
       lastMessageId: sent.id,
       enabled: true,
     });
@@ -105,11 +125,12 @@ await Sticky.findOneAndUpdate(
     });
 
     await logStickyAction({
-  guildId: interaction.guildId,
-  channelId: channel.id,
-  moderator: interaction.user,
-  action: "ADD",
-  content,
-});
+      guildId: interaction.guildId,
+      channelId: channel.id,
+      moderator: interaction.user,
+      action: "ADD",
+      content,
+      lineThreshold,
+    });
   },
 };

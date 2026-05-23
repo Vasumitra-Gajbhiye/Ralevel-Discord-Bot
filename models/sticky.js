@@ -17,6 +17,11 @@ const StickySchema = new mongoose.Schema(
       type: String,
       default: null, // markdown-enabled text
     },
+    lineThreshold: {
+      type: Number,
+      default: 8,
+      min: 1,
+    },
     lastMessageId: {
       type: String,
       default: null,

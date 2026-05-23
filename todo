@@ -1,0 +1,31 @@
+
+⁠❔┃hr-updates ⁠❔┃status-update sticky message after 6
+
+/announce hiting limits
+/lock and /unlock, jr mods, sr, mod dep head and admins. not to trial mods
+purge,  sr mods only
+/moderator-log, jr mods shouldn't be able to use it. IAL role access.
+/warn bug.
+/lock-status, not working
+/set-nickname. only for IAL (change for higher ranks) , dc mod head and admin. general, jr and sr mods, change it for people below them
+ 
+/say, shouldn't ping @ everyone.
+/mute and /timeout combine. keep timeout remove /mute-status, /unmute
+dc mod dep head should have access to all commands.
+dc mod dep head should have unban
+IAL access to mod logs
+fix message in cert
+make it so that not anyone can apply for certiifcate
+merge get and apply certificates
+get first and apply bottom
+remove new-to-discord and merge it somewhere
+server tour to welcome
+add roles and remove role
+
+
+DONE:
+discord /add-sticky message limit
+make sticky message resend customisable
+
+PROBLEM:
+dm ban appeal action (high priority)

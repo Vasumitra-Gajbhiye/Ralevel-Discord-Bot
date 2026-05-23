@@ -1,6 +1,6 @@
 const Sticky = require("../models/sticky.js");
 
-const LINE_THRESHOLD = 3; // repost after 3 lines
+const DEFAULT_LINE_THRESHOLD = 8; // repost after 8 lines
 
 module.exports = function stickySystem(client) {
   // channelId -> { lineCount }
@@ -17,6 +17,12 @@ module.exports = function stickySystem(client) {
 
     if (!sticky) return;
 
+    const lineThreshold =
+      Number.isInteger(sticky.lineThreshold) &&
+      sticky.lineThreshold > 0
+        ? sticky.lineThreshold
+        : DEFAULT_LINE_THRESHOLD;
+
     // Prevent reacting to the sticky itself
     if (message.id === sticky.lastMessageId) return;
 
@@ -29,13 +35,12 @@ module.exports = function stickySystem(client) {
 
     // Count how many lines this message adds
     // Split on newlines; empty message still counts as 1 visual line
-    const linesAdded =
-      (message.content?.split("\n").length || 1);
+    const linesAdded = message.content?.split("\n").length || 1;
 
     state.lineCount += linesAdded;
 
     // Not enough displacement yet
-    if (state.lineCount < LINE_THRESHOLD) return;
+    if (state.lineCount < lineThreshold) return;
 
     // Reset counter
     state.lineCount = 0;
@@ -47,8 +52,7 @@ module.exports = function stickySystem(client) {
       } catch {}
     }
 
-    const formatted =
-      `__**Stickied Message:**__\n\n${sticky.content}`;
+    const formatted = `__**Stickied Message:**__\n\n${sticky.content}`;
 
     // Send new sticky
     const sent = await message.channel.send({

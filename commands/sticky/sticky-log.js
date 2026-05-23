@@ -32,19 +32,22 @@ module.exports = {
       const time = `<t:${Math.floor(
         log.createdAt.getTime() / 1000
       )}:R>`;
-      if(!log.content) {
-        return (
-            `**${log.action}** in <#${log.channelId}>\n` +
-        `• Mod: ${log.moderatorTag}\n` +
-        `• ${time}`
-        )
+      const parts = [
+        `**${log.action}** in <#${log.channelId}>`,
+        `• Mod: ${log.moderatorTag}`,
+      ];
+
+      if (log.content) {
+        parts.push(`• Content: ${log.content}`);
       }
-      return (
-        `**${log.action}** in <#${log.channelId}>\n` +
-        `• Mod: ${log.moderatorTag}\n` +
-        `• Content: ${log.content}\n` +
-        `• ${time}`
-      );
+
+      if (log.lineThreshold != null) {
+        parts.push(`• Threshold: ${log.lineThreshold} lines`);
+      }
+
+      parts.push(`• ${time}`);
+
+      return parts.join("\n");
     });
 
     const embed = new EmbedBuilder()

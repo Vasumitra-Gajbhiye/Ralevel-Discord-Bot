@@ -29,7 +29,7 @@ module.exports = {
     const lines = stickies.map(s =>
       `<#${s.channelId}> — ${
         s.enabled ? "✅ Enabled" : "❌ Disabled"
-      }`
+      } • ${s.lineThreshold ?? 8} lines`
     );
 
     const embed = new EmbedBuilder()

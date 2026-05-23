@@ -1,3 +1,4 @@
+// REPUTATION model
 const { Schema, model } = require("mongoose");
 
 const ReputationSchema = new Schema(

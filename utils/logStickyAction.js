@@ -6,6 +6,7 @@ async function logStickyAction({
   moderator,
   action,
   content = null,
+  lineThreshold = null,
 }) {
   try {
     await StickyLog.create({
@@ -15,6 +16,7 @@ async function logStickyAction({
       moderatorTag: moderator.tag,
       action,
       content,
+      lineThreshold,
     });
   } catch (err) {
     console.error("Sticky log error:", err);
