@@ -19,9 +19,9 @@ require("dotenv").config();
 // CONFIG — change IDs if needed
 const APPLICATION_CHANNEL = process.env.APPLICATION_CHANNEL;
 const REVIEW_CHANNEL = process.env.REVIEW_CHANNEL;
-const ROLE_SR_HELPER = process.env.ROLE_SR_HELPER; // senior helper role (eligibility)
+const SR_HELPER_ROLE_ID = process.env.SR_HELPER_ROLE_ID; // senior helper role (eligibility)
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID; // only this role can approve/reject / use submit command
-const RESOURCE_CONTRIBUTOR_ROLE = process.env.RESOURCE_CONTRIBUTOR_ROLE; // optional role to give on resource approval
+const RESOURCE_CONTRIBUTOR_ROLE_ID = process.env.RESOURCE_CONTRIBUTOR_ROLE_ID; // optional role to give on resource approval
 const CERT_UPDATES_CHANNEL = process.env.CERT_UPDATES_CHANNEL; // Public certificate updates channel
 
 module.exports = function certificateSystem(client) {
@@ -96,7 +96,7 @@ module.exports = function certificateSystem(client) {
                     new EmbedBuilder()
                       .setTitle("❌ Certificate Application — Rejected")
                       .setDescription(
-                        `Your application for **${app.type}** certificate was rejected.`
+                        `Your application for **${app.type}** certificate was rejected.`,
                       )
                       .addFields(
                         { name: "Reason", value: reason.slice(0, 1024) },
@@ -104,7 +104,7 @@ module.exports = function certificateSystem(client) {
                           name: "Application ID",
                           value: `\`${app._id}\``,
                           inline: true,
-                        }
+                        },
                       )
                       .setColor("#ff4d4d")
                       .setTimestamp(),
@@ -115,15 +115,14 @@ module.exports = function certificateSystem(client) {
           } catch {
             // Send update
             try {
-              const updatesCh = await client.channels.fetch(
-                CERT_UPDATES_CHANNEL
-              );
+              const updatesCh =
+                await client.channels.fetch(CERT_UPDATES_CHANNEL);
               const applicantUser = await client.users.fetch(app.userId);
 
               const updateEmbed = new EmbedBuilder()
                 .setTitle("❌ Certificate Application — Rejected")
                 .setDescription(
-                  `Your application for **${app.type}** certificate was rejected.`
+                  `Your application for **${app.type}** certificate was rejected.`,
                 )
                 .addFields(
                   { name: "Reason", value: reason.slice(0, 1024) },
@@ -131,7 +130,7 @@ module.exports = function certificateSystem(client) {
                     name: "Application ID",
                     value: `\`${app._id}\``,
                     inline: true,
-                  }
+                  },
                 )
                 .setColor("#ff4d4d")
                 .setFooter({
@@ -162,7 +161,7 @@ module.exports = function certificateSystem(client) {
                   `Application ID: \`${app._id}\`\n
                  Moderator: ${interaction.user.tag} \n
                  Reason: ${reason}
-                `
+                `,
                 )
                 .setColor("#ff4d4d")
                 .setTimestamp();
@@ -206,10 +205,10 @@ module.exports = function certificateSystem(client) {
           customId === "apply_helper"
             ? "Helper"
             : customId === "apply_writer"
-            ? "Writer"
-            : customId === "apply_graphic"
-            ? "Graphic Designer"
-            : "Resource Contributor";
+              ? "Writer"
+              : customId === "apply_graphic"
+                ? "Graphic Designer"
+                : "Resource Contributor";
 
         // If in guild, fetch member for role checks
         let member = null;
@@ -218,7 +217,7 @@ module.exports = function certificateSystem(client) {
 
         // Eligibility: Helper requires senior helper
         if (type === "Helper") {
-          if (!member || !member.roles.cache.has(ROLE_SR_HELPER)) {
+          if (!member || !member.roles.cache.has(SR_HELPER_ROLE_ID)) {
             return interaction.editReply({
               content:
                 "❌ You are not eligible for the Helper Certificate. Only Senior Helpers may apply.\n" +
@@ -279,7 +278,7 @@ module.exports = function certificateSystem(client) {
               value: `<t:${Math.floor(app.createdAt.getTime() / 1000)}:F>`,
               inline: true,
             },
-            { name: "Application ID", value: `\`${app._id}\``, inline: false }
+            { name: "Application ID", value: `\`${app._id}\``, inline: false },
           )
           .setFooter({
             text: channel
@@ -298,7 +297,7 @@ module.exports = function certificateSystem(client) {
           new ButtonBuilder()
             .setCustomId(rejectId)
             .setLabel("Reject")
-            .setStyle(ButtonStyle.Danger)
+            .setStyle(ButtonStyle.Danger),
         );
 
         // send to review channel
@@ -323,7 +322,7 @@ module.exports = function certificateSystem(client) {
                   new EmbedBuilder()
                     .setTitle("✅ Application Submitted")
                     .setDescription(
-                      `Your application for **${type}** certificate was submitted and queued for review.`
+                      `Your application for **${type}** certificate was submitted and queued for review.`,
                     )
                     .addFields(
                       {
@@ -338,7 +337,7 @@ module.exports = function certificateSystem(client) {
                           ? `<t:${Math.floor(joinedAt.getTime() / 1000)}:R>`
                           : "Unknown",
                         inline: true,
-                      }
+                      },
                     )
                     .setColor("#00B894"),
                 ],
@@ -354,7 +353,7 @@ module.exports = function certificateSystem(client) {
             const updateEmbed = new EmbedBuilder()
               .setTitle("✅ Application Submitted")
               .setDescription(
-                `Your application for **${type}** certificate was submitted and queued for review.`
+                `Your application for **${type}** certificate was submitted and queued for review.`,
               )
               .addFields(
                 {
@@ -369,7 +368,7 @@ module.exports = function certificateSystem(client) {
                     ? `<t:${Math.floor(joinedAt.getTime() / 1000)}:R>`
                     : "Unknown",
                   inline: true,
-                }
+                },
               )
               .setColor("#00B894")
               .setFooter({
@@ -448,7 +447,7 @@ module.exports = function certificateSystem(client) {
                 .catch(() => null);
               if (guildMember)
                 await guildMember.roles
-                  .add(RESOURCE_CONTRIBUTOR_ROLE)
+                  .add(RESOURCE_CONTRIBUTOR_ROLE_ID)
                   .catch(() => {});
             }
           } catch (err) {
@@ -472,7 +471,7 @@ module.exports = function certificateSystem(client) {
                           `⚠️ **Note:** \n\n` +
                           `When you send details via email, please mention your Application ID in the email.\n\n` +
                           `Your full legal name will remain confidental.\n\n` +
-                          `Please send us the details from the email on which you'd like to receive the certificate.\n`
+                          `Please send us the details from the email on which you'd like to receive the certificate.\n`,
                       )
                       .setColor("#00B894")
                       .setTimestamp(),
@@ -484,9 +483,8 @@ module.exports = function certificateSystem(client) {
             console.log(err);
             // Send update
             try {
-              const updatesCh = await client.channels.fetch(
-                CERT_UPDATES_CHANNEL
-              );
+              const updatesCh =
+                await client.channels.fetch(CERT_UPDATES_CHANNEL);
               const applicantUser = await client.users.fetch(app.userId);
 
               const updateEmbed = new EmbedBuilder()
@@ -499,7 +497,7 @@ module.exports = function certificateSystem(client) {
                     `⚠️ **Note:** \n\n` +
                     `When you send details via email, please mention your Application ID in the email.\n\n` +
                     `Your full legal name will remain confidental.\n\n` +
-                    `Please send us the details from the email on which you'd like to receive the certificate.\n`
+                    `Please send us the details from the email on which you'd like to receive the certificate.\n`,
                 )
                 .setColor("#00B894")
                 .setFooter({
@@ -527,7 +525,7 @@ module.exports = function certificateSystem(client) {
                 .setDescription(
                   `Application ID: \`${app._id}\`\n
                  Moderator: ${interaction.user.tag}
-                `
+                `,
                 )
                 .setColor("#00B894")
                 .setTimestamp();
@@ -567,7 +565,7 @@ module.exports = function certificateSystem(client) {
             .setMaxLength(1000);
 
           modal.addComponents(
-            new ActionRowBuilder().addComponents(reasonInput)
+            new ActionRowBuilder().addComponents(reasonInput),
           );
 
           // show modal (no defer before)

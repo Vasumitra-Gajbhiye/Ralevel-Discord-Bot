@@ -5,7 +5,9 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("sethelper")
     .setDescription("Assign a helper role to this channel.")
-    .addRoleOption(option => option.setName("role").setDescription("Helper role").setRequired(true))
+    .addRoleOption((option) =>
+      option.setName("role").setDescription("Helper role").setRequired(true),
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
   async execute(interaction) {
@@ -15,9 +17,11 @@ module.exports = {
     await HelperRole.findOneAndUpdate(
       { channelId },
       { roleId: role.id },
-      { upsert: true }
+      { upsert: true },
     );
 
-    interaction.reply(`✅ Helper for **#${interaction.channel.name}** is now **${role.name}**`);
-  }
+    interaction.reply(
+      `✅ Helper for **#${interaction.channel.name}** is now **${role.name}**`,
+    );
+  },
 };

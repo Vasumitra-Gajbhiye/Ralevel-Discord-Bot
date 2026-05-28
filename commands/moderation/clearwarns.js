@@ -11,19 +11,19 @@ function isModerator(member) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("clearwarns")
+    .setName("clear-warnings")
     .setDescription("Clear all warnings for a user")
     .addUserOption((opt) =>
       opt
         .setName("user")
         .setDescription("User whose warnings should be cleared")
-        .setRequired(true)
+        .setRequired(true),
     )
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for warning")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -60,7 +60,7 @@ module.exports = {
       actionId,
     });
     return interaction.editReply(
-      `🧹 Cleared **${results.length}** warnings for <@${user.id}>.`
+      `🧹 Cleared **${results.length}** warnings for <@${user.id}>.`,
     );
   },
 };

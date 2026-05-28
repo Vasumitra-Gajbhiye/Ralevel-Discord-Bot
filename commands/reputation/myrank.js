@@ -1,10 +1,16 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const Reputation = require("../../models/reputation.js");
-const { ROLE_BEGINNER, ROLE_INTERMEDIATE, ROLE_ADVANCED, ROLE_EXPERT, ROLE_GIGACHAD } = require("../../utils/roles.js");
+const {
+  ROLE_BEGINNER,
+  ROLE_INTERMEDIATE,
+  ROLE_ADVANCED,
+  ROLE_EXPERT,
+  ROLE_GIGACHAD,
+} = require("../../utils/roles.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("myrank")
+    .setName("my-rank")
     .setDescription("Check your reputation rank and progress."),
 
   async execute(interaction) {
@@ -21,11 +27,11 @@ module.exports = {
       { amount: 100, label: "Advance", emoji: "⚡" },
       { amount: 50, label: "Intermediate", emoji: "📈" },
       { amount: 10, label: "Beginner", emoji: "🌱" },
-      { amount: 0, label: "Unranked", emoji: "❔" }
+      { amount: 0, label: "Unranked", emoji: "❔" },
     ];
 
-    const currentTier = tiers.find(t => rep >= t.amount);
-    const nextTier = tiers.find(t => t.amount > rep);
+    const currentTier = tiers.find((t) => rep >= t.amount);
+    const nextTier = tiers.find((t) => t.amount > rep);
 
     const progress = nextTier
       ? `${rep}/${nextTier.amount} rep needed for **${nextTier.label}**`
@@ -36,11 +42,11 @@ module.exports = {
       .addFields(
         { name: "Current Rank", value: currentTier.label, inline: true },
         { name: "Reputation", value: `${rep}`, inline: true },
-        { name: "Progress", value: progress }
+        { name: "Progress", value: progress },
       )
       .setColor("#00AEEF")
       .setTimestamp();
 
     return interaction.reply({ embeds: [embed] });
-  }
+  },
 };

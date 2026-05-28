@@ -11,19 +11,19 @@ function isModerator(member) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("delwarn")
+    .setName("delete-warning")
     .setDescription("Delete a specific warning by its action ID")
     .addStringOption((opt) =>
       opt
         .setName("actionid")
         .setDescription("Action ID of the warning")
-        .setRequired(true)
+        .setRequired(true),
     )
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for warning")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {

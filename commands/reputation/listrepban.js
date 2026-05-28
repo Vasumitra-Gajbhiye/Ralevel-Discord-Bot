@@ -1,9 +1,13 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
 const RepBan = require("../../models/repban");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("listrepban")
+    .setName("list-rep-ban")
     .setDescription("List all users who are banned from receiving reputation.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
@@ -29,5 +33,5 @@ module.exports = {
       .setFooter({ text: "Use /repunban @user to remove bans." });
 
     return interaction.editReply({ embeds: [embed] });
-  }
+  },
 };

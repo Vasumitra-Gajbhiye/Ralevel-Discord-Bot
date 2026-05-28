@@ -5,19 +5,19 @@ const { assignRepRoleById } = require("../../utils/assignRepRole.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("subrep")
+    .setName("sub-rep")
     .setDescription("Subtract reputation from a user.")
     .addUserOption((option) =>
       option
         .setName("user")
         .setDescription("The user to remove reputation from.")
-        .setRequired(true)
+        .setRequired(true),
     )
     .addIntegerOption((option) =>
       option
         .setName("amount")
         .setDescription("Amount to subtract.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -49,7 +49,7 @@ module.exports = {
     await assignRepRoleById(interaction.guild, interaction.channel, target.id);
 
     return interaction.editReply(
-      `✅ Removed **${amount}** reputation from ${target}.\nNew total: **${repRecord.rep}**`
+      `✅ Removed **${amount}** reputation from ${target}.\nNew total: **${repRecord.rep}**`,
     );
   },
 };

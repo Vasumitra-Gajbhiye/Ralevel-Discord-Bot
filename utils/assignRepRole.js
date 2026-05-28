@@ -22,23 +22,43 @@ async function assignRepRoleById(guild, channel, userId) {
     }
 
     // Load reputation
-    const rec = await Reputation.findOne({ userId }) || { rep: 0 };
+    const rec = (await Reputation.findOne({ userId })) || { rep: 0 };
     const rep = rec.rep || 0;
 
     // Define tiers (highest → lowest)
     const TIERS = [
-      { amount: 1000, role: process.env.ROLE_GIGACHAD,     label: "Giga Chad (1000+ Rep)" },
-      { amount: 500,  role: process.env.ROLE_EXPERT,       label: "Expert (500+ Rep)" },
-      { amount: 100,  role: process.env.ROLE_ADVANCED,     label: "Advance (100+ Rep)" },
-      { amount: 50,   role: process.env.ROLE_INTERMEDIATE, label: "Intermediate (50+ Rep)" },
-      { amount: 10,   role: process.env.ROLE_BEGINNER,     label: "Beginner (10+ Rep)" },
+      {
+        amount: 1000,
+        role: process.env.GIGACHAD_ROLE_ID,
+        label: "Giga Chad (1000+ Rep)",
+      },
+      {
+        amount: 500,
+        role: process.env.EXPERT_ROLE_ID,
+        label: "Expert (500+ Rep)",
+      },
+      {
+        amount: 100,
+        role: process.env.ADVANCED_ROLE_ID,
+        label: "Advance (100+ Rep)",
+      },
+      {
+        amount: 50,
+        role: process.env.INTERMEDIATE_ROLE_ID,
+        label: "Intermediate (50+ Rep)",
+      },
+      {
+        amount: 10,
+        role: process.env.ROLE_BEGINNER_ROLE_ID,
+        label: "Beginner (10+ Rep)",
+      },
     ];
 
     // Compute correct tier
-    const eligible = TIERS.find(t => rep >= t.amount);
+    const eligible = TIERS.find((t) => rep >= t.amount);
 
     // Remove all tier roles first (so the user has at most one)
-    const allTierIds = TIERS.map(t => t.role);
+    const allTierIds = TIERS.map((t) => t.role);
     await member.roles.remove(allTierIds).catch(() => {});
 
     // If no tier (rep < 10), stop after cleanup
@@ -48,7 +68,9 @@ async function assignRepRoleById(guild, channel, userId) {
     if (!member.roles.cache.has(eligible.role)) {
       await member.roles.add(eligible.role).catch(() => {});
       if (channel) {
-        await channel.send(`🎉 Congratulations, ${member} has received the **${eligible.label}** role!`);
+        await channel.send(
+          `🎉 Congratulations, ${member} has received the **${eligible.label}** role!`,
+        );
       }
     }
   } catch (err) {

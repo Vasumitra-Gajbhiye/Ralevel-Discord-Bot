@@ -5,16 +5,16 @@ require("dotenv").config();
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("setrep")
+    .setName("set-rep")
     .setDescription("Set a user's reputation to a specific value.")
     .addUserOption((o) =>
-      o.setName("user").setDescription("The user.").setRequired(true)
+      o.setName("user").setDescription("The user.").setRequired(true),
     )
     .addIntegerOption((o) =>
       o
         .setName("amount")
         .setDescription("The reputation value to set.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -43,7 +43,7 @@ module.exports = {
     await assignRepRoleById(interaction.guild, interaction.channel, target.id);
 
     return interaction.editReply(
-      `✅ Set **${target}**'s reputation to **${amount}**.`
+      `✅ Set **${target}**'s reputation to **${amount}**.`,
     );
   },
 };

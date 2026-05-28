@@ -4,10 +4,13 @@ const { ROLE_ADMIN } = require("../../utils/roles.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("repban")
+    .setName("rep-ban")
     .setDescription("Prevent a user from receiving reputation.")
     .addUserOption((o) =>
-      o.setName("user").setDescription("The user to rep-ban.").setRequired(true)
+      o
+        .setName("user")
+        .setDescription("The user to rep-ban.")
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -21,7 +24,7 @@ module.exports = {
     await RepBan.updateOne({ userId: target.id }, {}, { upsert: true });
 
     return interaction.reply(
-      `🚫 ${target} has been **banned from receiving reputation**.`
+      `🚫 ${target} has been **banned from receiving reputation**.`,
     );
   },
 };

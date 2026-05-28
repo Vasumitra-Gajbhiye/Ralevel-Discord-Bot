@@ -6,19 +6,19 @@ const logModAction = require("../../utils/logModAction");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("addrep")
+    .setName("add-rep")
     .setDescription("Add reputation to a user.")
     .addUserOption((option) =>
       option
         .setName("user")
         .setDescription("The user to add reputation to.")
-        .setRequired(true)
+        .setRequired(true),
     )
     .addIntegerOption((option) =>
       option
         .setName("amount")
         .setDescription("Amount to add.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -52,7 +52,7 @@ module.exports = {
     await assignRepRoleById(interaction.guild, interaction.channel, target.id);
 
     return interaction.editReply(
-      `✅ Added **${amount}** reputation to ${target}.\nNew total: **${repRecord.rep}**`
+      `✅ Added **${amount}** reputation to ${target}.\nNew total: **${repRecord.rep}**`,
     );
   },
 };
