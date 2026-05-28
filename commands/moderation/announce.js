@@ -278,15 +278,6 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ flags: 64 });
 
-    const modRoles = process.env.MOD_ROLES.split(",");
-    const moderator = interaction.member;
-
-    if (!moderator.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.editReply({
-        content: "❌ You do not have permission to use /announce.",
-      });
-    }
-
     const channel = interaction.options.getChannel("channel");
     const title = interaction.options.getString("title");
     const description = interaction.options.getString("description");
