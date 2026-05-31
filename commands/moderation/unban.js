@@ -11,30 +11,16 @@ module.exports = {
       option
         .setName("userid")
         .setDescription("User ID to unban")
-        .setRequired(true)
+        .setRequired(true),
     )
     .addStringOption((option) =>
       option
         .setName("reason")
         .setDescription("Reason for unbanning")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
-    // const modRoles = process.env.MOD_ROLES.split(",");
-    // if (!interaction.member.roles.cache.some(r => modRoles.includes(r.id))) {
-    //     return interaction.reply({ content: "❌ You cannot use this command.", ephemeral: true });
-    // }
-
-    const REQUIRED_ROLE = process.env.ADMIN_ROLE_ID;
-
-    if (!interaction.member.roles.cache.has(REQUIRED_ROLE)) {
-      return interaction.reply({
-        content: "❌ You cannot use this command.",
-        ephemeral: true,
-      });
-    }
-
     const userId = interaction.options.getString("userid");
     const reason = interaction.options.getString("reason");
 
@@ -94,7 +80,7 @@ module.exports = {
         { name: "User ID", value: userId },
         { name: "Moderator", value: interaction.user.tag },
         { name: "Reason", value: reason },
-        { name: "Action ID", value: actionId }
+        { name: "Action ID", value: actionId },
       )
       .setTimestamp();
 

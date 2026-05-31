@@ -4,11 +4,6 @@ const logModAction = require("../../utils/logModAction");
 const generateActionId = require("../../utils/generateId.js");
 const warning = require("../../models/warning.js");
 
-function isModerator(member) {
-  const allowedRoles = process.env.MOD_ROLES.split(",");
-  return member.roles.cache.some((role) => allowedRoles.includes(role.id));
-}
-
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("clear-warnings")
@@ -28,12 +23,6 @@ module.exports = {
 
   async execute(interaction) {
     await interaction.deferReply();
-    if (!isModerator(interaction.member))
-      return interaction.editReply({
-        content: "❌ No permission.",
-        ephemeral: true,
-      });
-
     const user = interaction.options.getUser("user");
 
     const reason = interaction.options.getString("reason");

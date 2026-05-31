@@ -10,68 +10,56 @@ module.exports = {
     .setName("add-task")
     .setDescription("Create a new task")
     .addStringOption((o) =>
-      o.setName("title").setDescription("Title of the task").setRequired(true)
+      o.setName("title").setDescription("Title of the task").setRequired(true),
     )
     .addStringOption((o) =>
       o
         .setName("description")
         .setDescription("Describe the task")
-        .setRequired(true)
+        .setRequired(true),
     )
     // OPTIONAL FIELDS
     .addStringOption((o) =>
       o
         .setName("resolution")
         .setDescription("Resolution (graphics only)")
-        .setRequired(false)
+        .setRequired(false),
     )
     .addStringOption((o) =>
       o
         .setName("fileformat")
         .setDescription("File format (graphics only)")
-        .setRequired(false)
+        .setRequired(false),
     )
     .addStringOption((o) =>
       o
         .setName("notes")
         .setDescription("Extra notes (graphics only)")
-        .setRequired(false)
+        .setRequired(false),
     )
     .addStringOption((o) =>
       o
         .setName("deadline")
         .setDescription("Deadline for this task")
-        .setRequired(false)
+        .setRequired(false),
     )
     .addStringOption((o) =>
       o
         .setName("word_limit")
         .setDescription("Word Limit for this task")
-        .setRequired(false)
+        .setRequired(false),
     )
     .addStringOption((o) =>
       o
         .setName("file_name_format")
         .setDescription(
-          "How should designers name their final file? (graphics only)"
+          "How should designers name their final file? (graphics only)",
         )
-        .setRequired(false)
+        .setRequired(false),
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.PinMessages),
 
   async execute(interaction) {
-    const allowedRoles = [process.env.GFX_HEAD_ID, process.env.ADMIN_ROLE_ID];
-    const hasPermission = interaction.member.roles.cache.some((role) =>
-      allowedRoles.includes(role.id)
-    );
-
-    if (!hasPermission) {
-      return interaction.reply({
-        content: "❌ You are not allowed to use this command.",
-        ephemeral: true,
-      });
-    }
-
     const title = interaction.options.getString("title");
     const description = interaction.options.getString("description");
 

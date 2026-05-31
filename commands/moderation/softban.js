@@ -8,29 +8,23 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("softban")
     .setDescription(
-      "Softban a user (ban + unban to delete messages from last 24 hours)"
+      "Softban a user (ban + unban to delete messages from last 24 hours)",
     )
     .addUserOption((option) =>
-      option.setName("user").setDescription("User to softban").setRequired(true)
+      option
+        .setName("user")
+        .setDescription("User to softban")
+        .setRequired(true),
     )
     .addStringOption((option) =>
       option
         .setName("reason")
         .setDescription("Reason for softban")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
     await interaction.deferReply();
-    const modRoles = process.env.MOD_ROLES.split(",");
-
-    // Permission check
-    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.editReply({
-        content: "❌ You do not have permission to use this command.",
-        flags: 64,
-      });
-    }
 
     const member = interaction.options.getMember("user");
     const reason = interaction.options.getString("reason");
@@ -60,7 +54,7 @@ module.exports = {
     // Try to DM user before banning
     try {
       await member.send(
-        `⛔ You have been **softbanned** from **r/Alevel**.\nReason: ${reason}\nYour recent messages were removed.\nFeel free to rejoin`
+        `⛔ You have been **softbanned** from **r/Alevel**.\nReason: ${reason}\nYour recent messages were removed.\nFeel free to rejoin`,
       );
     } catch {}
 
@@ -107,7 +101,7 @@ module.exports = {
       .addFields(
         { name: "User", value: `${member.user.tag}`, inline: true },
         { name: "Reason", value: reason, inline: true },
-        { name: "Action ID", value: `\`${actionId}\`` }
+        { name: "Action ID", value: `\`${actionId}\`` },
       )
       .setTimestamp();
 

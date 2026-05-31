@@ -18,28 +18,17 @@ module.exports = {
       opt
         .setName("message-id")
         .setDescription("The ID of the message to unpin.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for unpinning the message.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
-    const modRoles = process.env.MOD_ROLES.split(",");
-    const moderator = interaction.member;
-
-    // Mod-only check
-    if (!moderator.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.reply({
-        content: "❌ You do not have permission to use /unpin.",
-        ephemeral: true,
-      });
-    }
-
     const messageId = interaction.options.getString("message-id");
     const reason = interaction.options.getString("reason");
 
@@ -106,7 +95,7 @@ Reason: ${reason}
         { name: "Message ID", value: `${msg.id}`, inline: true },
         { name: "Moderator", value: interaction.user.tag, inline: true },
         { name: "Reason", value: reason, inline: false },
-        { name: "Log ID", value: `\`${actionId}\`` }
+        { name: "Log ID", value: `\`${actionId}\`` },
       )
       .setTimestamp();
 

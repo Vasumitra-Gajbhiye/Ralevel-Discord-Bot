@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const Reputation = require("../../models/reputation.js");
 const { ROLE_ADMIN } = require("../../utils/roles.js");
 const { assignRepRoleById } = require("../../utils/assignRepRole.js");
@@ -8,6 +8,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("add-rep")
     .setDescription("Add reputation to a user.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addUserOption((option) =>
       option
         .setName("user")
@@ -22,18 +23,6 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // Permission Check
-    if (
-      !interaction.member.roles.cache.has(ROLE_ADMIN) &&
-      !interaction.member.roles.cache.has("1474372815418425367")
-    ) {
-      console.log("has perm");
-      return interaction.reply({
-        content: "❌ You do not have permission to use this command.",
-        ephemeral: true,
-      });
-    }
-
     await interaction.deferReply();
 
     const target = interaction.options.getUser("user");

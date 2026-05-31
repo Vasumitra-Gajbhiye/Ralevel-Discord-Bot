@@ -15,30 +15,22 @@ module.exports = {
       opt
         .setName("channel")
         .setDescription("Channel to modify")
-        .setRequired(true)
+        .setRequired(true),
     )
     .addIntegerOption((opt) =>
       opt
         .setName("seconds")
         .setDescription("Slowmode duration in seconds (0 = off)")
-        .setRequired(true)
+        .setRequired(true),
     )
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for slowmode change")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
-    const modRoles = process.env.MOD_ROLES.split(",");
-    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.reply({
-        content: "❌ You are not allowed to use this command.",
-        flags: 64,
-      });
-    }
-
     const channel = interaction.options.getChannel("channel");
     const seconds = interaction.options.getInteger("seconds");
     const reason = interaction.options.getString("reason");
@@ -92,7 +84,7 @@ module.exports = {
       .setDescription(
         `**Channel:** <#${channel.id}>\n` +
           `**Slowmode:** ${seconds}s\n` +
-          `**Reason:** ${reason}`
+          `**Reason:** ${reason}`,
       )
       .setFooter({ text: `Action ID: ${actionId}` });
 

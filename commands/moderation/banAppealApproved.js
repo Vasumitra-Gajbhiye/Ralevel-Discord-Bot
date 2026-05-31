@@ -27,17 +27,6 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    const modRoles = [
-      ...process.env.MOD_ROLES.split(","),
-      "1114477061390733314",
-    ];
-    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.editReply({
-        content: "❌ You cannot use this command.",
-        ephemeral: true,
-      });
-    }
-
     // Use getUser because banned users are not members of the guild
     const user = interaction.options.getUser("user");
     const note =

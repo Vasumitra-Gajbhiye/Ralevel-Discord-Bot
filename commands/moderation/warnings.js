@@ -1,38 +1,24 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
 const ModLog = require("../../models/modlog.js");
 const Warning = require("../../models/warning.js");
 
-function isModerator(member) {
-  const allowedRoles = [
-    ...process.env.MOD_ROLES_WITH_TRIAL.split(","),
-    "1474372339000152250",
-    "1474373114937872384",
-    "1474372643917398129",
-    "1474372815418425367",
-    "1474373030967771257",
-  ];
-
-  return member.roles.cache.some((role) => allowedRoles.includes(role.id));
-}
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("warnings")
     .setDescription("View all warnings of a user")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addUserOption((opt) =>
       opt
         .setName("user")
         .setDescription("User to check warnings for")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
-    if (!isModerator(interaction.member)) {
-      return interaction.reply({
-        content: "❌ You do not have permission to use this command.",
-        ephemeral: true,
-      });
-    }
-
     const user = interaction.options.getUser("user");
 
     // Fetch only WARN entries for that user

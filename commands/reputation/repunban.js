@@ -1,11 +1,11 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const RepBan = require("../../models/repban.js");
-const { ROLE_ADMIN } = require("../../utils/roles.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("rep-unban")
     .setDescription("Allow a user to receive reputation again.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addUserOption((option) =>
       option
         .setName("user")
@@ -14,12 +14,6 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    if (!interaction.member.roles.cache.has(ROLE_ADMIN))
-      return interaction.reply({
-        content: "❌ You do not have permission.",
-        ephemeral: true,
-      });
-
     const target = interaction.options.getUser("user");
     await RepBan.deleteOne({ userId: target.id });
 

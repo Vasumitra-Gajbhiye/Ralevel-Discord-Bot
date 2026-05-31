@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const Reputation = require("../../models/reputation.js");
 const { assignRepRoleById } = require("../../utils/assignRepRole");
 require("dotenv").config();
@@ -7,6 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("set-rep")
     .setDescription("Set a user's reputation to a specific value.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addUserOption((o) =>
       o.setName("user").setDescription("The user.").setRequired(true),
     )
@@ -18,16 +19,6 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    if (
-      !interaction.member.roles.cache.has(process.env.ADMIN_ROLE_ID) &&
-      !interaction.member.roles.cache.has("1474372815418425367")
-    ) {
-      return interaction.reply({
-        content: "❌ You do not have permission.",
-        ephemeral: true,
-      });
-    }
-
     await interaction.deferReply();
 
     const target = interaction.options.getUser("user");

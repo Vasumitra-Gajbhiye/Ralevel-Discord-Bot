@@ -4,11 +4,6 @@ const logModAction = require("../../utils/logModAction");
 const generateActionId = require("../../utils/generateId.js");
 const Warning = require("../../models/warning");
 
-function isModerator(member) {
-  const allowedRoles = process.env.MOD_ROLES.split(",");
-  return member.roles.cache.some((role) => allowedRoles.includes(role.id));
-}
-
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("delete-warning")
@@ -28,12 +23,6 @@ module.exports = {
 
   async execute(interaction) {
     await interaction.deferReply();
-
-    if (!isModerator(interaction.member))
-      return interaction.editReply({
-        content: "❌ No permission.",
-        ephemeral: true,
-      });
 
     const actionId = interaction.options.getString("actionid");
     const reason = interaction.options.getString("reason");

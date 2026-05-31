@@ -37,14 +37,6 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const modRoles = process.env.MOD_ROLES.split(",");
-    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.reply({
-        content: "❌ You are not allowed to use this command.",
-        flags: 64,
-      });
-    }
-
     const user = interaction.options.getUser("user");
 
     // Fetch newest → oldest

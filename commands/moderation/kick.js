@@ -10,25 +10,17 @@ module.exports = {
     .setName("kick")
     .setDescription("Kick a member from the server")
     .addUserOption((option) =>
-      option.setName("user").setDescription("User to kick").setRequired(true)
+      option.setName("user").setDescription("User to kick").setRequired(true),
     )
     .addStringOption((option) =>
       option
         .setName("reason")
         .setDescription("Reason for kick")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
     await interaction.deferReply();
-    const modRoles = process.env.MOD_ROLES.split(",");
-
-    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.editReply({
-        content: "❌ You cannot use this command.",
-        ephemeral: true,
-      });
-    }
 
     const member = interaction.options.getMember("user");
     const reason = interaction.options.getString("reason");
@@ -51,7 +43,7 @@ module.exports = {
     // DM user
     try {
       await member.send(
-        `👢 You have been **kicked** from **r/Alevel**.\nReason: ${reason}`
+        `👢 You have been **kicked** from **r/Alevel**.\nReason: ${reason}`,
       );
     } catch {}
 
@@ -104,7 +96,7 @@ module.exports = {
         { name: "User", value: `${member.user.tag} (${member.id})` },
         { name: "Moderator", value: `${interaction.user.tag}` },
         { name: "Reason", value: reason },
-        { name: "Action ID", value: actionId }
+        { name: "Action ID", value: actionId },
       )
       .setTimestamp();
 

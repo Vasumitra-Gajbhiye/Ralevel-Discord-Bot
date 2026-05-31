@@ -12,20 +12,20 @@ module.exports = {
     .setName("ban")
     .setDescription("Ban a user from the server")
     .addUserOption((option) =>
-      option.setName("user").setDescription("User to ban").setRequired(true)
+      option.setName("user").setDescription("User to ban").setRequired(true),
     )
     .addStringOption((option) =>
       option
         .setName("reason")
         .setDescription("Reason for ban")
-        .setRequired(true)
+        .setRequired(true),
     )
     // NEW: Appeal option
     .addBooleanOption((option) =>
       option
         .setName("appealable")
         .setDescription("Is this ban appealable?")
-        .setRequired(true)
+        .setRequired(true),
     )
     // NEW: Message deletion option
     .addStringOption((option) =>
@@ -38,25 +38,14 @@ module.exports = {
           { name: "Past 1 day", value: "1d" },
           { name: "Past 7 days", value: "7d" },
           { name: "Past 1 month", value: "30d" },
-          { name: "All messages", value: "all" }
+          { name: "All messages", value: "all" },
         )
-        .setRequired(true)
+        .setRequired(true),
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   async execute(interaction) {
     await interaction.deferReply();
-
-    const modRoles = [
-      ...process.env.MOD_ROLES.split(","),
-      "1114477061390733314",
-    ];
-    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.editReply({
-        content: "❌ You cannot use this command.",
-        ephemeral: true,
-      });
-    }
 
     const member = interaction.options.getMember("user");
     const reason = interaction.options.getString("reason");
@@ -96,7 +85,7 @@ module.exports = {
 
       await member.send(
         `🚫 You have been **banned** from **r/Alevel** Discord server.\n` +
-          `Reason: ${reason}\n\n${appealText}`
+          `Reason: ${reason}\n\n${appealText}`,
       );
     } catch {}
 
@@ -137,7 +126,7 @@ module.exports = {
         { name: "Reason", value: reason },
         { name: "Appealable?", value: appealable ? "Yes" : "No" },
         { name: "Deleted Messages", value: deleteMsgs },
-        { name: "Action ID", value: actionId }
+        { name: "Action ID", value: actionId },
       )
       .setTimestamp();
 

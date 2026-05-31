@@ -11,10 +11,10 @@ const groups = {
   hlpHead: process.env.HLP_HEAD_ROLE_ID,
   commHead: process.env.COMM_HEAD_ROLE_ID,
   generalStaff: process.env.GENERAL_STAFF_ROLE_ID,
-  srMods: process.env.SR_MODS_ROLE_ID,
-  jrMods: process.env.JR_MODS_ROLE_ID,
-  trialMods: process.env.TRIAL_MODS_ROLE_ID,
-  redditMods: process.env.REDDIT_MODS_ROLE_ID,
+  srMods: process.env.SR_MOD_ROLE_ID,
+  jrMods: process.env.JR_MOD_ROLE_ID,
+  trialMods: process.env.TRIAL_MOD_ROLE_ID,
+  redditMods: process.env.REDDIT_MOD_ROLE_ID,
   srHelper: process.env.SR_HELPER_ROLE_ID,
   jrHelper: process.env.JR_HELPER_ROLE_ID,
   leadDesigner: process.env.LEAD_DESIGNER_ROLE_ID,
@@ -114,7 +114,7 @@ const commands = {
   confess: [], // everyone
 
   // FUN COMMANDS
-  ping: [], // everyone
+  // ping: [], // everyone
 
   // HELPER COMMANDS
   helper: [], // everyone

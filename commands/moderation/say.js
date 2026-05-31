@@ -19,40 +19,29 @@ module.exports = {
       opt
         .setName("channel")
         .setDescription("Channel where the bot will send the message.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addStringOption((opt) =>
       opt
         .setName("message")
         .setDescription("Message you want the bot to say.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for sending this announcement.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     // OPTIONAL OPTIONS AFTER
     .addBooleanOption((opt) =>
-      opt.setName("embed").setDescription("Send the message as an embed?")
+      opt.setName("embed").setDescription("Send the message as an embed?"),
     ),
 
   async execute(interaction) {
-    const modRoles = process.env.MOD_ROLES.split(",");
-    const member = interaction.member;
-
-    // Mod-only check
-    if (!member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.reply({
-        content: "❌ You do not have permission to use this command.",
-        ephemeral: true,
-      });
-    }
-
     const channel = interaction.options.getChannel("channel");
     const messageText = interaction.options.getString("message");
     const embedMode = interaction.options.getBoolean("embed");
@@ -65,9 +54,15 @@ module.exports = {
         .setDescription(messageText)
         .setTimestamp();
 
-      await channel.send({ embeds: [botEmbed] });
+      await channel.send({
+        embeds: [botEmbed],
+        allowedMentions: { parse: [] },
+      });
     } else {
-      await channel.send(messageText);
+      await channel.send({
+        content: messageText,
+        allowedMentions: { parse: [] },
+      });
     }
 
     // ----- LOG ENTRY -----
@@ -120,7 +115,7 @@ Reason: ${reason}
         { name: "Mode", value: embedMode ? "Embed" : "Normal", inline: true },
         { name: "Moderator", value: interaction.user.tag, inline: true },
         { name: "Reason", value: reason, inline: false },
-        { name: "Log ID", value: `\`${actionId}\`` }
+        { name: "Log ID", value: `\`${actionId}\`` },
       )
       .setTimestamp();
 

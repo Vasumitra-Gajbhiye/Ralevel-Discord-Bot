@@ -38,16 +38,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const modRoles = process.env.MOD_ROLES.split(",");
-    if (!interaction.member.roles.cache.some((r) => modRoles.includes(r.id))) {
-      return interaction.reply({
-        content: "❌ You are not allowed to use this command.",
-        flags: 64,
-      });
-    }
-
     const mod = interaction.options.getUser("user");
-
     // Logs MADE BY this moderator
     const logs = await ModLog.find({ moderatorId: mod.id }).sort({
       timestamp: -1,

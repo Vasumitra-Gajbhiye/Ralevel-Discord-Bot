@@ -17,21 +17,21 @@ module.exports = {
       opt
         .setName("user")
         .setDescription("User to remove the role from.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addRoleOption((opt) =>
       opt
         .setName("role")
         .setDescription("Role you want to remove.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for removing the role.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -109,7 +109,7 @@ Reason: ${reason}
         { name: "Role", value: role.name, inline: true },
         { name: "Moderator", value: interaction.user.tag, inline: true },
         { name: "Reason", value: reason, inline: false },
-        { name: "Log ID", value: `\`${actionId}\`` }
+        { name: "Log ID", value: `\`${actionId}\`` },
       )
       .setTimestamp();
 
