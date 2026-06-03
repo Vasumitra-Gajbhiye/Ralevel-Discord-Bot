@@ -72,7 +72,7 @@ const commands = {
   // MODERATION COMMANDS
   "add-role": [admin, dcHead, generalStaff],
   announce: [admin, generalStaff],
-  audit: [admin], //yellow
+  audit: [admin, generalStaff], //yellow
   ban: [admin, dcHead, srMods, jrMods],
   "ban-appeal-approved": [admin, dcHead], // yellow
   "ban-appeal-rejected": [admin, dcHead], // yellow
@@ -82,7 +82,7 @@ const commands = {
   "lock-status": [admin, dcHead, srMods, jrMods],
   lock: [admin, dcHead, srMods, jrMods],
   "moderator-logs": [admin, dcHead, srMods, ialAgent],
-  "moderation-logs": [admin, dcHead, srMods, jrMods, ialAgent],
+  "moderation-logs": [admin, dcHead, srMods, jrMods, trialMods, ialAgent],
   note: [admin, dcHead, srMods, jrMods, trialMods],
   "get-notes": [admin, dcHead, srMods, jrMods, trialMods],
   pin: [admin, dcHead, srMods],
@@ -92,13 +92,13 @@ const commands = {
   "set-nickname": [admin, dcHead, srMods, ialAgent],
   slowmode: [admin, dcHead, srMods],
   "timeout-status": [admin, dcHead, srMods],
-  timeout: [admin, dcHead, srMods, jrMods],
+  timeout: [admin, dcHead, srMods, jrMods, trialMods],
   unban: [admin, dcHead],
   unlock: [admin, dcHead, srMods, jrMods],
   unpin: [admin, dcHead, srMods],
-  untimeout: [admin, dcHead, srMods],
-  warn: [admin, dcHead, srMods, jrMods],
-  warnings: [admin, dcHead, srMods, jrMods],
+  untimeout: [admin, dcHead, srMods, trialMods, jrMods],
+  warn: [admin, dcHead, srMods, jrMods, trialMods],
+  warnings: [admin, dcHead, srMods, jrMods, trialMods],
 
   // APPLICATIONS COMMANDS
 
@@ -119,9 +119,9 @@ const commands = {
 
   // REPUTATION COMMANDS
   "add-rep": [hlpHead, admin],
-  "list-rep-ban": [admin], //yellow
-  "rep-ban": [admin], //yellow
-  "rep-unban": [admin], //yellow
+  "list-rep-ban": [admin, dcHead, hlpHead, srHelper, jrMods], //yellow
+  "rep-ban": [admin, dcHead, hlpHead, srMods], //yellow
+  "rep-unban": [admin, dcHead, hlpHead, srMods], //yellow
   "set-rep": [hlpHead, admin],
   "sub-rep": [hlpHead, admin],
 
@@ -149,10 +149,8 @@ const commands = {
   tasks: [admin, gfxHead],
 
   // UTILITY COMMANDS
-  avatar: [], // everyone
 
   // WEB COMMANDS
-  websites: [], // everyone
 
   // Example of combining multiple groups:
   // "nickname": [...groups.mod, ...groups.admin, ...groups.helper],

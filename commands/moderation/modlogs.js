@@ -33,7 +33,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("moderation-logs")
     .setDescription("View moderation logs for a user")
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addUserOption((option) =>
       option.setName("user").setDescription("Target user").setRequired(true),
     ),
