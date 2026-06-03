@@ -98,7 +98,7 @@ const commands = {
   unpin: [admin, dcHead, srMods],
   untimeout: [admin, dcHead, srMods],
   warn: [admin, dcHead, srMods, jrMods],
-  "warning-status": [admin, dcHead, srMods, jrMods],
+  warnings: [admin, dcHead, srMods, jrMods],
 
   // APPLICATIONS COMMANDS
 
