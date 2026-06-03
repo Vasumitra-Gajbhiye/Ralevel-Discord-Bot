@@ -46,13 +46,6 @@ module.exports = {
       });
     }
 
-    if (!member.moderatable) {
-      return interaction.reply({
-        content: "❌ I cannot untimeout this user (role too high).",
-        ephemeral: true,
-      });
-    }
-
     // Remove timeout
     await member.timeout(null).catch(() => {});
 

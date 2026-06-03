@@ -12,17 +12,20 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("lock")
     .setDescription("Lock a channel to prevent members from sending messages.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
 
     .addChannelOption((opt) =>
-      opt.setName("channel").setDescription("Channel to lock").setRequired(true)
+      opt
+        .setName("channel")
+        .setDescription("Channel to lock")
+        .setRequired(true),
     )
 
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for locking the channel.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -77,7 +80,7 @@ Reason: ${reason}
         { name: "Channel", value: `<#${channel.id}>`, inline: true },
         { name: "Moderator", value: interaction.user.tag, inline: true },
         { name: "Reason", value: reason },
-        { name: "Log ID", value: `\`${actionId}\`` }
+        { name: "Log ID", value: `\`${actionId}\`` },
       )
       .setTimestamp();
 

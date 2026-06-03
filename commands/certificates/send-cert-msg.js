@@ -6,24 +6,40 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
-require("dotenv").config();
-
-const APPLICATION_CHANNEL = process.env.APPLICATION_CHANNEL;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("send-cert-msg")
     .setDescription("Send the certificate application panel")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addChannelOption((opt) =>
+      opt
+        .setName("channel")
+        .setDescription("Channel where the application panel will be sent")
+        .setRequired(true),
+    ),
 
   async execute(interaction) {
-    const channel = await interaction.client.channels.fetch(
-      APPLICATION_CHANNEL
-    );
+    const channel = interaction.options.getChannel("channel");
 
-    if (!channel || !channel.isTextBased()) {
+    if (!channel.isTextBased()) {
       return interaction.reply({
-        content: "❌ Application channel not found.",
+        content: "❌ The panel can only be sent to a text channel.",
+        ephemeral: true,
+      });
+    }
+
+    const perms = channel.permissionsFor(interaction.client.user);
+    if (
+      !perms?.has([
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.EmbedLinks,
+      ])
+    ) {
+      return interaction.reply({
+        content:
+          "❌ I need View Channel, Send Messages, and Embed Links permissions in that channel.",
         ephemeral: true,
       });
     }
@@ -36,8 +52,8 @@ module.exports = {
           "**__Eligibility & Availability:__**\n" +
           "**Helper Certification**\n" +
           "• Achieve the rank of <@&1437727634711777450> by reaching 100 reputation points.\nMaintain this position for a minimum of 1 month.\n\n" +
-          "**Writer Certification**\n" +
-          "• Submit a minimum of 5 extensive and helpful blogs/pieces-of-writing to our website.\n\n" +
+          // "**Writer Certification**\n" +
+          // "• Submit a minimum of 5 extensive and helpful blogs/pieces-of-writing to our website.\n\n" +
           "**Resource Contributor Certification**\n" +
           "• Based on the work put in to the resources.\n• Final decision is made by the Administrative team after resource submission\n\n" +
           "**Graphic Designer Certification**\n" +
@@ -45,7 +61,7 @@ module.exports = {
           "**Moderator Certification**\n" +
           "• Eligable moderators will be notified by admins\n\n" +
           "Please ensure you meet the requirements before applying.\n" +
-          "Please ensure your DM's are open so that we can send updates"
+          "Please ensure your DM's are open so that we can send updates",
       )
       .setColor("#2CDAF2")
       .setFooter({
@@ -59,10 +75,10 @@ module.exports = {
         .setLabel("Apply — Helper")
         .setStyle(ButtonStyle.Primary),
 
-      new ButtonBuilder()
-        .setCustomId("apply_writer")
-        .setLabel("Apply — Writer")
-        .setStyle(ButtonStyle.Primary),
+      // new ButtonBuilder()
+      //   .setCustomId("apply_writer")
+      //   .setLabel("Apply — Writer")
+      //   .setStyle(ButtonStyle.Primary),
 
       new ButtonBuilder()
         .setCustomId("apply_resource")
@@ -72,7 +88,7 @@ module.exports = {
       new ButtonBuilder()
         .setCustomId("apply_graphic")
         .setLabel("Apply — Graphic")
-        .setStyle(ButtonStyle.Primary)
+        .setStyle(ButtonStyle.Primary),
     );
 
     await channel.send({
@@ -81,7 +97,7 @@ module.exports = {
     });
 
     await interaction.reply({
-      content: "✅ Certificate application panel sent.",
+      content: `✅ Certificate application panel sent to ${channel}.`,
       ephemeral: true,
     });
   },

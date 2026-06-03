@@ -58,15 +58,6 @@ module.exports = {
         ephemeral: true,
       });
 
-    // Prevent mods banning other mods
-    if (
-      member.roles.highest.position >= interaction.member.roles.highest.position
-    )
-      return interaction.editReply({
-        content: "❌ You cannot ban this user.",
-        ephemeral: true,
-      });
-
     // Convert delete window → seconds (Discord ban option)
     const deleteSeconds = {
       "1m": 60,

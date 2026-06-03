@@ -31,15 +31,6 @@ module.exports = {
         ephemeral: true,
       });
 
-    // Role hierarchy check
-    if (
-      member.roles.highest.position >= interaction.member.roles.highest.position
-    )
-      return interaction.editReply({
-        content: "❌ You cannot kick this user.",
-        ephemeral: true,
-      });
-
     // DM user
     try {
       await member.send(

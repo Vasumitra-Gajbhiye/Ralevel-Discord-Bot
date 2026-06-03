@@ -32,6 +32,23 @@ const { Collection } = require("discord.js");
 
 // 1. Import your new config file
 const permissionsConfig = require("../permissions.config.js");
+const checkRoleHierarchy = require("../utils/checkRoleHierarchy.js");
+
+// Commands that act on a member and require role hierarchy checks.
+// Value is the slash-command option name that holds the target user.
+const HIERARCHY_TARGET_OPTIONS = {
+  warn: "user",
+  kick: "user",
+  ban: "user",
+  softban: "user",
+  timeout: "user",
+  untimeout: "user",
+  "clear-warnings": "user",
+  setnickname: "user",
+  "add-role": "user",
+  "remove-role": "user",
+  purge: "target",
+};
 
 module.exports = (client) => {
   client.commands = new Collection();
@@ -82,6 +99,34 @@ module.exports = (client) => {
           content: "❌ You do not have permission to use this command.",
           ephemeral: true,
         });
+      }
+    }
+
+    // ==========================================
+    // 🪜 ROLE HIERARCHY CHECK (moderation)
+    // ==========================================
+    const targetOption = HIERARCHY_TARGET_OPTIONS[interaction.commandName];
+
+    if (targetOption && interaction.member && interaction.guild) {
+      const targetUser = interaction.options.getUser(targetOption);
+
+      if (targetUser) {
+        const targetMember =
+          interaction.options.getMember(targetOption) ??
+          (await interaction.guild.members
+            .fetch(targetUser.id)
+            .catch(() => null));
+
+        if (targetMember) {
+          const hierarchyError = checkRoleHierarchy(interaction, targetMember);
+
+          if (hierarchyError) {
+            return interaction.reply({
+              content: hierarchyError.message,
+              ephemeral: true,
+            });
+          }
+        }
       }
     }
 

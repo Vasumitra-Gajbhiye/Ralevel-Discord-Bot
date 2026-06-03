@@ -54,14 +54,6 @@ module.exports = {
       });
     }
 
-    // Role/hierarchy check
-    if (!member.moderatable) {
-      return interaction.reply({
-        content: "❌ I cannot timeout this user due to role hierarchy.",
-        ephemeral: true,
-      });
-    }
-
     // Apply timeout
     await member.timeout(ms, reason).catch(() => {});
 

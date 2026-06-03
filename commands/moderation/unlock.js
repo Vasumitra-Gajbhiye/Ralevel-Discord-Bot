@@ -12,20 +12,20 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("unlock")
     .setDescription("Unlock a channel so members can send messages again.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
 
     .addChannelOption((opt) =>
       opt
         .setName("channel")
         .setDescription("Channel to unlock")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for unlocking the channel.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -35,7 +35,7 @@ module.exports = {
     // Restore permissions
     await channel.permissionOverwrites.edit(
       channel.guild.roles.everyone,
-      { SendMessages: null } // removes overwrite
+      { SendMessages: null }, // removes overwrite
     );
 
     const actionId = generateId();
@@ -79,7 +79,7 @@ Reason: ${reason}
         { name: "Channel", value: `<#${channel.id}>`, inline: true },
         { name: "Moderator", value: interaction.user.tag, inline: true },
         { name: "Reason", value: reason },
-        { name: "Log ID", value: `\`${actionId}\`` }
+        { name: "Log ID", value: `\`${actionId}\`` },
       )
       .setTimestamp();
 

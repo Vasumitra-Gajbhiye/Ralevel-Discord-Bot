@@ -4,6 +4,7 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  PermissionFlagsBits,
 } = require("discord.js");
 
 const ModLog = require("../../models/modlog.js");
@@ -32,6 +33,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("moderation-logs")
     .setDescription("View moderation logs for a user")
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
     .addUserOption((option) =>
       option.setName("user").setDescription("Target user").setRequired(true),
     ),

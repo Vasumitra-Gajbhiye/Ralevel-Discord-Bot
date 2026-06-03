@@ -47,14 +47,6 @@ module.exports = {
       });
     }
 
-    // Permission & hierarchy check
-    if (!member.manageable) {
-      return interaction.reply({
-        content: "❌ I cannot change this user's nickname (role too high).",
-        ephemeral: true,
-      });
-    }
-
     // Apply nickname
     await member.setNickname(newNickname).catch(() => {});
 
