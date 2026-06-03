@@ -83,6 +83,8 @@ const commands = {
   lock: [admin, dcHead, srMods, jrMods],
   "moderator-logs": [admin, dcHead, srMods, ialAgent],
   "moderation-logs": [admin, dcHead, srMods, jrMods, ialAgent],
+  note: [admin, dcHead, srMods, jrMods, trialMods],
+  "get-notes": [admin, dcHead, srMods, jrMods, trialMods],
   pin: [admin, dcHead, srMods],
   purge: [admin, dcHead, srMods],
   "remove-role": [admin, dcHead, generalStaff],

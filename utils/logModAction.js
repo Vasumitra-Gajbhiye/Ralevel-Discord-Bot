@@ -367,6 +367,21 @@ module.exports = async function logModAction({
         { name: "Action ID", value: actionId }
       )
       .setTimestamp();
+  } else if (action === "note") {
+    const noteText = String(reason || "No note provided");
+    const displayNote =
+      noteText.length > 1024 ? `${noteText.slice(0, 1021)}...` : noteText;
+
+    embed = new EmbedBuilder()
+      .setTitle("📝 Note Added")
+      .setColor(0x5865f2)
+      .addFields(
+        { name: "User", value: `${userTag || "N/A"} (${userId || "N/A"})` },
+        { name: "Moderator", value: `${moderatorTag} (${moderatorId})` },
+        { name: "Note", value: displayNote },
+        { name: "Action ID", value: actionId }
+      )
+      .setTimestamp();
   } else {
     embed = new EmbedBuilder()
       .setTitle(`🔨 ${prettyAction}`)
