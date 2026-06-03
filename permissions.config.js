@@ -101,7 +101,6 @@ const commands = {
   "warning-status": [admin, dcHead, srMods, jrMods],
 
   // APPLICATIONS COMMANDS
-  apply: [], // everyone
 
   // CERTIFICATEES COMMANDS
   "approve-certificate": [admin],
@@ -113,28 +112,20 @@ const commands = {
   "submit-cert-details": [admin],
 
   // CONFESSION COMMANDS
-  confess: [], // everyone
-
   // FUN COMMANDS
   // ping: [], // everyone
 
   // HELPER COMMANDS
-  helper: [], // everyone
 
   // REPUTATION COMMANDS
-  "add-rep": [hlpHead],
-  leaderboard: [], // everyone
+  "add-rep": [hlpHead, admin],
   "list-rep-ban": [admin], //yellow
-  "my-rank": [], // everyone
-  rep: [], // everyone
-  "my-reputation": [], // everyone
   "rep-ban": [admin], //yellow
   "rep-unban": [admin], //yellow
   "set-rep": [hlpHead],
   "sub-rep": [hlpHead],
 
   // SECOND WEB COMMANDS
-  subreddit: [], // everyone
 
   // SETHELPER COMMANDS
   "set-helper": [admin, hlpHead, dcHead],
