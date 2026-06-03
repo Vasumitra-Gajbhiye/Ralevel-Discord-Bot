@@ -18,7 +18,6 @@ module.exports = {
   async execute(interaction) {
     await interaction.reply({
       content: "⏳ Checking current timeouts...",
-      ephemeral: true,
     });
 
     // 1. Fetch all timeout logs (latest entries)
@@ -59,16 +58,13 @@ module.exports = {
 
       if (!member.isCommunicationDisabled()) continue;
 
-      // Parse reason & duration from db
-      const reason =
-        lastLog.reason.split("Reason:")[1]?.trim() || "No reason logged";
-      const durationMatch = lastLog.reason.match(/Duration:\s(.+)/);
-      const duration = durationMatch ? durationMatch[1] : "Unknown";
+      const endMs = member.communicationDisabledUntil.getTime();
+      const { duration, reason } = getTimeoutLogDetails(lastLog);
 
       activeTimeouts.push({
         tag: member.user.tag,
         id: userId,
-        end: member.communicationDisabledUntil,
+        endMs,
         duration,
         reason,
       });
@@ -88,13 +84,14 @@ module.exports = {
     // Build final output
     let description = "";
     for (const t of activeTimeouts) {
-      const remaining = t.end - Date.now();
+      const remaining = Math.max(0, t.endMs - Date.now());
+      const endUnix = Math.floor(t.endMs / 1000);
 
       description += `**${t.tag}**\n`;
       description += `• **User ID:** ${t.id}\n`;
       description += `• **Duration:** ${t.duration}\n`;
       description += `• **Time Left:** ${ms(remaining, { long: true })}\n`;
-      description += `• **Ends:** <t:${Math.floor(t.end / 1000)}:R>\n`;
+      description += `• **Ends:** <t:${endUnix}:F>\n`;
       description += `• **Reason:** ${t.reason}\n\n`;
     }
 
@@ -107,3 +104,19 @@ module.exports = {
     return interaction.editReply({ content: "", embeds: [embed] });
   },
 };
+
+function getTimeoutLogDetails(log) {
+  if (log.timeourDuration) {
+    return {
+      duration: log.timeourDuration,
+      reason: log.reason?.trim() || "No reason logged",
+    };
+  }
+
+  const durationMatch = log.reason?.match(/Duration:\s*(.+)/i);
+  const reasonMatch = log.reason?.match(/Reason:\s*(.+)/is);
+  return {
+    duration: durationMatch?.[1]?.trim() || "Unknown",
+    reason: reasonMatch?.[1]?.trim() || log.reason?.trim() || "No reason logged",
+  };
+}
