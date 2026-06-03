@@ -122,8 +122,8 @@ const commands = {
   "list-rep-ban": [admin], //yellow
   "rep-ban": [admin], //yellow
   "rep-unban": [admin], //yellow
-  "set-rep": [hlpHead],
-  "sub-rep": [hlpHead],
+  "set-rep": [hlpHead, admin],
+  "sub-rep": [hlpHead, admin],
 
   // SECOND WEB COMMANDS
 
