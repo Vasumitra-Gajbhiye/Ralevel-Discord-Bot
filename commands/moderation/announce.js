@@ -276,7 +276,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply({ flags: 64 });
+    await interaction.deferReply();
 
     const channel = interaction.options.getChannel("channel");
     const title = interaction.options.getString("title");
