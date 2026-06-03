@@ -1,7 +1,7 @@
 const QotdRotation = require("../models/qotdRotation");
 
 // ===== CONFIG =====
-const REMINDER_CHANNEL_ID = "1114445623719112724";
+const REMINDER_CHANNEL_ID = process.env.QOTD_REMINDER_CHANNEL_ID;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // every 5 minutes
 const REMINDER_HOUR_IST = 6; // 6 AM IST
 // ==================
@@ -11,9 +11,7 @@ function getISTDateInfo() {
   const now = new Date();
 
   // IST = UTC + 5:30
-  const istTime = new Date(
-    now.getTime() + (5 * 60 + 30) * 60 * 1000
-  );
+  const istTime = new Date(now.getTime() + (5 * 60 + 30) * 60 * 1000);
 
   const year = istTime.getUTCFullYear();
   const month = String(istTime.getUTCMonth() + 1).padStart(2, "0");
@@ -42,18 +40,14 @@ module.exports = function qotdSystem(client) {
       // Already sent today
       if (rotation.lastReminderDate === dateStr) return;
 
-      const channel = await client.channels.fetch(
-        REMINDER_CHANNEL_ID
-      );
+      const channel = await client.channels.fetch(REMINDER_CHANNEL_ID);
       if (!channel || !channel.isTextBased()) return;
 
-      const current =
-        rotation.modOrder[rotation.currentIndex];
+      const current = rotation.modOrder[rotation.currentIndex];
 
       const next =
         rotation.modOrder[
-          (rotation.currentIndex + 1) %
-            rotation.modOrder.length
+          (rotation.currentIndex + 1) % rotation.modOrder.length
         ];
 
       const message =
@@ -64,9 +58,9 @@ module.exports = function qotdSystem(client) {
         `🔔 **Next up:** <@${next.id}>\n` +
         `You’re next in rotation — please start preparing.`;
 
-        console.log(
-  `[QOTD] ${dateStr} | index=${rotation.currentIndex} | current=${current.id}`
-);
+      console.log(
+        `[QOTD] ${dateStr} | index=${rotation.currentIndex} | current=${current.id}`,
+      );
 
       await channel.send({
         content: message,
@@ -77,11 +71,11 @@ module.exports = function qotdSystem(client) {
 
       // Mark as sent for today (IST)
       // Mark as sent for today (IST) AND advance rotation
-rotation.lastReminderDate = dateStr;
-rotation.currentIndex =
-  (rotation.currentIndex + 1) % rotation.modOrder.length;
+      rotation.lastReminderDate = dateStr;
+      rotation.currentIndex =
+        (rotation.currentIndex + 1) % rotation.modOrder.length;
 
-await rotation.save();
+      await rotation.save();
     } catch (err) {
       console.error("QOTD reminder error:", err);
     }

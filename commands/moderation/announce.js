@@ -334,7 +334,7 @@ module.exports = {
 
         // Only add Title, Thumbnails, and Timestamps to the FIRST embed
         if (isFirst) {
-          embed.setTitle(`📢 ${title}`);
+          embed.setTitle(`${title}`);
           if (thumbnailAttachment) embed.setThumbnail(thumbnailAttachment.url);
           // If there's only one chunk, we can add the image and footer here too
           if (isLast) {
@@ -407,7 +407,7 @@ module.exports = {
       reason.length > 1024 ? reason.substring(0, 1021) + "..." : reason;
     const confirm = new EmbedBuilder()
       .setColor("#00ffff")
-      .setTitle("📢 Announcement Sent")
+      .setTitle("Announcement Sent")
       .addFields(
         { name: "Channel", value: `<#${channel.id}>`, inline: true },
         { name: "Ping", value: pingText || "None", inline: true },
