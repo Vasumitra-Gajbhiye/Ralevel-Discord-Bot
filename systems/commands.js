@@ -33,6 +33,7 @@ const { Collection } = require("discord.js");
 // 1. Import your new config file
 const permissionsConfig = require("../permissions.config.js");
 const checkRoleHierarchy = require("../utils/checkRoleHierarchy.js");
+const checkRoleAssignment = require("../utils/checkRoleAssignment.js");
 
 // Commands that act on a member and require role hierarchy checks.
 // Value is the slash-command option name that holds the target user.
@@ -48,6 +49,12 @@ const HIERARCHY_TARGET_OPTIONS = {
   "add-role": "user",
   "remove-role": "user",
   purge: "target",
+};
+
+// Commands that assign/remove a role; value is the slash-command role option name.
+const HIERARCHY_ROLE_OPTIONS = {
+  "add-role": "role",
+  "remove-role": "role",
 };
 
 module.exports = (client) => {
@@ -125,6 +132,26 @@ module.exports = (client) => {
               content: hierarchyError.message,
               ephemeral: true,
             });
+          }
+
+          const roleOption =
+            HIERARCHY_ROLE_OPTIONS[interaction.commandName];
+          if (roleOption) {
+            const role = interaction.options.getRole(roleOption);
+            if (role) {
+              const assignmentError = checkRoleAssignment(
+                interaction,
+                targetMember,
+                role,
+              );
+
+              if (assignmentError) {
+                return interaction.reply({
+                  content: assignmentError.message,
+                  ephemeral: true,
+                });
+              }
+            }
           }
         }
       }

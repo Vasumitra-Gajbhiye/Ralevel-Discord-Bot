@@ -11,27 +11,27 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("add-role")
     .setDescription("Add a role to a user.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ChangeNickname)
 
     .addUserOption((opt) =>
       opt
         .setName("user")
         .setDescription("User to give the role to.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addRoleOption((opt) =>
       opt
         .setName("role")
         .setDescription("Role you want to add.")
-        .setRequired(true)
+        .setRequired(true),
     )
 
     .addStringOption((opt) =>
       opt
         .setName("reason")
         .setDescription("Reason for adding the role.")
-        .setRequired(true)
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -95,7 +95,7 @@ module.exports = {
         { name: "Role", value: role.name, inline: true },
         { name: "Moderator", value: interaction.user.tag, inline: true },
         { name: "Reason", value: reason, inline: false },
-        { name: "Log ID", value: `\`${actionId}\`` }
+        { name: "Log ID", value: `\`${actionId}\`` },
       )
       .setTimestamp();
 
