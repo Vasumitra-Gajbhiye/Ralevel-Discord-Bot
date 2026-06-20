@@ -10,6 +10,7 @@ const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
 const messageTracker = require("./systems/messageTracker");
 const dailyFinalizeSystem = require("./systems/dailyFinalizeSystem");
+const pollSystem = require("./systems/polls");
 
 // Connect DB
 connectDB();
@@ -33,5 +34,6 @@ welcomeSystem(client);
 confessionsSystem(client);
 messageTracker(client);
 dailyFinalizeSystem(client);
+pollSystem(client);
 
 client.login(process.env.TOKEN);

@@ -86,6 +86,7 @@ const commands = {
   note: [admin, dcHead, srMods, jrMods, trialMods],
   "get-notes": [admin, dcHead, srMods, jrMods, trialMods],
   pin: [admin, dcHead, srMods],
+  poll: [admin, dcHead, srMods, jrMods, trialMods],
   purge: [admin, dcHead, srMods],
   "remove-role": [admin, dcHead, generalStaff],
   say: [admin, dcHead, srMods, jrMods],
@@ -99,6 +100,7 @@ const commands = {
   untimeout: [admin, dcHead, srMods, trialMods, jrMods],
   warn: [admin, dcHead, srMods, jrMods, trialMods],
   warnings: [admin, dcHead, srMods, jrMods, trialMods],
+  poll: [admin, dcHead, generalStaff, srMods, jrMods, trialMods],
 
   // APPLICATIONS COMMANDS
 
