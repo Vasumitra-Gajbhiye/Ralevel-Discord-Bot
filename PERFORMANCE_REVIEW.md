@@ -20,26 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Medium Severity
 
-### 17. QOTD scheduler queries MongoDB every 5 minutes before cutoff
-
-**Description:** `systems/qotd.js` calls `findActiveRotation()` on every tick, even hours before the 6 AM IST reminder window.
-
-**Severity:** Medium
-
-**Why it matters:** Unnecessary DB reads (~288/day). Low per-query cost but avoidable.
-
-**Files involved:**
-- `systems/qotd.js`
-- `utils/qotdHelpers.js`
-- `systems/dailyFinalizeSystem.js` (duplicate `getISTDateInfo`)
-
-**Suggested fix:**
-- Cache active rotation in memory; invalidate on admin command or TTL refresh every 30 min.
-- Short-circuit time check **before** DB call.
-- Remove duplicate `getISTDateInfo` from `dailyFinalizeSystem.js`; import from `utils/qotdHelpers.js`.
-
----
-
 ### 18. Welcome system reloads background image on every join
 
 **Description:** `systems/welcome.js` calls `loadImage(IMAGE_PATH)` for the background on every `guildMemberAdd`.
@@ -303,7 +283,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 |------|---------|-----------------|-------------------|
 | Enabled stickies | In-memory `Map` by channelId (implemented) | N/A — already cached | Invalidate on sticky CRUD |
 | Rep ban status | Mongo per rep event | Redis SET / in-memory Set | On repban/repunban |
-| QOTD rotation | Mongo every 5 min | In-memory + refresh on save | Admin command / 30 min |
+| QOTD rotation | In-memory cache + IST short-circuit (implemented) | N/A — already cached | Refresh on save / 30 min TTL; `/qotd-status` bypasses cache |
 | Leaderboard top 10 | Mongo per command | Redis JSON | 60–300s |
 | Welcome background | Disk per join | Module-level Image cache | Permanent |
 | Task display message ID | 50-msg channel scan | Stored ID in Mongo/Redis | On missing message |
@@ -329,6 +309,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.
 - **Poll votes** are stored in a separate `PollVote` collection with per-user atomic `findOneAndUpdate` operations (`utils/applyPollVote.js`, `models/pollVote.js`).
 - **Poll deadline sweeper** uses adaptive `setTimeout` scheduling based on the nearest active deadline (5-minute idle cap), parallel poll closing with bounded concurrency, lazy close on vote/view interaction, and `wakePollSweeper()` on poll create (`utils/pollSweeper.js`). Verified via `npm run verify:poll-sweeper`.
+- **QOTD scheduler** short-circuits IST time check before MongoDB, caches active rotation in memory (30 min TTL, refreshed on save), and shares `getISTDateInfo` with daily finalize (`systems/qotd.js`, `utils/qotdHelpers.js`). Verified via `npm run verify:qotd`.
 - **Sequential public IDs** (poll, confession, task) use an atomic MongoDB counter collection with `$inc` and startup `$max` seeding (`models/counter.js`, `utils/getNextSequenceId.js`, `database.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Common query indexes** on `reputations.rep`, `users.xp`, and `tasks.team` support leaderboard sorts and team task lookups. Task compound indexes on `{ team, assignedTo }`, `{ team, finishedBy }`, and `{ team, selected }` support `/my-progress` count queries. Verified via `npm run verify:database-indexes` and `npm run verify:my-progress`.

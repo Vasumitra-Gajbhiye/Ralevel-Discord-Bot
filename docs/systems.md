@@ -17,7 +17,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Sticky | `systems/sticky.js` | Called by router + `ready` | MongoDB + cache |
 | Daily finalize | `systems/dailyFinalizeSystem.js`, `utils/dailyFinalize.js` | 5 min interval | Redis → MongoDB |
 | Rank system | `systems/rankSystem.js` | Called by finalize | Discord roles |
-| QOTD | `systems/qotd.js`, `utils/qotdHelpers.js` | 5 min interval | MongoDB |
+| QOTD | `systems/qotd.js`, `utils/qotdHelpers.js` | 5 min interval | MongoDB + cache |
 | Polls | `systems/polls.js`, `utils/applyPollVote.js`, `utils/pollSweeper.js` | Buttons + adaptive sweeper | MongoDB |
 | Welcome | `systems/welcome.js` | `guildMemberAdd` | Canvas image |
 | Certificates | `systems/certificates.js` | Buttons/modals | MongoDB |
@@ -30,7 +30,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Job | Interval | Condition | Handler |
 |-----|----------|-----------|---------|
 | Daily finalize | 5 min + 10s on startup | ≥ 6:00 AM IST, Redis lock absent | `dailyFinalizeSystem.js` |
-| QOTD reminder | 5 min + 10s on startup | ≥ 6:00 AM IST, not sent today | `qotd.js` |
+| QOTD reminder | 5 min + 10s on startup | ≥ 6:00 AM IST, not sent today; skips MongoDB before cutoff | `qotd.js` |
 | Poll deadline sweeper | Adaptive (5 min idle cap) + 10s on startup | `deadline <= now` | `utils/pollSweeper.js` |
 | Sticky `lastMessageId` flush | Debounced 5s | After sticky repost | `sticky.js` |
 | Sticky shutdown flush | `SIGINT` / `SIGTERM` | Process exit | `sticky.js` |
@@ -287,14 +287,16 @@ xpGained = isBooster ? messageCount * 2 : messageCount
 
 **Internal flow:**
 
-1. Load active `QotdRotation` document from MongoDB
-2. If IST hour ≥ 6 and reminder not sent today (`lastReminderDate`)
-3. Send reminder to `QOTD_REMINDER_CHANNEL_ID` mentioning current mod
-4. Advance `currentIndex` in rotation
+1. Short-circuit if IST hour &lt; 6 (no MongoDB query before cutoff)
+2. Load active `QotdRotation` from in-memory cache (30 min TTL) or MongoDB on cache miss
+3. If reminder not sent today (`lastReminderDate`), send to `QOTD_REMINDER_CHANNEL_ID`
+4. Advance `currentIndex`, save to MongoDB, refresh cache
 
 **Dependencies:** `QOTD_REMINDER_CHANNEL_ID`, MongoDB (`QotdRotation`)
 
-**Diagnostics:** `/qotd-status` command uses `getQotdDiagnostics()` from qotdHelpers
+**Diagnostics:** `/qotd-status` uses `getQotdDiagnostics()` with `bypassCache: true` for live MongoDB state
+
+**Verification:** `npm run verify:qotd`
 
 ---
 

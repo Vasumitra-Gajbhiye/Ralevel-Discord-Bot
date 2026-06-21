@@ -1,6 +1,9 @@
 const QotdRotation = require("../models/qotdRotation");
 
 const REMINDER_HOUR_IST = 6;
+const ROTATION_CACHE_TTL_MS = 30 * 60 * 1000;
+
+let rotationCache = { doc: null, expiresAt: 0 };
 
 function getISTDateInfo() {
   const now = new Date();
@@ -13,13 +16,32 @@ function getISTDateInfo() {
   return {
     dateStr: `${year}-${month}-${day}`,
     hour: istTime.getUTCHours(),
+    minute: istTime.getUTCMinutes(),
   };
 }
 
-function findActiveRotation() {
-  return QotdRotation.findOne({
+function updateRotationCache(doc) {
+  rotationCache = {
+    doc,
+    expiresAt: Date.now() + ROTATION_CACHE_TTL_MS,
+  };
+}
+
+function invalidateRotationCache() {
+  rotationCache = { doc: null, expiresAt: 0 };
+}
+
+async function findActiveRotation({ bypassCache = false } = {}) {
+  if (!bypassCache && Date.now() < rotationCache.expiresAt) {
+    return rotationCache.doc;
+  }
+
+  const doc = await QotdRotation.findOne({
     $or: [{ enabled: true }, { enabled: { $exists: false } }],
   });
+
+  updateRotationCache(doc);
+  return doc;
 }
 
 function getRotationMembers(rotation) {
@@ -64,7 +86,7 @@ function getWouldSendReason({ dateStr, hour, rotation, channelId, clientReady })
 async function getQotdDiagnostics(client) {
   const channelId = process.env.QOTD_REMINDER_CHANNEL_ID;
   const { dateStr, hour } = getISTDateInfo();
-  const rotation = await findActiveRotation();
+  const rotation = await findActiveRotation({ bypassCache: true });
   const { current, next, validIndex } = getRotationMembers(rotation);
   const clientReady = client?.isReady?.() ?? false;
 
@@ -110,8 +132,11 @@ async function getQotdDiagnostics(client) {
 
 module.exports = {
   REMINDER_HOUR_IST,
+  ROTATION_CACHE_TTL_MS,
   getISTDateInfo,
   findActiveRotation,
+  updateRotationCache,
+  invalidateRotationCache,
   getRotationMembers,
   getWouldSendReason,
   getQotdDiagnostics,

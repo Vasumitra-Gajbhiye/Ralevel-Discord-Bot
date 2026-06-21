@@ -3,6 +3,7 @@ const {
   getISTDateInfo,
   findActiveRotation,
   getRotationMembers,
+  updateRotationCache,
 } = require("../utils/qotdHelpers");
 
 // ===== CONFIG =====
@@ -29,19 +30,19 @@ module.exports = function qotdSystem(client) {
         return;
       }
 
-      const rotation = await findActiveRotation();
-      if (!rotation) {
-        console.warn(
-          "[QOTD] Skip: no active rotation found in MongoDB (check qotdrotations collection).",
-        );
-        return;
-      }
-
       const { dateStr, hour } = getISTDateInfo();
 
       if (hour < REMINDER_HOUR_IST) {
         console.log(
           `[QOTD] Skip: before ${REMINDER_HOUR_IST} AM IST (currently ${hour}:xx on ${dateStr}).`,
+        );
+        return;
+      }
+
+      const rotation = await findActiveRotation();
+      if (!rotation) {
+        console.warn(
+          "[QOTD] Skip: no active rotation found in MongoDB (check qotdrotations collection).",
         );
         return;
       }
@@ -105,6 +106,7 @@ module.exports = function qotdSystem(client) {
         (rotation.currentIndex + 1) % rotation.modOrder.length;
 
       await rotation.save();
+      updateRotationCache(rotation);
     } catch (err) {
       console.error("QOTD reminder error:", err);
     }

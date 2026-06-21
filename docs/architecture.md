@@ -271,7 +271,7 @@ No cron library. All scheduling uses `setInterval` / `setTimeout` with IST timez
 | Job | Interval | Trigger | Module |
 |-----|----------|---------|--------|
 | Daily finalize | 5 min + 10s startup | ≥ 6:00 AM IST, no Redis lock | `dailyFinalizeSystem.js` |
-| QOTD reminder | 5 min + 10s startup | ≥ 6:00 AM IST, not sent today | `qotd.js` |
+| QOTD reminder | 5 min + 10s startup | ≥ 6:00 AM IST, not sent today; skips MongoDB before cutoff | `qotd.js` |
 | Poll sweeper | Adaptive (5 min idle cap) + 10s startup | `deadline <= now` | `utils/pollSweeper.js` |
 | Sticky flush | Debounced 5s | After sticky repost | `sticky.js` |
 
