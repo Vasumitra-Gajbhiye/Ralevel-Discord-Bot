@@ -1,12 +1,7 @@
-const Poll = require("../models/poll");
+const { getNextSequenceId } = require("./getNextSequenceId");
 
 async function getNextPollId() {
-  const last = await Poll.findOne()
-    .sort({ pollId: -1 })
-    .select("pollId")
-    .lean();
-
-  return last ? last.pollId + 1 : 1;
+  return getNextSequenceId("pollId");
 }
 
 module.exports = { getNextPollId };

@@ -11,20 +11,12 @@ const {
 
 const Confession = require("../models/confession");
 const ConfessionBan = require("../models/confessionBan");
+const { getNextConfessionId } = require("../utils/getNextConfessionId");
 
 const MOD_ACTION_CHANNEL = process.env.MOD_ACTION_CHANNEL;
 const VENT_CHANNEL = process.env.VENT_CHANNEL;
 
 /* ================= HELPERS ================= */
-
-async function getNextConfessionId() {
-  const last = await Confession.findOne()
-    .sort({ confessionId: -1 })
-    .select("confessionId")
-    .lean();
-
-  return last ? last.confessionId + 1 : 1;
-}
 
 /* Buttons shown under EVERY approved confession */
 function confessionButtons(confessionId) {

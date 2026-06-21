@@ -1,16 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 const Confession = require("../../models/confession");
 const ConfessionBan = require("../../models/confessionBan");
-
-async function getNextConfessionId() {
-  const last = await Confession
-    .findOne({})
-    .sort({ confessionId: -1 })
-    .select("confessionId")
-    .lean();
-
-  return last ? last.confessionId + 1 : 1;
-}
+const { getNextConfessionId } = require("../../utils/getNextConfessionId");
 
 module.exports = {
   data: new SlashCommandBuilder()

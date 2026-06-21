@@ -4,6 +4,7 @@ const {
   PermissionFlagsBits,
 } = require("discord.js");
 const Task2 = require("../../models/task.js");
+const { getNextSequenceId } = require("../../utils/getNextSequenceId");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -87,14 +88,7 @@ module.exports = {
       });
     }
 
-    // AUTO-ID GENERATION
-    const latest = await Task2.findOne().sort({ createdAt: -1 });
-    let next = 1;
-
-    if (latest) {
-      next = parseInt(latest.taskId.split("-")[1]) + 1;
-    }
-
+    const next = await getNextSequenceId("taskId");
     const taskId = `tsk-${String(next).padStart(3, "0")}`;
 
     // CREATE TASK

@@ -20,25 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Critical & High Severity
 
-### 8. Race-prone sequential ID generation
-
-**Description:** `getNextConfessionId()`, `getNextPollId()`, and similar patterns do `findOne().sort({ id: -1 })` then `+ 1` before insert.
-
-**Severity:** High
-
-**Why it matters:** Two simultaneous submissions can read the same "last" ID and collide on the unique index, causing retries or failures under load.
-
-**Files involved:**
-- `systems/confessions.js` (`getNextConfessionId`)
-- `utils/getNextPollId.js`
-- `commands/task/addtask.js` (latest task lookup)
-
-**Suggested fix:**
-- Use a MongoDB counter collection with `findOneAndUpdate({ _id: 'pollId' }, { $inc: { seq: 1 } }, { upsert: true, new: true })`.
-- Or use MongoDB native auto-increment / UUID for public IDs.
-
----
-
 ### 9. Daily finalize lock key mismatch (correctness + duplicate runs)
 
 **Description:** `systems/dailyFinalizeSystem.js` checks lock key `processed:{guildId}:{today}` but `utils/dailyFinalize.js` sets/checks `processed:{guildId}:{yesterday}`.
@@ -501,8 +482,7 @@ taskSchema.index({ team: 1 });
 | 2 | #11 — Redis pipeline in messageTracker | Low | High |
 | 3 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
 | 4 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 5 | #8 — Poll ID counters | Medium | Medium |
-| 6 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 5 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
@@ -513,6 +493,7 @@ taskSchema.index({ team: 1 });
 - **Daily finalize Redis reads** use aggregate guild+date hashes (2 parallel `HGETALL` calls) with pipelined legacy fallback for in-flight per-user keys (`utils/dailyFinalize.js`, `systems/messageTracker.js`).
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.
 - **Poll votes** are stored in a separate `PollVote` collection with per-user atomic `findOneAndUpdate` operations (`utils/applyPollVote.js`, `models/pollVote.js`).
+- **Sequential public IDs** (poll, confession, task) use an atomic MongoDB counter collection with `$inc` and startup `$max` seeding (`models/counter.js`, `utils/getNextSequenceId.js`, `database.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Audit, moderation-logs, and moderator-logs commands** paginate at DB level with `skip/limit/.lean()` and compound indexes on ModLog.
 - **Moderation log moderator tags** are denormalized at write (`moderatorTag` on ModLog/Warning); read commands use stored tags with a batched Discord fallback only for legacy rows missing the field (`utils/fetchModeratorTags.js`).
