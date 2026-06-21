@@ -15,31 +15,11 @@ The bot is a single-process Discord application with several hot paths that do n
 3. **Moderation log commands** load entire collections into memory and perform N+1 Discord user fetches.
 4. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
-Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining, adding missing indexes, and parallelizing rank updates.
+Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and adding missing indexes.
 
 ---
 
 ## Critical & High Severity
-
-### 4. Rank system processes users sequentially with Discord API calls
-
-**Description:** `systems/rankSystem.js` loops over all rank-changed users and, for each, sequentially: `members.fetch`, `roles.remove`, `roles.add`, `channel.send`.
-
-**Severity:** High
-
-**Why it matters:** Discord rate limits guild member and role endpoints (~5–10 req/s). A busy day with many level-ups causes long finalize tail latency and possible 429 errors.
-
-**Files involved:**
-- `systems/rankSystem.js`
-- `utils/dailyFinalize.js`
-
-**Suggested fix:**
-- Filter to users whose rank actually changed before entering the loop (already partially done).
-- Process in batches with a small delay queue or `p-limit` concurrency of 3–5.
-- Parallelize independent operations per user: `Promise.all([roles.remove(...), ...])` where safe.
-- Consider batching announcements into one embed instead of one message per user.
-
----
 
 ### 5. Modlog commands load unbounded result sets
 
@@ -584,13 +564,13 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 | 4 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
 | 5 | #14 — Missing indexes | Low | Medium (grows over time) |
 | 6 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
-| 7 | #4 — Parallel rank updates | Medium | Medium |
-| 8 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 7 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
 ## What's Already Done Well
 
+- **Rank updates during finalize** process only rank-changed users with bounded concurrency (5 parallel Discord jobs per batch) in `systems/rankSystem.js`.
 - **Daily finalize MongoDB writes** use `bulkWrite` — good batch pattern (`utils/dailyFinalize.js`).
 - **Daily finalize Redis reads** use aggregate guild+date hashes (2 parallel `HGETALL` calls) with pipelined legacy fallback for in-flight per-user keys (`utils/dailyFinalize.js`, `systems/messageTracker.js`).
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.

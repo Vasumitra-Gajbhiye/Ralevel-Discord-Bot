@@ -28,9 +28,10 @@ const RANKS = [
 ];
 
 const ANNOUNCE_CHANNEL_ID = process.env.LEVELUP_CHANNEL_ID;
+const RANK_UPDATE_CONCURRENCY = 5;
+const ALL_RANK_ROLE_IDS = RANKS.map((r) => r.roleId);
 // 1127986149634359316
 
-// 🔍 Get correct rank based on XP
 function getRank(xp) {
   let currentRank = RANKS[0];
 
@@ -43,43 +44,51 @@ function getRank(xp) {
   return currentRank;
 }
 
-module.exports = async function handleRanks(client, guildId, users) {
+function filterRankChanges(users) {
+  return users
+    .map(({ userId, xp, previousXp }) => ({
+      userId,
+      newRank: getRank(xp),
+      oldRank: getRank(previousXp),
+    }))
+    .filter(({ oldRank, newRank }) => oldRank.roleId !== newRank.roleId);
+}
+
+async function handleRanks(client, guildId, users) {
   try {
+    const rankChanges = filterRankChanges(users);
+    if (rankChanges.length === 0) return;
+
     const guild = await client.guilds.fetch(guildId);
     const channel = await guild.channels.fetch(ANNOUNCE_CHANNEL_ID);
 
-    for (const user of users) {
-      const { userId, xp, previousXp } = user;
-
-      const oldRank = getRank(previousXp);
-      const newRank = getRank(xp);
-
-      // 🚫 No rank change
-      if (oldRank.roleId === newRank.roleId) continue;
-      console.log("1");
+    async function processRankChange({ userId, newRank }) {
       const member = await guild.members.fetch(userId).catch(() => null);
-      if (!member) continue;
-      console.log("2");
+      if (!member) return;
 
-      // 🔄 Remove old roles
-      const allRankRoleIds = RANKS.map((r) => r.roleId);
-      await member.roles.remove(allRankRoleIds).catch(() => {});
-
-      // ✅ Add new role
+      await member.roles.remove(ALL_RANK_ROLE_IDS).catch(() => {});
       await member.roles.add(newRank.roleId).catch(() => {});
 
-      // 📢 Send message
       const role = guild.roles.cache.get(newRank.roleId);
+      await channel
+        .send(
+          `🎉 <@${userId}> ranked up! You are now **${
+            role?.name || "Unknown Role"
+          }**`
+        )
+        .catch(() => {});
+    }
 
-      await channel.send(
-        `🎉 <@${userId}> ranked up! You are now **${
-          role?.name || "Unknown Role"
-        }**`
-      );
-
-      console.log("sent");
+    for (let i = 0; i < rankChanges.length; i += RANK_UPDATE_CONCURRENCY) {
+      const batch = rankChanges.slice(i, i + RANK_UPDATE_CONCURRENCY);
+      await Promise.all(batch.map(processRankChange));
     }
   } catch (err) {
     console.error("Rank system error:", err);
   }
-};
+}
+
+module.exports = handleRanks;
+module.exports.getRank = getRank;
+module.exports.filterRankChanges = filterRankChanges;
+module.exports.RANK_UPDATE_CONCURRENCY = RANK_UPDATE_CONCURRENCY;

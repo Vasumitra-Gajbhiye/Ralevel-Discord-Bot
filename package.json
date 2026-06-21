@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node .",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "verify:rank": "node scripts/verify-rank-system.js"
   },
   "keywords": [],
   "author": "Myz",
