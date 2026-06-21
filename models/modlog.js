@@ -144,4 +144,7 @@ const ModLogSchema = new mongoose.Schema({
   },
 });
 
+ModLogSchema.index({ userId: 1, timestamp: -1 });
+ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
+
 module.exports = mongoose.model("ModLog", ModLogSchema);

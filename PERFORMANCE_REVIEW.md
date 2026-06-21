@@ -12,7 +12,7 @@ The bot is a single-process Discord application with several hot paths that do n
 
 1. **Every guild message** can trigger up to three `messageCreate` handlers, each doing I/O (Redis and/or MongoDB).
 2. **Reputation and poll voting** use read-modify-write patterns without atomic updates or caching.
-3. **Moderation log commands** load entire collections into memory and perform N+1 Discord user fetches.
+3. **Moderation log commands** still perform Discord user fetches for moderator tags on read (see issue #6).
 4. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
 Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and adding missing indexes.
@@ -21,29 +21,9 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Critical & High Severity
 
-### 5. Modlog commands load unbounded result sets
-
-**Description:** `commands/moderation/modlogs.js` and `commands/moderation/moderatorlogs.js` call `ModLog.find(...).sort(...)` with **no `.limit()`**, loading every log for a user/moderator into memory.
-
-**Severity:** High
-
-**Why it matters:** Mod logs accumulate indefinitely. A prolific moderator or long-tenured user can have thousands of entries. This causes slow queries, high memory use, and Discord embed pagination built from a full in-memory array.
-
-**Files involved:**
-- `commands/moderation/modlogs.js`
-- `commands/moderation/moderatorlogs.js`
-- `models/modlog.js`
-
-**Suggested fix:**
-- Paginate at the database layer: `.skip(page * PAGE_SIZE).limit(PAGE_SIZE)` (like `commands/moderation/audit.js` already does).
-- Add compound index: `{ userId: 1, timestamp: -1 }` and `{ moderatorId: 1, timestamp: -1 }`.
-- Use `.lean()` on read-only queries.
-
----
-
 ### 6. N+1 Discord API calls in modlogs and warnings
 
-**Description:** After loading all logs, `modlogs.js` fetches each moderator via `interaction.client.users.fetch(log.moderatorId)` inside a `for` loop. `warnings.js` does the same per warning.
+**Description:** `modlogs.js` resolves moderator tags via `client.users.fetch` on each page (batched with `Promise.all`, but still hits Discord on read). `warnings.js` fetches each moderator sequentially in a loop.
 
 **Severity:** High
 
@@ -205,7 +185,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 - `models/reputation.js` — leaderboard: `.sort({ rep: -1 })` needs `{ rep: -1 }` index
 - `models/User.js` — no index on `xp` (used in rank calculations / potential leaderboards)
 - `models/task.js` — `Task.find({ team })` in `commands/task/my-progress.js` has no `team` index
-- `models/modlog.js` — missing `{ userId: 1, timestamp: -1 }`, `{ moderatorId: 1, timestamp: -1 }`
 
 **Suggested fix:**
 ```js
@@ -213,8 +192,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 ReputationSchema.index({ rep: -1 });
 UserSchema.index({ xp: -1 });
 taskSchema.index({ team: 1 });
-ModLogSchema.index({ userId: 1, timestamp: -1 });
-ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 ```
 
 ---
@@ -559,7 +536,7 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
 | 1 | #9 — Finalize lock key mismatch | Low | High (correctness) |
-| 2 | #5, #6 — Modlog unbounded + N+1 | Medium | High |
+| 2 | #6 — Modlog N+1 Discord fetches on read | Medium | High |
 | 3 | #11 — Redis pipeline in messageTracker | Low | High |
 | 4 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
 | 5 | #14 — Missing indexes | Low | Medium (grows over time) |
@@ -575,7 +552,7 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 - **Daily finalize Redis reads** use aggregate guild+date hashes (2 parallel `HGETALL` calls) with pipelined legacy fallback for in-flight per-user keys (`utils/dailyFinalize.js`, `systems/messageTracker.js`).
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
-- **Audit command** paginates at DB level with `skip/limit` — use as template for modlogs.
+- **Audit, moderation-logs, and moderator-logs commands** paginate at DB level with `skip/limit/.lean()` and compound indexes on ModLog.
 - **Message counting** offloads hot path to Redis instead of Mongo — correct architecture choice.
 - **Permission checks** in `systems/commands.js` use role cache (`roles.cache`) — no extra API calls.
 - **Sticky system** uses an in-memory enabled-channel cache loaded on startup, refreshed on CRUD commands, with debounced `lastMessageId` persistence on automatic reposts — no Mongo query per message.
