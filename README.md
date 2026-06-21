@@ -44,12 +44,11 @@ Copy the Role and Channel IDs provided in the development guide into your `.env`
 | :--- | :--- |
 | `TOKEN` | Your Discord Bot Token |
 | `MONGO_URI` | Connection string for MongoDB  |
-| `UPSTASH_REDIS_REST_URL` | REST URL from Upstash  |
-| `UPSTASH_REDIS_REST_TOKEN` | REST Token from Upstash |
+| `REDIS_URL` | Redis connection string (local: `redis://127.0.0.1:6379`; production: internal URL from your Coolify Redis service) |
 
 **Important Services:**
 * **MongoDB Atlas**: Create a **FREE** cluster and select the region closest to you.
-* **Upstash Redis**: Create a Redis database using the **SAME** region as your MongoDB cluster.
+* **Redis**: Run locally (`brew install redis && brew services start redis`) or deploy a Redis service in Coolify and set `REDIS_URL` to its internal connection URL.
 
 ---
 

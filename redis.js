@@ -1,8 +1,15 @@
-const { Redis } = require("@upstash/redis");
+const Redis = require("ioredis");
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+if (!process.env.REDIS_URL) {
+  throw new Error("REDIS_URL is required");
+}
+
+const redis = new Redis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: 3,
+});
+
+redis.on("error", (err) => {
+  console.error("Redis connection error:", err);
 });
 
 module.exports = redis;

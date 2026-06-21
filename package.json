@@ -14,7 +14,7 @@
   "dependencies": {
     "@discordjs/rest": "^1.7.1",
     "@napi-rs/canvas": "^0.1.84",
-    "@upstash/redis": "^1.37.0",
+    "ioredis": "^5.6.1",
     "discord-api-types": "^0.37.46",
     "discord.js": "^14.11.0",
     "dotenv": "^16.6.1",

@@ -91,7 +91,7 @@ async function finalize(client) {
 
     await handleRanks(client, guildId, usersForRanking);
 
-    await redis.set(lockKey, "true", { ex: 60 * 60 * 24 * 7 });
+    await redis.set(lockKey, "true", "EX", 60 * 60 * 24 * 7);
 
     await Promise.all(keys.map((key) => redis.del(key)));
 
