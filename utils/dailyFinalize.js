@@ -19,10 +19,10 @@ async function finalize(client) {
 
     const usersForRanking = [];
 
-    const pattern = `messages:${guildId}:${date}:*`;
+    const usersSetKey = `messages:users:${guildId}:${date}`;
     const lockKey = `processed:${guildId}:${date}`;
 
-    console.log(`📥 Processing pattern: ${pattern}`);
+    console.log(`📥 Processing users set: ${usersSetKey}`);
 
     const alreadyProcessed = await redis.get(lockKey);
     if (alreadyProcessed) {
@@ -30,18 +30,19 @@ async function finalize(client) {
       return;
     }
 
-    const keys = await redis.keys(pattern);
+    const userIds = await redis.smembers(usersSetKey);
 
-    if (!keys || keys.length === 0) {
+    if (!userIds || userIds.length === 0) {
       console.log("⚠️ No data found");
       return;
     }
+
+    const keys = userIds.map((userId) => `messages:${guildId}:${date}:${userId}`);
 
     console.log(`Found ${keys.length} users`);
 
     const operations = [];
 
-    const userIds = keys.map((k) => k.split(":").pop());
     const existingUsers = await User.find({ _id: { $in: userIds } });
 
     const userMap = {};
@@ -93,7 +94,10 @@ async function finalize(client) {
 
     await redis.set(lockKey, "true", "EX", 60 * 60 * 24 * 7);
 
-    await Promise.all(keys.map((key) => redis.del(key)));
+    await Promise.all([
+      ...keys.map((key) => redis.del(key)),
+      redis.del(usersSetKey),
+    ]);
 
     console.log("🧹 Redis cleaned up");
   } catch (err) {

@@ -31,6 +31,9 @@ module.exports = (client) => {
       // 🔥 Set booster status (overwrite is fine)
       await redis.hset(key, { booster: isBooster ? "true" : "false" });
 
+      const usersSetKey = `messages:users:${guildId}:${date}`;
+      await redis.sadd(usersSetKey, userId);
+
       // Debug
       // console.log(`+1 → ${userId} | booster: ${isBooster}`);
     } catch (err) {

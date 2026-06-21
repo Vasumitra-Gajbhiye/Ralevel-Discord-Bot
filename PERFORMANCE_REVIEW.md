@@ -11,39 +11,20 @@ Senior-engineer review of the codebase (~12k LOC, 124 JS files). Focus: bottlene
 The bot is a single-process Discord application with several hot paths that do not scale well under load:
 
 1. **Every guild message** can trigger up to three `messageCreate` handlers, each doing I/O (Redis and/or MongoDB).
-2. **Daily finalize** uses `KEYS` plus sequential Redis reads — the highest-risk batch job.
+2. **Daily finalize** uses sequential Redis reads — the highest-risk batch job.
 3. **Reputation and poll voting** use read-modify-write patterns without atomic updates or caching.
 4. **Moderation log commands** load entire collections into memory and perform N+1 Discord user fetches.
 5. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
-Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining, replacing `KEYS`, adding missing indexes, and parallelizing rank updates.
+Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining, adding missing indexes, and parallelizing rank updates.
 
 ---
 
 ## Critical & High Severity
 
-### 2. Daily finalize uses `redis.keys()` (O(N) full scan)
-
-**Description:** `utils/dailyFinalize.js` calls `redis.keys(pattern)` to discover all message-count keys for a date.
-
-**Severity:** High
-
-**Why it matters:** `KEYS` blocks Redis and scans the entire keyspace. On Upstash REST this also means a large payload and latency that grows with total keys, not just yesterday's users. This is a known anti-pattern at scale.
-
-**Files involved:**
-- `utils/dailyFinalize.js`
-- `systems/dailyFinalizeSystem.js`
-
-**Suggested fix:**
-- Maintain a Redis `SET` per day: `SADD messages:users:{guildId}:{date} {userId}` in `systems/messageTracker.js` on each increment.
-- During finalize, use `SMEMBERS` (or iterate the set) and pipeline `HGETALL` for each user key.
-- Alternatively, store all users in one hash `HINCRBY messages:{guildId}:{date} {userId} 1` and finalize with a single `HGETALL` (eliminates per-user keys entirely).
-
----
-
 ### 3. Sequential Redis `HGETALL` in daily finalize loop
 
-**Description:** After `KEYS`, the finalize loop awaits `redis.hgetall(key)` once per user sequentially.
+**Description:** The finalize loop awaits `redis.hgetall(key)` once per user sequentially.
 
 **Severity:** High
 
@@ -54,7 +35,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 **Suggested fix:**
 - Batch with `Promise.all` in chunks (e.g. 50 keys at a time), or use Redis pipeline if supported by `@upstash/redis`.
-- Better: single-hash design (see issue #2) avoids the loop entirely.
+- Better: single-hash design (`HINCRBY messages:{guildId}:{date} {userId} 1` + one `HGETALL`) avoids the loop entirely.
 
 ---
 
@@ -615,7 +596,7 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
-| 1 | #2, #3 — Redis KEYS + sequential HGETALL | Medium | Very high |
+| 1 | #3 — Sequential HGETALL in daily finalize | Medium | Very high |
 | 2 | #9 — Finalize lock key mismatch | Low | High (correctness) |
 | 3 | #5, #6 — Modlog unbounded + N+1 | Medium | High |
 | 4 | #11 — Redis pipeline in messageTracker | Low | High |
