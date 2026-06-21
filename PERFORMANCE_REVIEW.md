@@ -20,23 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Medium Severity
 
-### 13. `processedMessageIds` Set grows without bound
-
-**Description:** `systems/reputation.js` keeps every processed message ID in an in-process `Set` forever.
-
-**Severity:** Medium
-
-**Why it matters:** Long-running bot process accumulates unbounded memory (one string ID per processed message, never pruned).
-
-**Files involved:**
-- `systems/reputation.js`
-
-**Suggested fix:**
-- Use LRU cache with max size (e.g. 10k entries).
-- Or rely on idempotency at DB level (`$inc` only once per message via a `processedMessages` collection with TTL index).
-
----
-
 ### 14. Missing database indexes for common query patterns
 
 **Description:** Several frequent queries lack supporting indexes.
@@ -343,7 +326,7 @@ taskSchema.index({ team: 1 });
 
 ### 29. Single-process architecture — no horizontal scaling
 
-**Description:** One Node process handles all events, schedulers, and state (`stickyState` Map, `processedMessageIds` Set).
+**Description:** One Node process handles all events, schedulers, and state (`stickyState` Map, bounded `processedMessageIds` cache).
 
 **Severity:** Low (by design for Discord bots)
 
@@ -399,9 +382,8 @@ taskSchema.index({ team: 1 });
 
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
-| 1 | #13 — Reputation Set leak | Medium | Medium |
-| 2 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 3 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 1 | #14 — Missing indexes | Low | Medium (grows over time) |
+| 2 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
@@ -422,6 +404,7 @@ taskSchema.index({ team: 1 });
 - **Permission checks** in `systems/commands.js` use role cache (`roles.cache`) — no extra API calls.
 - **Sticky system** uses an in-memory enabled-channel cache loaded on startup, refreshed on CRUD commands, with debounced `lastMessageId` persistence on automatic reposts — no Mongo query per message.
 - **Automatic reputation awards** use atomic `$inc` / `bulkWrite` with batched ban checks for mention thanks; tier sync reuses the awarded rep total (no duplicate DB reads). Verified via `npm run verify:reputation`.
+- **Reputation dedup cache** uses a bounded in-memory FIFO set (10k message IDs) to prevent double-awarding without unbounded memory growth.
 
 ---
 

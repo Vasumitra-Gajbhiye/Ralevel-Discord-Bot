@@ -256,7 +256,7 @@ Error: Used disallowed intents → enable intents in Developer Portal
 This bot is designed as a **single-instance** application:
 
 - Redis locks prevent double finalize — running multiple instances could cause race conditions
-- In-memory caches (`client.stickies`, `processedMessageIds`) are not shared across instances
+- In-memory caches (`client.stickies`, bounded `processedMessageIds` reputation dedup cache) are not shared across instances
 - Run **one bot container** per Discord server
 
 If you need high availability, implement leader election or move caches to Redis before running multiple instances.

@@ -1,4 +1,5 @@
 const { PermissionsBitField } = require("discord.js");
+const { createBoundedSet } = require("../utils/boundedSet.js");
 
 function assert(condition, message) {
   if (!condition) {
@@ -262,6 +263,55 @@ async function testMentionHandlerSendsOneMessage() {
   );
 }
 
+async function testDuplicateMessageIsIgnored() {
+  const tracker = createQueryTracker();
+  const reputationSystem = loadReputationWithMocks(tracker);
+  const handleReputationMessage = reputationSystem({});
+
+  let sendCount = 0;
+  const channel = {
+    send: async () => {
+      sendCount += 1;
+    },
+  };
+  const target = createMockMember("user-1");
+
+  const message = {
+    id: "msg-dup",
+    content: "thanks",
+    author: { id: "author-1" },
+    reference: { messageId: "prev-msg" },
+    guild: createMockGuild(target),
+    channel,
+    member: createMockMember("author-1"),
+    fetchReference: async () => ({
+      member: target,
+    }),
+  };
+
+  await handleReputationMessage(message);
+  await handleReputationMessage(message);
+
+  assert(sendCount === 1, `expected 1 channel message, got ${sendCount}`);
+  assert(
+    tracker.counts.reputationFindOneAndUpdate === 1,
+    `expected 1 findOneAndUpdate call, got ${tracker.counts.reputationFindOneAndUpdate}`
+  );
+}
+
+function testBoundedSetEvictsOldest() {
+  const cache = createBoundedSet(3);
+
+  cache.add("a");
+  cache.add("b");
+  cache.add("c");
+  cache.add("d");
+
+  assert(cache.size === 3, `expected cache size 3, got ${cache.size}`);
+  assert(!cache.has("a"), "oldest entry should be evicted");
+  assert(cache.has("d"), "newest entry should remain");
+}
+
 async function main() {
   await testIncrementReputationQueryCount();
   await testIncrementReputationSkipsBannedUser();
@@ -269,6 +319,8 @@ async function main() {
   await testIncrementReputationBatchExcludesBanned();
   await testEnsureTierRoleUsesPassedRepWithoutDb();
   await testMentionHandlerSendsOneMessage();
+  await testDuplicateMessageIsIgnored();
+  testBoundedSetEvictsOldest();
 
   console.log("verify-reputation-system: all checks passed");
 }

@@ -6,6 +6,9 @@
 const Reputation = require("../models/reputation.js");
 const RepBan = require("../models/repban.js");
 const { PermissionsBitField } = require("discord.js");
+const { createBoundedSet } = require("../utils/boundedSet.js");
+
+const PROCESSED_MESSAGE_CACHE_SIZE = 10_000;
 
 // Words
 const THANK_WORDS = [
@@ -208,7 +211,7 @@ async function ensureTierRoleAndCheckAdded(guild, member, announceChannel, rep) 
 // MAIN EXPORT — returns message handler
 //---------------------------------------------
 function reputationSystem(client) {
-  const processedMessageIds = new Set();
+  const processedMessageIds = createBoundedSet(PROCESSED_MESSAGE_CACHE_SIZE);
 
   async function handleReputationMessage(message) {
     try {

@@ -165,7 +165,7 @@ On tier-up, removes old tier roles and announces in channel.
 - Checks `RepBan` collection — banned users cannot receive rep
 - Automatic rep awards use atomic MongoDB `$inc` (no read-modify-save); mention-based thanks batch ban checks and increments via `bulkWrite`, then send one combined confirmation message
 - Tier role sync uses the rep total from the award step (no second DB read)
-- Keeps in-memory `processedMessageIds` Set to prevent double-processing
+- Keeps a bounded in-memory `processedMessageIds` cache (10k entries, FIFO eviction) to prevent double-processing
 - Uses `utils/assignRepRole.js` for manual rep commands
 
 **Verification:** `npm run verify:reputation`
