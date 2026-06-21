@@ -1,4 +1,8 @@
 const finalize = require("../utils/dailyFinalize");
+const {
+  getFinalizeDate,
+  getFinalizeLockKey,
+} = finalize;
 
 // ===== CONFIG =====
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // every 5 min
@@ -25,7 +29,7 @@ function getISTDateInfo() {
 module.exports = function dailyFinalizeSystem(client) {
   async function checkAndRun() {
     try {
-      const { dateStr, hour, minute } = getISTDateInfo();
+      const { hour, minute } = getISTDateInfo();
 
       // ⛔ Not time yet (before 9:25 AM IST)
       if (
@@ -38,13 +42,14 @@ module.exports = function dailyFinalizeSystem(client) {
       const redis = require("../redis");
       const guildId = process.env.GUILD_ID;
 
-      const lockKey = `processed:${guildId}:${dateStr}`;
+      const finalizeDate = getFinalizeDate();
+      const lockKey = getFinalizeLockKey(guildId, finalizeDate);
 
       const alreadyProcessed = await redis.get(lockKey);
       if (alreadyProcessed) return;
 
       console.log(
-        `🔥 [FINALIZE] Running for ${dateStr} at ${hour}:${minute} IST`
+        `🔥 [FINALIZE] Running for ${finalizeDate} at ${hour}:${minute} IST`
       );
 
       await finalize(client);

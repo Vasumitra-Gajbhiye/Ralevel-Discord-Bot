@@ -1,7 +1,10 @@
+const finalizeModule = require("../utils/dailyFinalize");
 const {
   fetchLegacyUserHashes,
   buildUserUpdates,
-} = require("../utils/dailyFinalize");
+  getFinalizeDate,
+  getFinalizeLockKey,
+} = finalizeModule;
 
 function assert(condition, message) {
   if (!condition) {
@@ -105,10 +108,194 @@ async function testFetchLegacyUserHashesChunksLargeSets() {
   }
 }
 
+function testFinalizeLockKeyUsesSameDate() {
+  const guildId = "guild123";
+  const date = getFinalizeDate();
+  const lockKey = getFinalizeLockKey(guildId, date);
+
+  assert(
+    lockKey === `processed:${guildId}:${date}`,
+    "lock key should use processed prefix with guild and finalize date"
+  );
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(date), "finalize date should be YYYY-MM-DD");
+}
+
+function testSchedulerAndFinalizeShareLockKey() {
+  const guildId = "guild456";
+  const date = "2026-06-20";
+  const schedulerKey = getFinalizeLockKey(guildId, date);
+  const finalizeKey = getFinalizeLockKey(guildId, date);
+
+  assert(
+    schedulerKey === finalizeKey,
+    "scheduler and finalize should use the same lock key helper"
+  );
+  assert(
+    schedulerKey === "processed:guild456:2026-06-20",
+    "lock key should match expected shape"
+  );
+}
+
+async function withReloadedFinalize(setup, run) {
+  const dailyFinalizePath = require.resolve("../utils/dailyFinalize");
+  const databasePath = require.resolve("../database");
+  const rankSystemPath = require.resolve("../systems/rankSystem");
+  const redisModule = require("../redis");
+  const User = require("../models/User");
+
+  const saved = {
+    set: redisModule.set,
+    hgetall: redisModule.hgetall,
+    del: redisModule.del,
+    smembers: redisModule.smembers,
+    find: User.find,
+    bulkWrite: User.bulkWrite,
+    database: require.cache[databasePath],
+    rankSystem: require.cache[rankSystemPath],
+    dailyFinalize: require.cache[dailyFinalizePath],
+  };
+
+  setup({ redisModule, User, databasePath, rankSystemPath });
+
+  delete require.cache[dailyFinalizePath];
+  const reloadedFinalize = require("../utils/dailyFinalize");
+
+  try {
+    await run(reloadedFinalize);
+  } finally {
+    redisModule.set = saved.set;
+    redisModule.hgetall = saved.hgetall;
+    redisModule.del = saved.del;
+    redisModule.smembers = saved.smembers;
+    User.find = saved.find;
+    User.bulkWrite = saved.bulkWrite;
+    require.cache[databasePath] = saved.database;
+    require.cache[rankSystemPath] = saved.rankSystem;
+    require.cache[dailyFinalizePath] = saved.dailyFinalize;
+  }
+}
+
+async function testFinalizeAcquiresLockBeforeWork() {
+  const callOrder = [];
+  const guildId = "g1";
+  process.env.GUILD_ID = guildId;
+
+  await withReloadedFinalize(
+    ({ redisModule, User, databasePath, rankSystemPath }) => {
+      require.cache[databasePath] = {
+        id: databasePath,
+        filename: databasePath,
+        loaded: true,
+        exports: async () => {},
+      };
+      require.cache[rankSystemPath] = {
+        id: rankSystemPath,
+        filename: rankSystemPath,
+        loaded: true,
+        exports: async () => {
+          callOrder.push({ op: "handleRanks" });
+        },
+      };
+
+      redisModule.set = async (...args) => {
+        callOrder.push({ op: "set", args });
+        return "OK";
+      };
+      redisModule.hgetall = async (key) => {
+        callOrder.push({ op: "hgetall", key });
+        if (key.includes("boosters")) return {};
+        return { u1: "5" };
+      };
+      redisModule.del = async (...args) => {
+        callOrder.push({ op: "del", args });
+      };
+      redisModule.smembers = async () => [];
+
+      User.find = async () => [];
+      User.bulkWrite = async () => {
+        callOrder.push({ op: "bulkWrite" });
+      };
+    },
+    async (reloadedFinalize) => {
+      await reloadedFinalize({});
+
+      const setIndex = callOrder.findIndex((entry) => entry.op === "set");
+      const hgetallIndex = callOrder.findIndex((entry) => entry.op === "hgetall");
+      assert(setIndex !== -1, "finalize should acquire lock with set");
+      assert(hgetallIndex !== -1, "finalize should read redis message data");
+      assert(setIndex < hgetallIndex, "lock should be acquired before redis reads");
+      assert(
+        callOrder[setIndex].args[4] === "NX",
+        "initial lock acquisition should use SET NX"
+      );
+    }
+  );
+}
+
+async function testFinalizeSkipsWhenLockNotAcquired() {
+  const callOrder = [];
+  const guildId = "g2";
+  process.env.GUILD_ID = guildId;
+
+  await withReloadedFinalize(
+    ({ redisModule, User, databasePath, rankSystemPath }) => {
+      require.cache[databasePath] = {
+        id: databasePath,
+        filename: databasePath,
+        loaded: true,
+        exports: async () => {},
+      };
+      require.cache[rankSystemPath] = {
+        id: rankSystemPath,
+        filename: rankSystemPath,
+        loaded: true,
+        exports: async () => {
+          callOrder.push({ op: "handleRanks" });
+        },
+      };
+
+      redisModule.set = async (...args) => {
+        callOrder.push({ op: "set", args });
+        return args[4] === "NX" ? null : "OK";
+      };
+      redisModule.hgetall = async (key) => {
+        callOrder.push({ op: "hgetall", key });
+        return {};
+      };
+
+      User.find = async () => [];
+      User.bulkWrite = async () => {
+        callOrder.push({ op: "bulkWrite" });
+      };
+    },
+    async (reloadedFinalize) => {
+      await reloadedFinalize({});
+
+      assert(
+        callOrder.length === 1,
+        "only lock acquisition should run when lock is held"
+      );
+      assert(callOrder[0].op === "set", "finalize should attempt lock acquisition");
+      assert(
+        !callOrder.some((entry) => entry.op === "hgetall"),
+        "finalize should not read redis when lock is not acquired"
+      );
+      assert(
+        !callOrder.some((entry) => entry.op === "bulkWrite"),
+        "finalize should not write mongo when lock is not acquired"
+      );
+    }
+  );
+}
+
 async function main() {
   testBuildUserUpdates();
+  testFinalizeLockKeyUsesSameDate();
+  testSchedulerAndFinalizeShareLockKey();
   await testFetchLegacyUserHashesUsesPipelineChunks();
   await testFetchLegacyUserHashesChunksLargeSets();
+  await testFinalizeAcquiresLockBeforeWork();
+  await testFinalizeSkipsWhenLockNotAcquired();
   console.log("✅ finalize redis verification passed");
 }
 

@@ -9,7 +9,8 @@
     "dev": "nodemon index.js",
     "verify:rank": "node scripts/verify-rank-system.js",
     "verify:poll-votes": "node scripts/verify-poll-votes.js",
-    "verify:sequential-ids": "node scripts/verify-sequential-ids.js"
+    "verify:sequential-ids": "node scripts/verify-sequential-ids.js",
+    "verify:finalize": "node scripts/verify-finalize-redis.js"
   },
   "keywords": [],
   "author": "Myz",

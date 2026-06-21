@@ -4,10 +4,17 @@ const redis = require("../redis");
 const User = require("../models/User");
 const handleRanks = require("../systems/rankSystem");
 
-function getYesterdayDate() {
+const LOCK_TTL_PROCESSING_SEC = 60 * 60;
+const LOCK_TTL_COMPLETED_SEC = 60 * 60 * 24 * 7;
+
+function getFinalizeDate() {
   const now = new Date();
   now.setDate(now.getDate() - 1);
   return now.toISOString().split("T")[0];
+}
+
+function getFinalizeLockKey(guildId, date) {
+  return `processed:${guildId}:${date}`;
 }
 
 async function fetchLegacyUserHashes(keys, chunkSize = 50) {
@@ -67,22 +74,28 @@ function buildUserUpdates(userIds, counts, boosters, userMap, guildId) {
 }
 
 async function finalize(client) {
+  const guildId = process.env.GUILD_ID;
+  const date = getFinalizeDate();
+  const lockKey = getFinalizeLockKey(guildId, date);
+
   try {
     await connectDB();
-
-    const guildId = process.env.GUILD_ID;
-    const date = getYesterdayDate();
 
     const countKey = `messages:${guildId}:${date}`;
     const boosterKey = `messages:boosters:${guildId}:${date}`;
     const usersSetKey = `messages:users:${guildId}:${date}`;
-    const lockKey = `processed:${guildId}:${date}`;
 
     console.log(`📥 Processing message data for ${date}`);
 
-    const alreadyProcessed = await redis.get(lockKey);
-    if (alreadyProcessed) {
-      console.log("⚠️ Already processed. Skipping.");
+    const acquired = await redis.set(
+      lockKey,
+      "true",
+      "EX",
+      LOCK_TTL_PROCESSING_SEC,
+      "NX"
+    );
+    if (!acquired) {
+      console.log("⚠️ Already processed or in progress. Skipping.");
       return;
     }
 
@@ -106,6 +119,7 @@ async function finalize(client) {
 
       if (!legacyUserIds || legacyUserIds.length === 0) {
         console.log("⚠️ No data found");
+        await redis.del(lockKey);
         return;
       }
 
@@ -148,7 +162,7 @@ async function finalize(client) {
 
     await handleRanks(client, guildId, usersForRanking);
 
-    await redis.set(lockKey, "true", "EX", 60 * 60 * 24 * 7);
+    await redis.set(lockKey, "true", "EX", LOCK_TTL_COMPLETED_SEC);
 
     await Promise.all([
       redis.del(countKey),
@@ -160,10 +174,13 @@ async function finalize(client) {
     console.log("🧹 Redis cleaned up");
   } catch (err) {
     console.error("❌ Finalize Error:", err);
+    await redis.del(lockKey);
   }
 }
 
 module.exports = finalize;
+module.exports.getFinalizeDate = getFinalizeDate;
+module.exports.getFinalizeLockKey = getFinalizeLockKey;
 module.exports.fetchLegacyUserHashes = fetchLegacyUserHashes;
 module.exports.buildUserUpdates = buildUserUpdates;
 // DO NOT DELETE THE COMMENT BELOW

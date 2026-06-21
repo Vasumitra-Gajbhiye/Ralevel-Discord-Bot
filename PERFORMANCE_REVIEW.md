@@ -18,24 +18,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ---
 
-## Critical & High Severity
-
-### 9. Daily finalize lock key mismatch (correctness + duplicate runs)
-
-**Description:** `systems/dailyFinalizeSystem.js` checks lock key `processed:{guildId}:{today}` but `utils/dailyFinalize.js` sets/checks `processed:{guildId}:{yesterday}`.
-
-**Severity:** High
-
-**Why it matters:** The outer guard does not prevent re-entry correctly. Finalize can run multiple times per day if the inner lock is not set yet, doubling MongoDB writes, rank updates, and Redis cleanup work.
-
-**Files involved:**
-- `systems/dailyFinalizeSystem.js`
-- `utils/dailyFinalize.js`
-
-**Suggested fix:**
-- Use one canonical date (yesterday) for both check and set, in one place.
-- Set the lock **before** processing (with short TTL + idempotent finalize) to prevent concurrent runs across restarts.
-
 ---
 
 ## Medium Severity
@@ -478,11 +460,10 @@ taskSchema.index({ team: 1 });
 
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
-| 1 | #9 — Finalize lock key mismatch | Low | High (correctness) |
-| 2 | #11 — Redis pipeline in messageTracker | Low | High |
-| 3 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
-| 4 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 5 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 1 | #11 — Redis pipeline in messageTracker | Low | High |
+| 2 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
+| 3 | #14 — Missing indexes | Low | Medium (grows over time) |
+| 4 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
