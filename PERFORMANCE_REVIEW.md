@@ -16,31 +16,11 @@ The bot is a single-process Discord application with several hot paths that do n
 4. **Moderation log commands** load entire collections into memory and perform N+1 Discord user fetches.
 5. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
-Most issues are fixable incrementally. The highest-impact wins are: sticky in-memory cache, Redis pipelining, replacing `KEYS`, adding missing indexes, and parallelizing rank updates.
+Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining, replacing `KEYS`, adding missing indexes, and parallelizing rank updates.
 
 ---
 
 ## Critical & High Severity
-
-### 1. Sticky system queries MongoDB on every message
-
-**Description:** `systems/sticky.js` runs `Sticky.findOne({ channelId, enabled: true })` for every non-bot guild message, even in channels with no sticky.
-
-**Severity:** High
-
-**Why it matters:** In an active server, message volume is the highest-frequency event. One MongoDB round trip per message adds latency, connection pool pressure, and cost. Most channels will never have a sticky.
-
-**Files involved:**
-- `systems/sticky.js`
-- `models/sticky.js`
-- `commands/sticky/add-sticky.js`, `commands/sticky/edit-sticky.js`, `commands/sticky/remove-sticky.js`
-
-**Suggested fix:**
-- Load all enabled stickies into a `Map<channelId, stickyDoc>` on startup and refresh on sticky create/edit/delete/resend.
-- Only attach the `messageCreate` handler logic for channels present in the map.
-- Persist `lastMessageId` updates via debounced writes (e.g. flush to Mongo every N seconds or on shutdown) instead of `save()` on every repost.
-
----
 
 ### 2. Daily finalize uses `redis.keys()` (O(N) full scan)
 
@@ -620,7 +600,7 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 
 | Data | Current | Suggested cache | TTL / invalidation |
 |------|---------|-----------------|-------------------|
-| Enabled stickies | Mongo query per message | In-memory `Map` by channelId | Invalidate on sticky CRUD |
+| Enabled stickies | In-memory `Map` by channelId (implemented) | N/A — already cached | Invalidate on sticky CRUD |
 | Rep ban status | Mongo per rep event | Redis SET / in-memory Set | On repban/repunban |
 | QOTD rotation | Mongo every 5 min | In-memory + refresh on save | Admin command / 30 min |
 | Leaderboard top 10 | Mongo per command | Redis JSON | 60–300s |
@@ -637,14 +617,13 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 |----------|---------|--------|--------|
 | 1 | #2, #3 — Redis KEYS + sequential HGETALL | Medium | Very high |
 | 2 | #9 — Finalize lock key mismatch | Low | High (correctness) |
-| 3 | #1 — Sticky per-message Mongo query | Medium | Very high |
-| 4 | #5, #6 — Modlog unbounded + N+1 | Medium | High |
-| 5 | #11 — Redis pipeline in messageTracker | Low | High |
-| 6 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
-| 7 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 8 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
-| 9 | #4 — Parallel rank updates | Medium | Medium |
-| 10 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 3 | #5, #6 — Modlog unbounded + N+1 | Medium | High |
+| 4 | #11 — Redis pipeline in messageTracker | Low | High |
+| 5 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
+| 6 | #14 — Missing indexes | Low | Medium (grows over time) |
+| 7 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
+| 8 | #4 — Parallel rank updates | Medium | Medium |
+| 9 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
@@ -656,6 +635,7 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 - **Audit command** paginates at DB level with `skip/limit` — use as template for modlogs.
 - **Message counting** offloads hot path to Redis instead of Mongo — correct architecture choice.
 - **Permission checks** in `systems/commands.js` use role cache (`roles.cache`) — no extra API calls.
+- **Sticky system** uses an in-memory enabled-channel cache loaded on startup, refreshed on CRUD commands, with debounced `lastMessageId` persistence on automatic reposts — no Mongo query per message.
 
 ---
 

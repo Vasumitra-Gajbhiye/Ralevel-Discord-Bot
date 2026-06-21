@@ -5,6 +5,7 @@ const {
 
 const Sticky = require("../../models/sticky");
 const logStickyAction = require("../../utils/logStickyAction");
+const { upsertStickyCache } = require("../../systems/sticky");
 
 const DEFAULT_LINE_THRESHOLD = 8;
 
@@ -92,6 +93,14 @@ module.exports = {
     sticky.lineThreshold = lineThreshold;
     sticky.lastMessageId = sent.id;
     await sticky.save();
+
+    upsertStickyCache(interaction.client, {
+      channelId: channel.id,
+      content: newContent,
+      lineThreshold,
+      lastMessageId: sent.id,
+      enabled: sticky.enabled,
+    });
 
     await interaction.reply({
       content: `✏️ Sticky updated in ${channel}.`,

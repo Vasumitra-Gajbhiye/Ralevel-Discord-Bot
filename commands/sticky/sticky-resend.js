@@ -5,6 +5,7 @@ const {
 
 const Sticky = require("../../models/sticky");
 const logStickyAction = require("../../utils/logStickyAction");
+const { upsertStickyCache } = require("../../systems/sticky");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -61,6 +62,14 @@ module.exports = {
 
     sticky.lastMessageId = sent.id;
     await sticky.save();
+
+    upsertStickyCache(interaction.client, {
+      channelId: channel.id,
+      content: sticky.content,
+      lineThreshold: sticky.lineThreshold,
+      lastMessageId: sent.id,
+      enabled: sticky.enabled,
+    });
 
     await interaction.reply({
       content: `🔁 Sticky resent in ${channel}.`,

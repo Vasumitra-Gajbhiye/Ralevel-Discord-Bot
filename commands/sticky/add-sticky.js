@@ -5,6 +5,7 @@ const {
 
 const Sticky = require("../../models/sticky");
 const logStickyAction = require("../../utils/logStickyAction");
+const { upsertStickyCache } = require("../../systems/sticky");
 
 const DEFAULT_LINE_THRESHOLD = 8;
 
@@ -111,7 +112,7 @@ module.exports = {
       { upsert: true }
     );
 
-    interaction.client.stickies?.set(channel.id, {
+    upsertStickyCache(interaction.client, {
       channelId: channel.id,
       content,
       lineThreshold,

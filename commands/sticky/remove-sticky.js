@@ -5,6 +5,7 @@ const {
 
 const Sticky = require("../../models/sticky");
 const logStickyAction = require("../../utils/logStickyAction");
+const { removeStickyCache } = require("../../systems/sticky");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -55,7 +56,7 @@ module.exports = {
       channelId: channel.id,
     });
 
-    interaction.client.stickies?.delete(channel.id);
+    removeStickyCache(interaction.client, channel.id);
 
     await interaction.reply({
       content: `🗑️ Sticky removed from ${channel}.`,
