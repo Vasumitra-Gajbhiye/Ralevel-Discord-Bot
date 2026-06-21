@@ -20,29 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Medium Severity
 
-### 18. Welcome system reloads background image on every join
-
-**Description:** `systems/welcome.js` calls `loadImage(IMAGE_PATH)` for the background on every `guildMemberAdd`.
-
-**Severity:** Medium
-
-**Why it matters:** Disk I/O and image decode on every join. Canvas rendering + avatar fetch is inherently heavy; redundant background load adds avoidable latency during join bursts.
-
-**Files involved:**
-- `systems/welcome.js`
-
-**Suggested fix:**
-- Load and cache the background buffer once at module init or first use:
-  ```js
-  let cachedBackground;
-  async function getBackground() {
-    if (!cachedBackground) cachedBackground = await loadImage(IMAGE_PATH);
-    return cachedBackground;
-  }
-  ```
-
----
-
 ### 19. Task display scans 50 channel messages on every update
 
 **Description:** `utils/taskDisplay.js` fetches the last 50 messages and iterates to find the bot's task embed.
@@ -285,7 +262,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 | Rep ban status | Mongo per rep event | Redis SET / in-memory Set | On repban/repunban |
 | QOTD rotation | In-memory cache + IST short-circuit (implemented) | N/A — already cached | Refresh on save / 30 min TTL; `/qotd-status` bypasses cache |
 | Leaderboard top 10 | Mongo per command | Redis JSON | 60–300s |
-| Welcome background | Disk per join | Module-level Image cache | Permanent |
 | Task display message ID | 50-msg channel scan | Stored ID in Mongo/Redis | On missing message |
 | Mod log moderator tags | Denormalized at write (`moderatorTag` on ModLog/Warning) | N/A — already implemented | N/A |
 | Guild member for tier sync | `members.fetch` each time | Use `message.member` when available | N/A |
@@ -310,6 +286,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 - **Poll votes** are stored in a separate `PollVote` collection with per-user atomic `findOneAndUpdate` operations (`utils/applyPollVote.js`, `models/pollVote.js`).
 - **Poll deadline sweeper** uses adaptive `setTimeout` scheduling based on the nearest active deadline (5-minute idle cap), parallel poll closing with bounded concurrency, lazy close on vote/view interaction, and `wakePollSweeper()` on poll create (`utils/pollSweeper.js`). Verified via `npm run verify:poll-sweeper`.
 - **QOTD scheduler** short-circuits IST time check before MongoDB, caches active rotation in memory (30 min TTL, refreshed on save), and shares `getISTDateInfo` with daily finalize (`systems/qotd.js`, `utils/qotdHelpers.js`). Verified via `npm run verify:qotd`.
+- **Welcome background** is cached at module level after first load — no disk I/O or decode on subsequent joins (`systems/welcome.js`). Verified via `npm run verify:welcome`.
 - **Sequential public IDs** (poll, confession, task) use an atomic MongoDB counter collection with `$inc` and startup `$max` seeding (`models/counter.js`, `utils/getNextSequenceId.js`, `database.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Common query indexes** on `reputations.rep`, `users.xp`, and `tasks.team` support leaderboard sorts and team task lookups. Task compound indexes on `{ team, assignedTo }`, `{ team, finishedBy }`, and `{ team, selected }` support `/my-progress` count queries. Verified via `npm run verify:database-indexes` and `npm run verify:my-progress`.

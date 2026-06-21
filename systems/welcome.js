@@ -13,7 +13,16 @@ const AVATAR_SIZE = 360;
 const AVATAR_X = 600; // center of 1000px canvas
 const AVATAR_Y = 225; // above "Welcome" text
 
-module.exports = function welcomeSystem(client) {
+let cachedBackground;
+
+async function getBackground() {
+  if (!cachedBackground) {
+    cachedBackground = await loadImage(IMAGE_PATH);
+  }
+  return cachedBackground;
+}
+
+function welcomeSystem(client) {
   client.on("guildMemberAdd", async (member) => {
     try {
       const channel = await client.channels.fetch(
@@ -25,8 +34,7 @@ module.exports = function welcomeSystem(client) {
       const canvas = createCanvas(1200, 675);
       const ctx = canvas.getContext("2d");
 
-      // Load base image
-      const background = await loadImage(IMAGE_PATH);
+      const background = await getBackground();
       ctx.drawImage(background, 0, 0, 1200, 675);
 
       // Load avatar
@@ -101,4 +109,11 @@ await channel.send({
       console.error("Welcome system error:", err);
     }
   });
+}
+
+welcomeSystem.getBackground = getBackground;
+welcomeSystem.resetBackgroundCache = () => {
+  cachedBackground = null;
 };
+
+module.exports = welcomeSystem;

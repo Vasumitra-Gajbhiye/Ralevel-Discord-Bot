@@ -227,6 +227,7 @@ Run these after changing core systems:
 | Sequential IDs | `npm run verify:sequential-ids` | Counter/ID generation (needs `MONGO_URI`) |
 | Daily finalize | `npm run verify:finalize` | Redis finalize + lock behavior |
 | Message router | `npm run verify:message-router` | Single MessageCreate listener, rep gating |
+| Welcome system | `npm run verify:welcome` | Background image cache (no reload per join) |
 
 ---
 

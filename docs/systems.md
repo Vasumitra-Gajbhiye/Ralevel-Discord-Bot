@@ -340,10 +340,12 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 **Internal flow:**
 
 1. Fetch member avatar URL
-2. Composite avatar onto `assets/welcome.png` using `@napi-rs/canvas`
+2. Composite avatar onto cached `assets/welcome.png` background using `@napi-rs/canvas` (background loaded once at first join, then reused)
 3. Send embed with image to `WELCOME_CHANNEL`
 
 **Dependencies:** `WELCOME_CHANNEL`, `@napi-rs/canvas`, `assets/welcome.png`
+
+**Verification:** `npm run verify:welcome`
 
 ---
 
