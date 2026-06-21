@@ -396,8 +396,8 @@ Redis is used **only** for high-frequency message counting and finalize locking.
 
 | Key pattern | Type | Written by | Read by | TTL |
 |-------------|------|------------|---------|-----|
-| `messages:{guildId}:{date}` | Hash | `messageTracker` (`HINCRBY`) | `dailyFinalize` | Deleted after finalize |
-| `messages:boosters:{guildId}:{date}` | Hash | `messageTracker` (`HSET`) | `dailyFinalize` | Deleted after finalize |
+| `messages:{guildId}:{date}` | Hash | `messageTracker` (pipelined `HINCRBY` + `EXPIRE`) | `dailyFinalize` | 72h sliding TTL; deleted after finalize |
+| `messages:boosters:{guildId}:{date}` | Hash | `messageTracker` (pipelined `HSET` + `EXPIRE`) | `dailyFinalize` | 72h sliding TTL; deleted after finalize |
 | `processed:{guildId}:{date}` | String | `dailyFinalize` (`SET NX EX`) | `dailyFinalizeSystem` | 1h processing / 7d completed |
 
 **Hash fields:**
@@ -440,8 +440,9 @@ await redis.del(countKey, boosterKey, usersSetKey);
 ```mermaid
 flowchart LR
     MSG[User sends message] --> MT[messageTracker]
-    MT --> R1["Redis: messages:guild:date"]
-    MT --> R2["Redis: messages:boosters:guild:date"]
+    MT --> Pipe["Redis pipeline: HINCRBY + HSET + EXPIRE"]
+    Pipe --> R1["messages:guild:date"]
+    Pipe --> R2["messages:boosters:guild:date"]
 
     SCHED[6 AM IST finalize] --> FIN[dailyFinalize]
     FIN --> R1

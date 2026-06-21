@@ -21,24 +21,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Medium Severity
 
-### 11. Message tracker: two sequential Redis calls per message
-
-**Description:** Each message awaits `redis.hincrby` then `redis.hset` separately.
-
-**Severity:** Medium
-
-**Why it matters:** Doubles REST latency for the hottest code path. At 50 msg/s this is ~100 Redis requests/s.
-
-**Files involved:**
-- `systems/messageTracker.js`
-
-**Suggested fix:**
-- Use a pipeline: `[hincrby, hset]` in one round trip.
-- Or use `HINCRBY` for count only and infer booster status at finalize time via Discord API / cached role set (if accuracy allows).
-- Set TTL on keys at first write (`EXPIRE` 48h) to prevent unbounded key growth if finalize fails.
-
----
-
 ### 12. Reputation system: multiple DB queries per thank message
 
 **Description:** `addReputation()` calls `RepBan.findOne`, then `getRepRecord()` (`findOne` + possible `create`), then `save()`. `ensureTierRoleAndCheckAdded()` calls `RepBan.findOne` again and `getRepRecord()` again, plus `members.fetch`.
@@ -439,10 +421,9 @@ taskSchema.index({ team: 1 });
 
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
-| 1 | #11 — Redis pipeline in messageTracker | Low | High |
-| 2 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
-| 3 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 4 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 1 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
+| 2 | #14 — Missing indexes | Low | Medium (grows over time) |
+| 3 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
@@ -459,6 +440,7 @@ taskSchema.index({ team: 1 });
 - **Audit, moderation-logs, and moderator-logs commands** paginate at DB level with `skip/limit/.lean()` and compound indexes on ModLog.
 - **Moderation log moderator tags** are denormalized at write (`moderatorTag` on ModLog/Warning); read commands use stored tags with a batched Discord fallback only for legacy rows missing the field (`utils/fetchModeratorTags.js`).
 - **Message counting** offloads hot path to Redis instead of Mongo — correct architecture choice.
+- **Message tracker** batches `HINCRBY`, `HSET`, and key `EXPIRE` in a single Redis pipeline per message (`systems/messageTracker.js`).
 - **Permission checks** in `systems/commands.js` use role cache (`roles.cache`) — no extra API calls.
 - **Sticky system** uses an in-memory enabled-channel cache loaded on startup, refreshed on CRUD commands, with debounced `lastMessageId` persistence on automatic reposts — no Mongo query per message.
 

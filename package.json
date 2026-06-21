@@ -11,7 +11,8 @@
     "verify:poll-votes": "node scripts/verify-poll-votes.js",
     "verify:sequential-ids": "node scripts/verify-sequential-ids.js",
     "verify:finalize": "node scripts/verify-finalize-redis.js",
-    "verify:message-router": "node scripts/verify-message-router.js"
+    "verify:message-router": "node scripts/verify-message-router.js",
+    "verify:message-tracker": "node scripts/verify-message-tracker.js"
   },
   "keywords": [],
   "author": "Myz",

@@ -117,15 +117,20 @@ const boosterKey = `messages:boosters:${guildId}:${date}`; // Hash: userId → "
 
 pipeline.hincrby(countKey, userId, 1);
 pipeline.hset(boosterKey, userId, isBooster ? "true" : "false");
+pipeline.expire(countKey, MESSAGE_KEY_TTL_SEC);   // 72h sliding TTL
+pipeline.expire(boosterKey, MESSAGE_KEY_TTL_SEC);
 ```
 
 - Date format: `YYYY-MM-DD` UTC (`toISOString().split("T")[0]`)
 - Booster detection: checks `BOOSTER_ROLE_ID` on message author's roles
-- Two Redis ops per message via pipeline
+- Four Redis commands per message via a single pipeline (`HINCRBY`, `HSET`, `EXPIRE` × 2) — one network round trip
+- Key TTL: 72 hours (refreshed on each message); keys are also deleted after daily finalize
 
 **Dependencies:** `redis.js`, `BOOSTER_ROLE_ID`
 
 **Downstream:** Data consumed by `utils/dailyFinalize.js` at 6 AM IST
+
+**Verification:** `npm run verify:message-tracker`
 
 ---
 
