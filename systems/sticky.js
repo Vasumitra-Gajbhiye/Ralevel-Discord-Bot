@@ -75,49 +75,51 @@ function stickySystem(client) {
     });
   });
 
-  client.on("messageCreate", async (message) => {
-    if (!message.guild || message.author.bot) return;
+  async function handleStickyMessage(message) {
+    try {
+      const sticky = client.stickies.get(message.channel.id);
+      if (!sticky) return;
 
-    const sticky = client.stickies.get(message.channel.id);
-    if (!sticky) return;
+      const lineThreshold =
+        Number.isInteger(sticky.lineThreshold) && sticky.lineThreshold > 0
+          ? sticky.lineThreshold
+          : DEFAULT_LINE_THRESHOLD;
 
-    const lineThreshold =
-      Number.isInteger(sticky.lineThreshold) && sticky.lineThreshold > 0
-        ? sticky.lineThreshold
-        : DEFAULT_LINE_THRESHOLD;
+      if (message.id === sticky.lastMessageId) return;
 
-    if (message.id === sticky.lastMessageId) return;
+      let state = stickyState.get(message.channel.id);
+      if (!state) {
+        state = { lineCount: 0 };
+        stickyState.set(message.channel.id, state);
+      }
 
-    let state = stickyState.get(message.channel.id);
-    if (!state) {
-      state = { lineCount: 0 };
-      stickyState.set(message.channel.id, state);
+      const linesAdded = message.content?.split("\n").length || 1;
+      state.lineCount += linesAdded;
+
+      if (state.lineCount < lineThreshold) return;
+
+      state.lineCount = 0;
+
+      if (sticky.lastMessageId) {
+        try {
+          await message.channel.messages.delete(sticky.lastMessageId);
+        } catch {}
+      }
+
+      const formatted = `__**Stickied Message:**__\n\n${sticky.content}`;
+
+      const sent = await message.channel.send({
+        content: formatted,
+        allowedMentions: { parse: [] },
+      });
+
+      sticky.lastMessageId = sent.id;
+      client.stickies.set(message.channel.id, sticky);
+      queueLastMessageIdFlush(message.channel.id, sent.id);
+    } catch (err) {
+      console.error("[Sticky] Message Handler Error:", err);
     }
-
-    const linesAdded = message.content?.split("\n").length || 1;
-    state.lineCount += linesAdded;
-
-    if (state.lineCount < lineThreshold) return;
-
-    state.lineCount = 0;
-
-    if (sticky.lastMessageId) {
-      try {
-        await message.channel.messages.delete(sticky.lastMessageId);
-      } catch {}
-    }
-
-    const formatted = `__**Stickied Message:**__\n\n${sticky.content}`;
-
-    const sent = await message.channel.send({
-      content: formatted,
-      allowedMentions: { parse: [] },
-    });
-
-    sticky.lastMessageId = sent.id;
-    client.stickies.set(message.channel.id, sticky);
-    queueLastMessageIdFlush(message.channel.id, sent.id);
-  });
+  }
 
   const flushOnExit = () => {
     if (flushTimer) {
@@ -131,6 +133,8 @@ function stickySystem(client) {
 
   process.once("SIGINT", flushOnExit);
   process.once("SIGTERM", flushOnExit);
+
+  return handleStickyMessage;
 }
 
 module.exports = stickySystem;

@@ -5,7 +5,7 @@
 
 const Reputation = require("../models/reputation.js");
 const RepBan = require("../models/repban.js");
-const { PermissionsBitField, Events } = require("discord.js");
+const { PermissionsBitField } = require("discord.js");
 
 // Words
 const THANK_WORDS = [
@@ -80,10 +80,6 @@ const WELCOME_WORDS = [
   "nw",
   "nws",
 ];
-
-// Disabled areas
-const DISABLED_CHANNELS = process.env.DISABLED_CHANNELS;
-const DISABLED_CATEGORIES = process.env.DISABLED_CATEGORIES;
 
 // Tier roles
 const ROLE_BEGINNER = process.env.ROLE_BEGINNER_ROLE_ID;
@@ -192,24 +188,13 @@ async function ensureTierRoleAndCheckAdded(guild, member, announceChannel) {
 }
 
 //---------------------------------------------
-// MAIN EXPORT — attaches event listeners
+// MAIN EXPORT — returns message handler
 //---------------------------------------------
 module.exports = function reputationSystem(client) {
   const processedMessageIds = new Set();
 
-  client.on(Events.MessageCreate, async (message) => {
+  async function handleReputationMessage(message) {
     try {
-      if (!message.guild) return;
-      if (message.author.bot) return;
-
-      // Disable checks
-      if (DISABLED_CHANNELS.includes(message.channel.id)) return;
-      if (
-        message.channel.parentId &&
-        DISABLED_CATEGORIES.includes(message.channel.parentId)
-      )
-        return;
-
       const content = message.content?.toLowerCase() || "";
       if (processedMessageIds.has(message.id)) return;
 
@@ -283,7 +268,8 @@ module.exports = function reputationSystem(client) {
     } catch (err) {
       console.error("[Reputation] Message Handler Error:", err);
     }
-  });
+  }
 
   console.log("✅ Reputation system loaded");
+  return handleReputationMessage;
 };

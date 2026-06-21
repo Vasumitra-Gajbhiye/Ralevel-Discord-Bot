@@ -10,9 +10,8 @@ Senior-engineer review of the codebase (~12k LOC, 124 JS files). Focus: bottlene
 
 The bot is a single-process Discord application with several hot paths that do not scale well under load:
 
-1. **Every guild message** can trigger up to three `messageCreate` handlers, each doing I/O (Redis and/or MongoDB).
-2. **Reputation** uses read-modify-write patterns without atomic updates or caching.
-3. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
+1. **Reputation** uses read-modify-write patterns without atomic updates or caching.
+2. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
 Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and adding missing indexes.
 
@@ -21,26 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 ---
 
 ## Medium Severity
-
-### 10. Three separate `messageCreate` handlers per message
-
-**Description:** `systems/messageTracker.js`, `systems/reputation.js`, and `systems/sticky.js` each register independent `messageCreate` listeners.
-
-**Severity:** Medium
-
-**Why it matters:** Every handler adds async work to the event loop for every message. Reputation and tracker both run on high-traffic channels; combined latency stacks.
-
-**Files involved:**
-- `index.js`
-- `systems/messageTracker.js`
-- `systems/reputation.js`
-- `systems/sticky.js`
-
-**Suggested fix:**
-- Consolidate into a single `messageCreate` router that early-returns and dispatches to sub-modules.
-- Share cheap guards (bot check, guild check, disabled channel list) once.
-
----
 
 ### 11. Message tracker: two sequential Redis calls per message
 
@@ -469,6 +448,7 @@ taskSchema.index({ team: 1 });
 
 ## What's Already Done Well
 
+- **Single messageCreate router** in `systems/messageRouter.js` — one listener with shared bot/guild guards dispatches to tracker, sticky, and reputation handlers in parallel.
 - **Rank updates during finalize** process only rank-changed users with bounded concurrency (5 parallel Discord jobs per batch) in `systems/rankSystem.js`.
 - **Daily finalize MongoDB writes** use `bulkWrite` — good batch pattern (`utils/dailyFinalize.js`).
 - **Daily finalize Redis reads** use aggregate guild+date hashes (2 parallel `HGETALL` calls) with pipelined legacy fallback for in-flight per-user keys (`utils/dailyFinalize.js`, `systems/messageTracker.js`).

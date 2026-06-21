@@ -8,7 +8,8 @@ const stickySystem = require("./systems/sticky");
 const qotdSystem = require("./systems/qotd");
 const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
-const messageTracker = require("./systems/messageTracker");
+const { handleMessageTracker } = require("./systems/messageTracker");
+const messageRouter = require("./systems/messageRouter");
 const dailyFinalizeSystem = require("./systems/dailyFinalizeSystem");
 const pollSystem = require("./systems/polls");
 
@@ -26,13 +27,17 @@ const client = new Client({
 });
 
 loadCommands(client); // loads slash commands
-reputationSystem(client); // attach message handler
+const handleReputation = reputationSystem(client);
 certificateSystem(client); // attach cert button logic
-stickySystem(client);
+const handleSticky = stickySystem(client);
 qotdSystem(client);
 welcomeSystem(client);
 confessionsSystem(client);
-messageTracker(client);
+messageRouter(client, {
+  handleMessageTracker,
+  handleSticky,
+  handleReputation,
+});
 dailyFinalizeSystem(client);
 pollSystem(client);
 

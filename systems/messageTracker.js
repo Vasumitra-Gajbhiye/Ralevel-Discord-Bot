@@ -9,31 +9,28 @@ function getTodayDate() {
   return now.toISOString().split("T")[0];
 }
 
-module.exports = (client) => {
-  client.on("messageCreate", async (message) => {
-    try {
-      if (message.author.bot) return;
-      if (!message.guild) return;
+async function handleMessageTracker(message) {
+  try {
+    const userId = message.author.id;
+    const guildId = message.guild.id;
+    const date = getTodayDate();
 
-      const userId = message.author.id;
-      const guildId = message.guild.id;
-      const date = getTodayDate();
+    const countKey = `messages:${guildId}:${date}`;
+    const boosterKey = `messages:boosters:${guildId}:${date}`;
 
-      const countKey = `messages:${guildId}:${date}`;
-      const boosterKey = `messages:boosters:${guildId}:${date}`;
+    const isBooster =
+      message.member?.roles?.cache?.has(BOOSTER_ROLE_ID) || false;
 
-      const isBooster =
-        message.member?.roles?.cache?.has(BOOSTER_ROLE_ID) || false;
+    const pipeline = redis.pipeline();
+    pipeline.hincrby(countKey, userId, 1);
+    pipeline.hset(boosterKey, userId, isBooster ? "true" : "false");
+    await pipeline.exec();
 
-      const pipeline = redis.pipeline();
-      pipeline.hincrby(countKey, userId, 1);
-      pipeline.hset(boosterKey, userId, isBooster ? "true" : "false");
-      await pipeline.exec();
+    // Debug
+    // console.log(`+1 → ${userId} | booster: ${isBooster}`);
+  } catch (err) {
+    console.error("Redis error:", err);
+  }
+}
 
-      // Debug
-      // console.log(`+1 → ${userId} | booster: ${isBooster}`);
-    } catch (err) {
-      console.error("Redis error:", err);
-    }
-  });
-};
+module.exports = { handleMessageTracker };
