@@ -110,57 +110,74 @@ function hasWholeWord(str, list) {
   return tokens.some((t) => list.includes(t));
 }
 
+function getTierByRep(rep) {
+  return TIERS.find((t) => rep >= t.amount) || null;
+}
+
 //---------------------------------------------
 // DB Helpers
 //---------------------------------------------
-async function getRepRecord(userId) {
-  return Reputation.findOneAndUpdate(
+async function incrementReputation(userId) {
+  if (await RepBan.exists({ userId })) return null;
+
+  const doc = await Reputation.findOneAndUpdate(
     { userId },
-    { $setOnInsert: { userId, rep: 0 } },
+    { $inc: { rep: 1 }, $setOnInsert: { userId } },
     { upsert: true, new: true }
   );
+  return doc.rep;
 }
 
-async function addReputation(userId) {
-  if (await RepBan.findOne({ userId })) return null;
-  const doc = await getRepRecord(userId);
-  doc.rep += 1;
-  await doc.save();
-  return doc.rep;
+async function incrementReputationBatch(userIds) {
+  const uniqueIds = [...new Set(userIds.filter(Boolean))];
+  if (!uniqueIds.length) return [];
+
+  const bans = await RepBan.find({ userId: { $in: uniqueIds } })
+    .select("userId")
+    .lean();
+  const bannedSet = new Set(bans.map((b) => b.userId));
+  const eligible = uniqueIds.filter((id) => !bannedSet.has(id));
+  if (!eligible.length) return [];
+
+  await Reputation.bulkWrite(
+    eligible.map((userId) => ({
+      updateOne: {
+        filter: { userId },
+        update: { $inc: { rep: 1 }, $setOnInsert: { userId } },
+        upsert: true,
+      },
+    }))
+  );
+
+  const docs = await Reputation.find({ userId: { $in: eligible } })
+    .select("userId rep")
+    .lean();
+
+  return docs.map((d) => ({ userId: d.userId, rep: d.rep }));
 }
 
 //---------------------------------------------
 // Tier Sync Logic
 //---------------------------------------------
-async function ensureTierRoleAndCheckAdded(guild, member, announceChannel) {
+async function ensureTierRoleAndCheckAdded(guild, member, announceChannel, rep) {
   try {
-    member = await guild.members.fetch(member.id).catch(() => member);
+    if (member?.partial) {
+      member = await guild.members.fetch(member.id).catch(() => member);
+    }
     if (!member) return false;
-
-    if (await RepBan.findOne({ userId: member.id })) return false;
 
     const me = guild.members.me;
     if (!me.permissions.has(PermissionsBitField.Flags.ManageRoles))
       return false;
 
-    const repDoc = await getRepRecord(member.id);
-    const rep = repDoc.rep ?? 0;
-
-    const eligible = TIERS.find((t) => rep >= t.amount);
+    const eligible = getTierByRep(rep);
 
     if (!eligible) {
       await member.roles.remove(ALL_TIER_IDS).catch(() => {});
       return false;
     }
 
-    function getTierByRep(rep) {
-      return TIERS.find((t) => rep >= t.amount) || null;
-    }
-
-    // NEW: get previous tier from rep - 1
     const previousTier = getTierByRep(rep - 1);
-
-    // Determine if new tier is different
     const hadBefore = previousTier && previousTier.role === eligible.role;
 
     const toRemove = ALL_TIER_IDS.filter((r) => r !== eligible.role);
@@ -190,7 +207,7 @@ async function ensureTierRoleAndCheckAdded(guild, member, announceChannel) {
 //---------------------------------------------
 // MAIN EXPORT — returns message handler
 //---------------------------------------------
-module.exports = function reputationSystem(client) {
+function reputationSystem(client) {
   const processedMessageIds = new Set();
 
   async function handleReputationMessage(message) {
@@ -205,7 +222,7 @@ module.exports = function reputationSystem(client) {
         if (!target) return;
         if (target.id === message.author.id) return;
 
-        const newRep = await addReputation(target.id);
+        const newRep = await incrementReputation(target.id);
         if (newRep === null) return;
 
         processedMessageIds.add(message.id);
@@ -213,6 +230,7 @@ module.exports = function reputationSystem(client) {
           message.guild,
           target,
           message.channel,
+          newRep,
         );
 
         return message.channel.send(`+1 Rep → ${target} (**${newRep}**)`);
@@ -224,34 +242,44 @@ module.exports = function reputationSystem(client) {
         hasWholeWord(content, THANK_WORDS) &&
         message.mentions.members.size
       ) {
-        let processed = new Set();
-        let awarded = false;
-
+        const membersById = new Map();
         for (const m of message.mentions.members.values()) {
           if (!m || m.id === message.author.id) continue;
-          if (processed.has(m.id)) continue;
-
-          const newRep = await addReputation(m.id);
-          if (newRep === null) continue;
-
-          processed.add(m.id);
-          awarded = true;
-
-          await ensureTierRoleAndCheckAdded(message.guild, m, message.channel);
-          await message.channel.send(`+1 Rep → ${m} (**${newRep}**)`);
+          membersById.set(m.id, m);
         }
 
-        if (awarded) processedMessageIds.add(message.id);
-        return;
+        if (!membersById.size) return;
+
+        const awards = await incrementReputationBatch([...membersById.keys()]);
+        if (!awards.length) return;
+
+        processedMessageIds.add(message.id);
+
+        await Promise.all(
+          awards.map(({ userId, rep }) =>
+            ensureTierRoleAndCheckAdded(
+              message.guild,
+              membersById.get(userId),
+              message.channel,
+              rep,
+            ),
+          ),
+        );
+
+        const parts = awards.map(({ userId, rep }) => {
+          const member = membersById.get(userId);
+          return `${member} (**${rep}**)`;
+        });
+
+        return message.channel.send(`+1 Rep → ${parts.join(", ")}`);
       }
 
       // ---------- CASE 3: yw reply to a thank ----------
       if (message.reference && hasWholeWord(content, WELCOME_WORDS)) {
         const replied = await message.fetchReference().catch(() => null);
         if (!replied) return;
-        // if (!hasWholeWord(replied.content?.toLowerCase(), THANK_WORDS)) return;
 
-        const newRep = await addReputation(message.author.id);
+        const newRep = await incrementReputation(message.author.id);
         if (newRep === null) return;
 
         processedMessageIds.add(message.id);
@@ -260,6 +288,7 @@ module.exports = function reputationSystem(client) {
           message.guild,
           message.member,
           message.channel,
+          newRep,
         );
         return message.channel.send(
           `+1 Rep → ${message.author} (**${newRep}**)`,
@@ -272,4 +301,9 @@ module.exports = function reputationSystem(client) {
 
   console.log("✅ Reputation system loaded");
   return handleReputationMessage;
-};
+}
+
+module.exports = reputationSystem;
+module.exports.incrementReputation = incrementReputation;
+module.exports.incrementReputationBatch = incrementReputationBatch;
+module.exports.ensureTierRoleAndCheckAdded = ensureTierRoleAndCheckAdded;

@@ -78,7 +78,7 @@ Tracks message activity and XP per Discord user.
 | `rep` | Number | Reputation points (default 0) |
 | `createdAt` / `updatedAt` | Date | Auto timestamps |
 
-**Written by:** `systems/reputation.js` (automatic), rep commands (`/add-rep`, `/set-rep`, etc.)
+**Written by:** `systems/reputation.js` (automatic via atomic `$inc` / `bulkWrite`), rep commands (`/add-rep`, `/set-rep`, etc.)
 
 **Read by:** Rep commands, `/leaderboard`
 
@@ -458,7 +458,7 @@ flowchart LR
 flowchart LR
     MSG[Thank-you message] --> REP[reputation system]
     REP --> CHECK{RepBan?}
-    CHECK -->|No| MONGO["MongoDB: reputations rep++"]
+    CHECK -->|No| MONGO["MongoDB: atomic rep $inc or bulkWrite"]
     MONGO --> TIER[Assign tier role if threshold crossed]
 ```
 

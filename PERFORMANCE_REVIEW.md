@@ -10,8 +10,7 @@ Senior-engineer review of the codebase (~12k LOC, 124 JS files). Focus: bottlene
 
 The bot is a single-process Discord application with several hot paths that do not scale well under load:
 
-1. **Reputation** uses read-modify-write patterns without atomic updates or caching.
-2. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
+1. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
 Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and adding missing indexes.
 
@@ -20,27 +19,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 ---
 
 ## Medium Severity
-
-### 12. Reputation system: multiple DB queries per thank message
-
-**Description:** `addReputation()` calls `RepBan.findOne`, then `getRepRecord()` (`findOne` + possible `create`), then `save()`. `ensureTierRoleAndCheckAdded()` calls `RepBan.findOne` again and `getRepRecord()` again, plus `members.fetch`.
-
-**Severity:** Medium
-
-**Why it matters:** A single "thanks @user" message with 3 mentions can trigger 15+ DB queries and 3+ Discord API calls, plus 3 channel messages.
-
-**Files involved:**
-- `systems/reputation.js`
-- `models/reputation.js`
-- `models/repban.js`
-
-**Suggested fix:**
-- Replace find+create+save with `findOneAndUpdate({ userId }, { $inc: { rep: 1 } }, { upsert: true, new: true })`.
-- Check rep ban once; pass result to tier sync.
-- Batch mention rep awards: one `$inc` per user, one combined channel message.
-- Cache rep-ban list in memory with TTL or Redis `SISMEMBER`.
-
----
 
 ### 13. `processedMessageIds` Set grows without bound
 
@@ -421,7 +399,7 @@ taskSchema.index({ team: 1 });
 
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
-| 1 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
+| 1 | #13 — Reputation Set leak | Medium | Medium |
 | 2 | #14 — Missing indexes | Low | Medium (grows over time) |
 | 3 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
@@ -443,6 +421,7 @@ taskSchema.index({ team: 1 });
 - **Message tracker** batches `HINCRBY`, `HSET`, and key `EXPIRE` in a single Redis pipeline per message (`systems/messageTracker.js`).
 - **Permission checks** in `systems/commands.js` use role cache (`roles.cache`) — no extra API calls.
 - **Sticky system** uses an in-memory enabled-channel cache loaded on startup, refreshed on CRUD commands, with debounced `lastMessageId` persistence on automatic reposts — no Mongo query per message.
+- **Automatic reputation awards** use atomic `$inc` / `bulkWrite` with batched ban checks for mention thanks; tier sync reuses the awarded rep total (no duplicate DB reads). Verified via `npm run verify:reputation`.
 
 ---
 
