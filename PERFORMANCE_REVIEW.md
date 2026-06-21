@@ -20,30 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Medium Severity
 
-### 15. `my-progress` loads entire team task collection
-
-**Description:** `commands/task/my-progress.js` fetches all tasks for a team with `Task.find({ team })`, then filters in JavaScript.
-
-**Severity:** Medium
-
-**Why it matters:** As task history grows, every progress check transfers and parses all documents. Arrays like `assignedTo` and `finishedBy` make documents large.
-
-**Files involved:**
-- `commands/task/my-progress.js`
-- `models/task.js`
-
-**Suggested fix:**
-- Use targeted aggregation:
-  ```js
-  Task.countDocuments({ team });
-  Task.countDocuments({ team, assignedTo: userId });
-  Task.countDocuments({ team, finishedBy: userId });
-  Task.countDocuments({ team, selected: userId });
-  ```
-- Consider multikey indexes on array fields if count queries replace full loads.
-
----
-
 ### 16. Poll sweeper queries MongoDB every 60 seconds
 
 **Description:** `systems/polls.js` runs `Poll.find({ status: 'active', deadline: { $lte: now } })` on a 1-minute interval forever.
@@ -285,7 +261,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 **Description:** Several files are 2× larger than necessary due to commented legacy blocks:
 - `commands/moderation/audit.js` (~176 lines commented)
-- `commands/task/my-progress.js`, `commands/task/finished-tsk.js`, `commands/task/tasks.js`
+- `commands/task/finished-tsk.js`, `commands/task/tasks.js`
 - `systems/commands.js` (old loader)
 
 **Severity:** Low
@@ -372,7 +348,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 - **Poll votes** are stored in a separate `PollVote` collection with per-user atomic `findOneAndUpdate` operations (`utils/applyPollVote.js`, `models/pollVote.js`).
 - **Sequential public IDs** (poll, confession, task) use an atomic MongoDB counter collection with `$inc` and startup `$max` seeding (`models/counter.js`, `utils/getNextSequenceId.js`, `database.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
-- **Common query indexes** on `reputations.rep`, `users.xp`, and `tasks.team` support leaderboard sorts and team task lookups. Verified via `npm run verify:database-indexes`.
+- **Common query indexes** on `reputations.rep`, `users.xp`, and `tasks.team` support leaderboard sorts and team task lookups. Task compound indexes on `{ team, assignedTo }`, `{ team, finishedBy }`, and `{ team, selected }` support `/my-progress` count queries. Verified via `npm run verify:database-indexes` and `npm run verify:my-progress`.
 - **Audit, moderation-logs, and moderator-logs commands** paginate at DB level with `skip/limit/.lean()` and compound indexes on ModLog.
 - **Moderation log moderator tags** are denormalized at write (`moderatorTag` on ModLog/Warning); read commands use stored tags with a batched Discord fallback only for legacy rows missing the field (`utils/fetchModeratorTags.js`).
 - **Message counting** offloads hot path to Redis instead of Mongo — correct architecture choice.

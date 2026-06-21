@@ -114,13 +114,43 @@ async function verifyIndexesExist() {
     hasIndex(taskIndexes, { team: 1 }),
     "tasks collection missing { team: 1 } index",
   );
+  assert(
+    hasIndex(taskIndexes, { team: 1, assignedTo: 1 }),
+    "tasks collection missing { team: 1, assignedTo: 1 } index",
+  );
+  assert(
+    hasIndex(taskIndexes, { team: 1, finishedBy: 1 }),
+    "tasks collection missing { team: 1, finishedBy: 1 } index",
+  );
+  assert(
+    hasIndex(taskIndexes, { team: 1, selected: 1 }),
+    "tasks collection missing { team: 1, selected: 1 } index",
+  );
 }
 
 async function verifyQueryPlans() {
-  const [repExplain, userExplain, taskExplain] = await Promise.all([
+  const testUserId = "test-user";
+
+  const [
+    repExplain,
+    userExplain,
+    taskExplain,
+    taskAssignedExplain,
+    taskFinishedExplain,
+    taskSelectedExplain,
+  ] = await Promise.all([
     Reputation.find().sort({ rep: -1 }).limit(10).explain("executionStats"),
     User.find().sort({ xp: -1 }).limit(10).explain("executionStats"),
     Task.find({ team: "dev" }).limit(1).explain("executionStats"),
+    Task.find({ team: "dev", assignedTo: testUserId })
+      .limit(1)
+      .explain("executionStats"),
+    Task.find({ team: "dev", finishedBy: testUserId })
+      .limit(1)
+      .explain("executionStats"),
+    Task.find({ team: "graphic", selected: testUserId })
+      .limit(1)
+      .explain("executionStats"),
   ]);
 
   assert(
@@ -134,6 +164,18 @@ async function verifyQueryPlans() {
   assert(
     planUsesIndex(taskExplain, { team: 1 }),
     "Task.find({ team }) does not use { team: 1 } index",
+  );
+  assert(
+    planUsesIndex(taskAssignedExplain, { team: 1, assignedTo: 1 }),
+    "Task progress assignedTo query does not use { team: 1, assignedTo: 1 } index",
+  );
+  assert(
+    planUsesIndex(taskFinishedExplain, { team: 1, finishedBy: 1 }),
+    "Task progress finishedBy query does not use { team: 1, finishedBy: 1 } index",
+  );
+  assert(
+    planUsesIndex(taskSelectedExplain, { team: 1, selected: 1 }),
+    "Task progress selected query does not use { team: 1, selected: 1 } index",
   );
 }
 

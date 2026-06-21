@@ -14,7 +14,8 @@
     "verify:message-router": "node scripts/verify-message-router.js",
     "verify:message-tracker": "node scripts/verify-message-tracker.js",
     "verify:reputation": "node scripts/verify-reputation-system.js",
-    "verify:database-indexes": "node scripts/verify-database-indexes.js"
+    "verify:database-indexes": "node scripts/verify-database-indexes.js",
+    "verify:my-progress": "node scripts/verify-my-progress.js"
   },
   "keywords": [],
   "author": "Myz",

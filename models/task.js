@@ -48,5 +48,8 @@ const taskSchema = new mongoose.Schema({
 });
 
 taskSchema.index({ team: 1 });
+taskSchema.index({ team: 1, assignedTo: 1 });
+taskSchema.index({ team: 1, finishedBy: 1 });
+taskSchema.index({ team: 1, selected: 1 });
 
 module.exports = mongoose.model("Task", taskSchema);

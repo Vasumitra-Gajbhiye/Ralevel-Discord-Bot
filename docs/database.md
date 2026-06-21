@@ -375,9 +375,11 @@ Staff notes on users (separate from warnings).
 | `deadline` | String | Deadline text |
 | `createdAt` | Date | Creation time |
 
-**Indexes:** `{ team: 1 }`
+**Indexes:** `{ team: 1 }`, `{ team: 1, assignedTo: 1 }`, `{ team: 1, finishedBy: 1 }`, `{ team: 1, selected: 1 }` — compound indexes support `/my-progress` count queries without loading full task documents.
 
 **Written by:** Task commands (`/add-task`, `/claim`, etc.)
+
+**Read by:** `/my-progress` (count-only queries), task display commands
 
 ---
 
