@@ -53,6 +53,7 @@ module.exports = async function logModAction({
     const doc = await ModLog.create({
       userId: userId,
       moderatorId: moderatorId,
+      moderatorTag: moderatorTag,
       action: action,
       targetTag: targetTag,
       reason: reason || "No reason provided",

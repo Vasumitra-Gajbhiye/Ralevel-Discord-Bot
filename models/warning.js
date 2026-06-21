@@ -19,6 +19,11 @@ const WarningSchema = new mongoose.Schema({
     required: true,
   },
 
+  moderatorTag: {
+    type: String,
+    default: null,
+  },
+
   reason: {
     type: String,
     default: "No reason provided",

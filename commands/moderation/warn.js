@@ -32,6 +32,7 @@ module.exports = {
       userId: user.id,
       userTag: user.tag,
       moderatorId: interaction.user.id,
+      moderatorTag: interaction.user.tag,
       reason,
       actionId,
     });

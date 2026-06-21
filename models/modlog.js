@@ -13,6 +13,11 @@ const ModLogSchema = new mongoose.Schema({
     required: true,
   },
 
+  moderatorTag: {
+    type: String,
+    default: null,
+  },
+
   action: {
     type: String,
     required: true, // "warn", "ban", "role-add", etc

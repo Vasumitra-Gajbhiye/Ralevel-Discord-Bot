@@ -3,8 +3,8 @@ const {
   EmbedBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
-const ModLog = require("../../models/modlog.js");
 const Warning = require("../../models/warning.js");
+const fetchModeratorTags = require("../../utils/fetchModeratorTags");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,10 +21,9 @@ module.exports = {
   async execute(interaction) {
     const user = interaction.options.getUser("user");
 
-    // Fetch only WARN entries for that user
-    const logs = await Warning.find({ userId: user.id, active: true }).sort({
-      timestamp: -1,
-    });
+    const logs = await Warning.find({ userId: user.id, active: true })
+      .sort({ timestamp: -1 })
+      .lean();
 
     if (logs.length === 0) {
       return interaction.reply({
@@ -33,20 +32,24 @@ module.exports = {
       });
     }
 
-    // Build embed
+    const missingModeratorIds = logs
+      .filter((log) => !log.moderatorTag)
+      .map((log) => log.moderatorId);
+
+    const moderatorTags = await fetchModeratorTags(
+      interaction.client,
+      missingModeratorIds,
+    );
+
     const embed = new EmbedBuilder()
       .setTitle(`⚠️ Warnings for ${user.tag}`)
       .setColor("Orange");
 
     for (const log of logs) {
-      // Fetch moderator name
-      let moderatorName = "Unknown Moderator";
-      try {
-        const modUser = await interaction.client.users.fetch(log.moderatorId);
-        moderatorName = modUser?.tag || log.moderatorId;
-      } catch {
-        moderatorName = log.moderatorId; // fallback
-      }
+      const moderatorName =
+        log.moderatorTag ||
+        moderatorTags.get(log.moderatorId) ||
+        "Unknown Moderator";
 
       embed.addFields({
         name: `🚨 Warning ID: ${log.actionId}`,

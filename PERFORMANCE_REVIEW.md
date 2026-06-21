@@ -12,32 +12,13 @@ The bot is a single-process Discord application with several hot paths that do n
 
 1. **Every guild message** can trigger up to three `messageCreate` handlers, each doing I/O (Redis and/or MongoDB).
 2. **Reputation and poll voting** use read-modify-write patterns without atomic updates or caching.
-3. **Moderation log commands** still perform Discord user fetches for moderator tags on read (see issue #6).
-4. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
+3. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
 Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and adding missing indexes.
 
 ---
 
 ## Critical & High Severity
-
-### 6. N+1 Discord API calls in modlogs and warnings
-
-**Description:** `modlogs.js` resolves moderator tags via `client.users.fetch` on each page (batched with `Promise.all`, but still hits Discord on read). `warnings.js` fetches each moderator sequentially in a loop.
-
-**Severity:** High
-
-**Why it matters:** 100 logs = 100 sequential Discord REST calls. Discord caches help only after the first fetch; cold fetches dominate latency.
-
-**Files involved:**
-- `commands/moderation/modlogs.js`
-- `commands/moderation/warnings.js`
-
-**Suggested fix:**
-- Collect unique `moderatorId` values, then `Promise.all(ids.map(id => client.users.fetch(id).catch(() => null)))` into a Map.
-- Better long-term: store `moderatorTag` at write time in `utils/logModAction.js` (already available) and stop fetching on read.
-
----
 
 ### 7. Poll votes use non-atomic read-modify-write
 
@@ -526,7 +507,7 @@ taskSchema.index({ team: 1 });
 | Leaderboard top 10 | Mongo per command | Redis JSON | 60–300s |
 | Welcome background | Disk per join | Module-level Image cache | Permanent |
 | Task display message ID | 50-msg channel scan | Stored ID in Mongo/Redis | On missing message |
-| Mod log moderator tags | Discord fetch per log | Denormalize at write | N/A |
+| Mod log moderator tags | Denormalized at write (`moderatorTag` on ModLog/Warning) | N/A — already implemented | N/A |
 | Guild member for tier sync | `members.fetch` each time | Use `message.member` when available | N/A |
 
 ---
@@ -536,12 +517,11 @@ taskSchema.index({ team: 1 });
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
 | 1 | #9 — Finalize lock key mismatch | Low | High (correctness) |
-| 2 | #6 — Modlog N+1 Discord fetches on read | Medium | High |
-| 3 | #11 — Redis pipeline in messageTracker | Low | High |
-| 4 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
-| 5 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 6 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
-| 7 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 2 | #11 — Redis pipeline in messageTracker | Low | High |
+| 3 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
+| 4 | #14 — Missing indexes | Low | Medium (grows over time) |
+| 5 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
+| 6 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
@@ -553,6 +533,7 @@ taskSchema.index({ team: 1 });
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Audit, moderation-logs, and moderator-logs commands** paginate at DB level with `skip/limit/.lean()` and compound indexes on ModLog.
+- **Moderation log moderator tags** are denormalized at write (`moderatorTag` on ModLog/Warning); read commands use stored tags with a batched Discord fallback only for legacy rows missing the field (`utils/fetchModeratorTags.js`).
 - **Message counting** offloads hot path to Redis instead of Mongo — correct architecture choice.
 - **Permission checks** in `systems/commands.js` use role cache (`roles.cache`) — no extra API calls.
 - **Sticky system** uses an in-memory enabled-channel cache loaded on startup, refreshed on CRUD commands, with debounced `lastMessageId` persistence on automatic reposts — no Mongo query per message.

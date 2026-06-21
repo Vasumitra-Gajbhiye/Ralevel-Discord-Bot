@@ -9,6 +9,7 @@ const {
 
 const ModLog = require("../../models/modlog.js");
 const generateId = require("../../utils/generateId");
+const fetchModeratorTags = require("../../utils/fetchModeratorTags");
 
 const ACTION_EMOJIS = {
   warn: "⚠️",
@@ -34,21 +35,6 @@ function truncateReason(reason) {
   const normalized = (reason || "").replace(/\s+/g, " ").trim();
   if (normalized.length <= 200) return normalized;
   return normalized.slice(0, 197) + "...";
-}
-
-async function fetchModeratorTags(client, moderatorIds) {
-  const uniqueIds = [...new Set(moderatorIds.filter(Boolean))];
-  const entries = await Promise.all(
-    uniqueIds.map(async (id) => {
-      try {
-        const user = await client.users.fetch(id);
-        return [id, user.tag];
-      } catch {
-        return [id, "Unknown Moderator"];
-      }
-    }),
-  );
-  return new Map(entries);
 }
 
 module.exports = {
@@ -77,6 +63,7 @@ module.exports = {
 
     const totalPages = Math.max(1, Math.ceil(totalLogs / PAGE_SIZE));
     const uid = generateId().slice(0, 8);
+    const moderatorTagCache = new Map();
 
     const fetchPage = async (page) => {
       const skip = page * PAGE_SIZE;
@@ -88,10 +75,20 @@ module.exports = {
     };
 
     const buildEmbed = async (page, docs) => {
-      const moderatorTags = await fetchModeratorTags(
-        interaction.client,
-        docs.map((log) => log.moderatorId),
-      );
+      const missingModeratorIds = docs
+        .filter((log) => !log.moderatorTag)
+        .map((log) => log.moderatorId)
+        .filter((id) => id && !moderatorTagCache.has(id));
+
+      if (missingModeratorIds.length > 0) {
+        const fetchedTags = await fetchModeratorTags(
+          interaction.client,
+          missingModeratorIds,
+        );
+        for (const [id, tag] of fetchedTags) {
+          moderatorTagCache.set(id, tag);
+        }
+      }
 
       const embed = new EmbedBuilder()
         .setTitle(`📚 Moderation Logs — ${user.tag}`)
@@ -107,7 +104,9 @@ module.exports = {
 
       const lines = docs.map((log) => {
         const moderatorTag =
-          moderatorTags.get(log.moderatorId) || "Unknown Moderator";
+          log.moderatorTag ||
+          moderatorTagCache.get(log.moderatorId) ||
+          "Unknown Moderator";
         const emoji = ACTION_EMOJIS[log.action] || "📘";
         const reason = truncateReason(log.reason);
 
