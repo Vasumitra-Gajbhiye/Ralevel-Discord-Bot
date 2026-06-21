@@ -18,7 +18,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Daily finalize | `systems/dailyFinalizeSystem.js`, `utils/dailyFinalize.js` | 5 min interval | Redis → MongoDB |
 | Rank system | `systems/rankSystem.js` | Called by finalize | Discord roles |
 | QOTD | `systems/qotd.js`, `utils/qotdHelpers.js` | 5 min interval | MongoDB |
-| Polls | `systems/polls.js`, `utils/applyPollVote.js` | Buttons + 60s sweeper | MongoDB |
+| Polls | `systems/polls.js`, `utils/applyPollVote.js`, `utils/pollSweeper.js` | Buttons + adaptive sweeper | MongoDB |
 | Welcome | `systems/welcome.js` | `guildMemberAdd` | Canvas image |
 | Certificates | `systems/certificates.js` | Buttons/modals | MongoDB |
 | Confessions | `systems/confessions.js` | Buttons/modals | MongoDB |
@@ -31,7 +31,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 |-----|----------|-----------|---------|
 | Daily finalize | 5 min + 10s on startup | ≥ 6:00 AM IST, Redis lock absent | `dailyFinalizeSystem.js` |
 | QOTD reminder | 5 min + 10s on startup | ≥ 6:00 AM IST, not sent today | `qotd.js` |
-| Poll deadline sweeper | 60s + 10s on startup | `deadline <= now` | `polls.js` |
+| Poll deadline sweeper | Adaptive (5 min idle cap) + 10s on startup | `deadline <= now` | `utils/pollSweeper.js` |
 | Sticky `lastMessageId` flush | Debounced 5s | After sticky repost | `sticky.js` |
 | Sticky shutdown flush | `SIGINT` / `SIGTERM` | Process exit | `sticky.js` |
 
@@ -300,7 +300,7 @@ xpGained = isBooster ? messageCount * 2 : messageCount
 
 ## 9. Poll system
 
-**Files:** `systems/polls.js`, `utils/applyPollVote.js`, `utils/getPollVotes.js`, `utils/pollDisplay.js`
+**Files:** `systems/polls.js`, `utils/pollSweeper.js`, `utils/applyPollVote.js`, `utils/getPollVotes.js`, `utils/pollDisplay.js`
 
 **Purpose:** Handle poll vote buttons and automatically close expired polls.
 
@@ -314,14 +314,16 @@ xpGained = isBooster ? messageCount * 2 : messageCount
 **Internal flow — sweeper:**
 
 ```javascript
-// Every 60 seconds
-Poll.find({ status: "active", deadline: { $lte: new Date() } })
-// → closePoll: set status "closed", edit Discord message to results view
+// Adaptive setTimeout chain (no fixed setInterval)
+// Idle cap: 5 minutes when no active deadlines
+// After each sweep: schedule next run at min(msUntilNearestDeadline, 5 min)
+sweepExpiredPolls → close expired polls in parallel (concurrency 5)
+// Lazy close on vote/view; wakePollSweeper() on /poll create with deadline
 ```
 
 **Dependencies:** MongoDB (`Poll`, `PollVote`), `utils/canViewPollBreakdown.js`
 
-**Verification:** `npm run verify:poll-votes`
+**Verification:** `npm run verify:poll-votes`, `npm run verify:poll-sweeper`
 
 ---
 

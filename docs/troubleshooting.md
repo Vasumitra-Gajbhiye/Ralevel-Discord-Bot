@@ -305,7 +305,7 @@ Restart the bot.
 **Fix:**
 
 1. Verify poll has a `deadline` set in MongoDB
-2. Check bot logs for poll sweeper errors (runs every 60 seconds)
+2. Check bot logs for poll sweeper errors (runs on an adaptive schedule, up to 5 min between checks when idle)
 3. Bot needs permission to edit the poll message in the channel
 4. Manually close by editing the poll in MongoDB: `{ status: "closed" }`
 

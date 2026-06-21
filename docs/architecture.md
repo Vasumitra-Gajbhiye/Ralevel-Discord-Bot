@@ -58,7 +58,7 @@ r-alevel bot code/
 │   ├── dailyFinalizeSystem.js
 │   ├── rankSystem.js        # XP rank roles (via finalize)
 │   ├── qotd.js              # QOTD reminder scheduler
-│   ├── polls.js             # Poll buttons + deadline sweeper
+│   ├── polls.js             # Poll vote/view button handlers
 │   ├── welcome.js           # Welcome card on join
 │   ├── certificates.js      # Certificate button/modal flow
 │   └── confessions.js       # Confession approval flow
@@ -91,7 +91,7 @@ flowchart TD
     I --> J[confessionsSystem]
     J --> K[messageRouter - wire MessageCreate]
     K --> L[dailyFinalizeSystem - 5min interval]
-    L --> M[pollSystem - 60s interval]
+    L --> M[pollSystem - adaptive sweeper]
     M --> N[client.login TOKEN]
 ```
 
@@ -272,7 +272,7 @@ No cron library. All scheduling uses `setInterval` / `setTimeout` with IST timez
 |-----|----------|---------|--------|
 | Daily finalize | 5 min + 10s startup | ≥ 6:00 AM IST, no Redis lock | `dailyFinalizeSystem.js` |
 | QOTD reminder | 5 min + 10s startup | ≥ 6:00 AM IST, not sent today | `qotd.js` |
-| Poll sweeper | 60s + 10s startup | `deadline <= now` | `polls.js` |
+| Poll sweeper | Adaptive (5 min idle cap) + 10s startup | `deadline <= now` | `utils/pollSweeper.js` |
 | Sticky flush | Debounced 5s | After sticky repost | `sticky.js` |
 
 ---

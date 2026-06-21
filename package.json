@@ -9,6 +9,7 @@
     "dev": "nodemon index.js",
     "verify:rank": "node scripts/verify-rank-system.js",
     "verify:poll-votes": "node scripts/verify-poll-votes.js",
+    "verify:poll-sweeper": "node scripts/verify-poll-sweeper.js",
     "verify:sequential-ids": "node scripts/verify-sequential-ids.js",
     "verify:finalize": "node scripts/verify-finalize-redis.js",
     "verify:message-router": "node scripts/verify-message-router.js",

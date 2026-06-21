@@ -2,12 +2,11 @@ const { Events } = require("discord.js");
 const Poll = require("../models/poll");
 const applyPollVote = require("../utils/applyPollVote");
 const getPollVotes = require("../utils/getPollVotes");
+const { buildResultsEmbed } = require("../utils/pollDisplay");
 const {
-  buildResultsEmbed,
-  buildPollButtons,
-} = require("../utils/pollDisplay");
-
-const CHECK_INTERVAL_MS = 60 * 1000;
+  closePoll,
+  startPollSweeper,
+} = require("../utils/pollSweeper");
 
 function isPollExpired(poll) {
   return poll.deadline && new Date(poll.deadline).getTime() <= Date.now();
@@ -16,38 +15,6 @@ function isPollExpired(poll) {
 function memberCanVote(member, poll) {
   if (!member) return false;
   return poll.allowedRoleIds.some((roleId) => member.roles.cache.has(roleId));
-}
-
-async function closePoll(client, poll) {
-  if (poll.status === "closed") return;
-
-  poll.status = "closed";
-  await poll.save();
-
-  try {
-    const channel = await client.channels.fetch(poll.channelId);
-    if (!channel?.isTextBased()) return;
-
-    const message = await channel.messages.fetch(poll.messageId);
-    const votes = await getPollVotes(poll);
-    const embed = buildResultsEmbed(poll, true, votes);
-    const components = buildPollButtons(poll, true);
-
-    await message.edit({ embeds: [embed], components });
-  } catch (err) {
-    console.error(`Failed to close poll #${poll.pollId}:`, err.message);
-  }
-}
-
-async function sweepExpiredPolls(client) {
-  const expiredPolls = await Poll.find({
-    status: "active",
-    deadline: { $ne: null, $lte: new Date() },
-  });
-
-  for (const poll of expiredPolls) {
-    await closePoll(client, poll);
-  }
 }
 
 module.exports = function pollSystem(client) {
@@ -133,6 +100,10 @@ module.exports = function pollSystem(client) {
       });
     }
 
+    if (poll.status === "active" && isPollExpired(poll)) {
+      await closePoll(interaction.client, poll);
+    }
+
     const closed = poll.status === "closed" || isPollExpired(poll);
     const votes = await getPollVotes(poll);
     const embed = buildResultsEmbed(poll, closed, votes);
@@ -140,14 +111,5 @@ module.exports = function pollSystem(client) {
     return interaction.reply({ embeds: [embed], ephemeral: true });
   }
 
-  async function runSweeper() {
-    try {
-      await sweepExpiredPolls(client);
-    } catch (err) {
-      console.error("Poll deadline sweeper error:", err);
-    }
-  }
-
-  setInterval(runSweeper, CHECK_INTERVAL_MS);
-  setTimeout(runSweeper, 10_000);
+  startPollSweeper(client);
 };

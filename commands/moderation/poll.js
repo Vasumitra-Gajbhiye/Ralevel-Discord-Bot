@@ -11,6 +11,7 @@ const {
   buildPollButtons,
   buildRolePingContent,
 } = require("../../utils/pollDisplay");
+const { wakePollSweeper } = require("../../utils/pollSweeper");
 
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 24;
@@ -190,6 +191,10 @@ async function handleCreate(interaction) {
 
     poll.messageId = message.id;
     await poll.save();
+
+    if (deadline) {
+      wakePollSweeper();
+    }
 
     return interaction.editReply({
       content: `✅ Poll **#${pollId}** created in ${channel}.`,

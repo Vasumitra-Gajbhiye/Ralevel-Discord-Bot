@@ -223,6 +223,7 @@ Run these after changing core systems:
 |--------|---------|---------|
 | Rank system | `npm run verify:rank` | XP rank role assignment logic |
 | Poll votes | `npm run verify:poll-votes` | Poll vote integrity (needs `MONGO_URI`) |
+| Poll sweeper | `npm run verify:poll-sweeper` | Adaptive deadline scheduling + sweep logic (needs `MONGO_URI`) |
 | Sequential IDs | `npm run verify:sequential-ids` | Counter/ID generation (needs `MONGO_URI`) |
 | Daily finalize | `npm run verify:finalize` | Redis finalize + lock behavior |
 | Message router | `npm run verify:message-router` | Single MessageCreate listener, rep gating |

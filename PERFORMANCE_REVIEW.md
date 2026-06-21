@@ -20,24 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Medium Severity
 
-### 16. Poll sweeper queries MongoDB every 60 seconds
-
-**Description:** `systems/polls.js` runs `Poll.find({ status: 'active', deadline: { $lte: now } })` on a 1-minute interval forever.
-
-**Severity:** Medium
-
-**Why it matters:** Constant background load even when zero polls are active. With many historical polls, the query still hits the index but wakes the DB 1,440 times/day.
-
-**Files involved:**
-- `systems/polls.js`
-
-**Suggested fix:**
-- Increase interval to 5 minutes (matches QOTD/finalize pattern), or schedule next run based on nearest deadline.
-- Close expired polls lazily on vote/view interaction (already partially done).
-- Sequential `closePoll` in sweeper loop — use `Promise.all` with concurrency limit.
-
----
-
 ### 17. QOTD scheduler queries MongoDB every 5 minutes before cutoff
 
 **Description:** `systems/qotd.js` calls `findActiveRotation()` on every tick, even hours before the 6 AM IST reminder window.
@@ -346,6 +328,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 - **Daily finalize Redis reads** use aggregate guild+date hashes (2 parallel `HGETALL` calls) with pipelined legacy fallback for in-flight per-user keys (`utils/dailyFinalize.js`, `systems/messageTracker.js`).
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.
 - **Poll votes** are stored in a separate `PollVote` collection with per-user atomic `findOneAndUpdate` operations (`utils/applyPollVote.js`, `models/pollVote.js`).
+- **Poll deadline sweeper** uses adaptive `setTimeout` scheduling based on the nearest active deadline (5-minute idle cap), parallel poll closing with bounded concurrency, lazy close on vote/view interaction, and `wakePollSweeper()` on poll create (`utils/pollSweeper.js`). Verified via `npm run verify:poll-sweeper`.
 - **Sequential public IDs** (poll, confession, task) use an atomic MongoDB counter collection with `$inc` and startup `$max` seeding (`models/counter.js`, `utils/getNextSequenceId.js`, `database.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Common query indexes** on `reputations.rep`, `users.xp`, and `tasks.team` support leaderboard sorts and team task lookups. Task compound indexes on `{ team, assignedTo }`, `{ team, finishedBy }`, and `{ team, selected }` support `/my-progress` count queries. Verified via `npm run verify:database-indexes` and `npm run verify:my-progress`.
