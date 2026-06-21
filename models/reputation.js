@@ -9,4 +9,6 @@ const ReputationSchema = new Schema(
   { timestamps: true }
 );
 
+ReputationSchema.index({ rep: -1 });
+
 module.exports = model("Reputation", ReputationSchema);

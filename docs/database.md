@@ -62,6 +62,8 @@ Tracks message activity and XP per Discord user.
 | `xp` | Number | Total XP (default 0) |
 | `createdAt` / `updatedAt` | Date | Auto timestamps |
 
+**Indexes:** `{ guild_id: 1 }`, `{ xp: -1 }`
+
 **Written by:** `utils/dailyFinalize.js` (daily bulkWrite from Redis)
 
 **Read by:** Rank system, XP-related commands
@@ -77,6 +79,8 @@ Tracks message activity and XP per Discord user.
 | `userId` | String | Discord user ID (unique, indexed) |
 | `rep` | Number | Reputation points (default 0) |
 | `createdAt` / `updatedAt` | Date | Auto timestamps |
+
+**Indexes:** `{ userId: 1 }` unique, `{ rep: -1 }`
 
 **Written by:** `systems/reputation.js` (automatic via atomic `$inc` / `bulkWrite`), rep commands (`/add-rep`, `/set-rep`, etc.)
 
@@ -371,6 +375,8 @@ Staff notes on users (separate from warnings).
 | `deadline` | String | Deadline text |
 | `createdAt` | Date | Creation time |
 
+**Indexes:** `{ team: 1 }`
+
 **Written by:** Task commands (`/add-task`, `/claim`, etc.)
 
 ---
@@ -500,6 +506,12 @@ Use MongoDB Atlas UI or `mongosh`:
 db.users.find().sort({ xp: -1 }).limit(10)
 db.reputations.find().sort({ rep: -1 }).limit(10)
 db.counters.find()
+```
+
+Verify schema indexes with:
+
+```bash
+npm run verify:database-indexes
 ```
 
 ---

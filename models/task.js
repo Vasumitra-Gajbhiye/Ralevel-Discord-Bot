@@ -47,4 +47,6 @@ const taskSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+taskSchema.index({ team: 1 });
+
 module.exports = mongoose.model("Task", taskSchema);

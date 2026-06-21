@@ -12,36 +12,13 @@ The bot is a single-process Discord application with several hot paths that do n
 
 1. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
-Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and adding missing indexes.
+Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and interaction routing consolidation.
 
 ---
 
 ---
 
 ## Medium Severity
-
-### 14. Missing database indexes for common query patterns
-
-**Description:** Several frequent queries lack supporting indexes.
-
-**Severity:** Medium
-
-**Why it matters:** Full collection scans degrade as data grows.
-
-**Files involved:**
-- `models/reputation.js` — leaderboard: `.sort({ rep: -1 })` needs `{ rep: -1 }` index
-- `models/User.js` — no index on `xp` (used in rank calculations / potential leaderboards)
-- `models/task.js` — `Task.find({ team })` in `commands/task/my-progress.js` has no `team` index
-
-**Suggested fix:**
-```js
-// examples
-ReputationSchema.index({ rep: -1 });
-UserSchema.index({ xp: -1 });
-taskSchema.index({ team: 1 });
-```
-
----
 
 ### 15. `my-progress` loads entire team task collection
 
@@ -63,7 +40,7 @@ taskSchema.index({ team: 1 });
   Task.countDocuments({ team, finishedBy: userId });
   Task.countDocuments({ team, selected: userId });
   ```
-- Add `{ team: 1 }` index and consider multikey indexes on array fields if needed.
+- Consider multikey indexes on array fields if count queries replace full loads.
 
 ---
 
@@ -283,7 +260,6 @@ taskSchema.index({ team: 1 });
 **Suggested fix:**
 - Cache result in Redis or in-memory for 60–300 seconds.
 - Invalidate cache on rep change (or accept short staleness).
-- Add `{ rep: -1 }` index (see issue #14).
 
 ---
 
@@ -382,8 +358,7 @@ taskSchema.index({ team: 1 });
 
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
-| 1 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 2 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 1 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
@@ -397,6 +372,7 @@ taskSchema.index({ team: 1 });
 - **Poll votes** are stored in a separate `PollVote` collection with per-user atomic `findOneAndUpdate` operations (`utils/applyPollVote.js`, `models/pollVote.js`).
 - **Sequential public IDs** (poll, confession, task) use an atomic MongoDB counter collection with `$inc` and startup `$max` seeding (`models/counter.js`, `utils/getNextSequenceId.js`, `database.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
+- **Common query indexes** on `reputations.rep`, `users.xp`, and `tasks.team` support leaderboard sorts and team task lookups. Verified via `npm run verify:database-indexes`.
 - **Audit, moderation-logs, and moderator-logs commands** paginate at DB level with `skip/limit/.lean()` and compound indexes on ModLog.
 - **Moderation log moderator tags** are denormalized at write (`moderatorTag` on ModLog/Warning); read commands use stored tags with a batched Discord fallback only for legacy rows missing the field (`utils/fetchModeratorTags.js`).
 - **Message counting** offloads hot path to Redis instead of Mongo — correct architecture choice.
