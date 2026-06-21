@@ -1,54 +1,85 @@
-const QotdRotation = require("../models/qotdRotation");
+const {
+  REMINDER_HOUR_IST,
+  getISTDateInfo,
+  findActiveRotation,
+  getRotationMembers,
+} = require("../utils/qotdHelpers");
 
 // ===== CONFIG =====
 const REMINDER_CHANNEL_ID = process.env.QOTD_REMINDER_CHANNEL_ID;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // every 5 minutes
-const REMINDER_HOUR_IST = 6; // 6 AM IST
 // ==================
 
-// Convert current time to IST date + hour
-function getISTDateInfo() {
-  const now = new Date();
-
-  // IST = UTC + 5:30
-  const istTime = new Date(now.getTime() + (5 * 60 + 30) * 60 * 1000);
-
-  const year = istTime.getUTCFullYear();
-  const month = String(istTime.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(istTime.getUTCDate()).padStart(2, "0");
-
-  return {
-    dateStr: `${year}-${month}-${day}`, // YYYY-MM-DD
-    hour: istTime.getUTCHours(),
-  };
-}
-
 module.exports = function qotdSystem(client) {
+  if (!REMINDER_CHANNEL_ID) {
+    console.warn(
+      "[QOTD] QOTD_REMINDER_CHANNEL_ID is not set — reminders will not send.",
+    );
+  }
+
   async function checkAndSendReminder() {
     try {
-      const rotation = await QotdRotation.findOne({
-        enabled: true,
-      });
+      if (!client.isReady()) {
+        console.log("[QOTD] Skip: Discord client not ready yet.");
+        return;
+      }
 
-      if (!rotation) return;
+      if (!REMINDER_CHANNEL_ID) {
+        console.warn("[QOTD] Skip: QOTD_REMINDER_CHANNEL_ID is missing.");
+        return;
+      }
+
+      const rotation = await findActiveRotation();
+      if (!rotation) {
+        console.warn(
+          "[QOTD] Skip: no active rotation found in MongoDB (check qotdrotations collection).",
+        );
+        return;
+      }
 
       const { dateStr, hour } = getISTDateInfo();
 
-      // Not time yet
-      if (hour < REMINDER_HOUR_IST) return;
+      if (hour < REMINDER_HOUR_IST) {
+        console.log(
+          `[QOTD] Skip: before ${REMINDER_HOUR_IST} AM IST (currently ${hour}:xx on ${dateStr}).`,
+        );
+        return;
+      }
 
-      // Already sent today
-      if (rotation.lastReminderDate === dateStr) return;
+      if (rotation.lastReminderDate === dateStr) {
+        console.log(
+          `[QOTD] Skip: reminder already sent today (${dateStr}).`,
+        );
+        return;
+      }
+
+      if (!rotation.modOrder?.length) {
+        console.warn("[QOTD] Skip: modOrder is empty.");
+        return;
+      }
+
+      const { current, next, validIndex } = getRotationMembers(rotation);
+      if (!validIndex) {
+        console.warn(
+          `[QOTD] Skip: currentIndex ${rotation.currentIndex} out of bounds (modOrder length ${rotation.modOrder.length}).`,
+        );
+        return;
+      }
 
       const channel = await client.channels.fetch(REMINDER_CHANNEL_ID);
-      if (!channel || !channel.isTextBased()) return;
+      if (!channel) {
+        console.warn(
+          `[QOTD] Skip: channel ${REMINDER_CHANNEL_ID} not found.`,
+        );
+        return;
+      }
 
-      const current = rotation.modOrder[rotation.currentIndex];
-
-      const next =
-        rotation.modOrder[
-          (rotation.currentIndex + 1) % rotation.modOrder.length
-        ];
+      if (!channel.isTextBased()) {
+        console.warn(
+          `[QOTD] Skip: channel ${REMINDER_CHANNEL_ID} is not text-based.`,
+        );
+        return;
+      }
 
       const message =
         `🌅 **Question of the Day — Reminder**\n\n` +
@@ -69,8 +100,6 @@ module.exports = function qotdSystem(client) {
         },
       });
 
-      // Mark as sent for today (IST)
-      // Mark as sent for today (IST) AND advance rotation
       rotation.lastReminderDate = dateStr;
       rotation.currentIndex =
         (rotation.currentIndex + 1) % rotation.modOrder.length;
@@ -81,9 +110,11 @@ module.exports = function qotdSystem(client) {
     }
   }
 
-  // Run periodically
-  setInterval(checkAndSendReminder, CHECK_INTERVAL_MS);
-
-  // Also run once shortly after startup
-  setTimeout(checkAndSendReminder, 10_000);
+  client.once("ready", () => {
+    console.log(
+      "[QOTD] Scheduler started (checks every 5 minutes after client ready).",
+    );
+    setInterval(checkAndSendReminder, CHECK_INTERVAL_MS);
+    setTimeout(checkAndSendReminder, 10_000);
+  });
 };
