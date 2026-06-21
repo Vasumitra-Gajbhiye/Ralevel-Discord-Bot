@@ -10,6 +10,62 @@ function getYesterdayDate() {
   return now.toISOString().split("T")[0];
 }
 
+async function fetchLegacyUserHashes(keys, chunkSize = 50) {
+  const result = new Map();
+
+  for (let i = 0; i < keys.length; i += chunkSize) {
+    const chunk = keys.slice(i, i + chunkSize);
+    const pipeline = redis.pipeline();
+    chunk.forEach((key) => pipeline.hgetall(key));
+    const replies = await pipeline.exec();
+
+    chunk.forEach((key, idx) => {
+      const [err, data] = replies[idx];
+      if (err) throw err;
+      result.set(key, data);
+    });
+  }
+
+  return result;
+}
+
+function buildUserUpdates(userIds, counts, boosters, userMap, guildId) {
+  const operations = [];
+  const usersForRanking = [];
+
+  for (const userId of userIds) {
+    const count = parseInt(counts[userId] || "0", 10);
+    const isBooster =
+      boosters[userId] === "true" || boosters[userId] === true;
+    const xpGained = isBooster ? count * 2 : count;
+
+    const existingUser = userMap[userId];
+    const previousXp = existingUser?.xp || 0;
+
+    usersForRanking.push({
+      userId,
+      previousXp,
+      xp: previousXp + xpGained,
+    });
+
+    operations.push({
+      updateOne: {
+        filter: { _id: userId },
+        update: {
+          $inc: {
+            total_messages: count,
+            xp: xpGained,
+          },
+          $set: { guild_id: guildId },
+        },
+        upsert: true,
+      },
+    });
+  }
+
+  return { operations, usersForRanking };
+}
+
 async function finalize(client) {
   try {
     await connectDB();
@@ -17,12 +73,12 @@ async function finalize(client) {
     const guildId = process.env.GUILD_ID;
     const date = getYesterdayDate();
 
-    const usersForRanking = [];
-
+    const countKey = `messages:${guildId}:${date}`;
+    const boosterKey = `messages:boosters:${guildId}:${date}`;
     const usersSetKey = `messages:users:${guildId}:${date}`;
     const lockKey = `processed:${guildId}:${date}`;
 
-    console.log(`📥 Processing users set: ${usersSetKey}`);
+    console.log(`📥 Processing message data for ${date}`);
 
     const alreadyProcessed = await redis.get(lockKey);
     if (alreadyProcessed) {
@@ -30,18 +86,44 @@ async function finalize(client) {
       return;
     }
 
-    const userIds = await redis.smembers(usersSetKey);
+    let userIds = [];
+    let counts = {};
+    let boosters = {};
+    let legacyKeys = [];
 
-    if (!userIds || userIds.length === 0) {
-      console.log("⚠️ No data found");
-      return;
+    const [countsData, boostersData] = await Promise.all([
+      redis.hgetall(countKey),
+      redis.hgetall(boosterKey),
+    ]);
+
+    if (countsData && Object.keys(countsData).length > 0) {
+      counts = countsData;
+      boosters = boostersData || {};
+      userIds = Object.keys(counts);
+      console.log(`Found ${userIds.length} users (aggregate hash)`);
+    } else {
+      const legacyUserIds = await redis.smembers(usersSetKey);
+
+      if (!legacyUserIds || legacyUserIds.length === 0) {
+        console.log("⚠️ No data found");
+        return;
+      }
+
+      legacyKeys = legacyUserIds.map(
+        (userId) => `messages:${guildId}:${date}:${userId}`
+      );
+      const legacyHashes = await fetchLegacyUserHashes(legacyKeys);
+
+      for (const key of legacyKeys) {
+        const userId = key.split(":").pop();
+        const data = legacyHashes.get(key) || {};
+        counts[userId] = data.count || "0";
+        boosters[userId] = data.booster || "false";
+      }
+
+      userIds = legacyUserIds;
+      console.log(`Found ${userIds.length} users (legacy per-user keys)`);
     }
-
-    const keys = userIds.map((userId) => `messages:${guildId}:${date}:${userId}`);
-
-    console.log(`Found ${keys.length} users`);
-
-    const operations = [];
 
     const existingUsers = await User.find({ _id: { $in: userIds } });
 
@@ -50,39 +132,13 @@ async function finalize(client) {
       userMap[u._id] = u;
     }
 
-    for (const key of keys) {
-      const userId = key.split(":").pop();
-      const data = await redis.hgetall(key);
-
-      const count = parseInt(data.count || "0");
-      const isBooster = data.booster === "true" || data.booster === true;
-
-      const xpGained = isBooster ? count * 2 : count;
-
-      const existingUser = userMap[userId];
-      const previousXp = existingUser?.xp || 0;
-      const newXp = previousXp + xpGained;
-
-      usersForRanking.push({
-        userId,
-        previousXp,
-        xp: newXp,
-      });
-
-      operations.push({
-        updateOne: {
-          filter: { _id: userId },
-          update: {
-            $inc: {
-              total_messages: count,
-              xp: xpGained,
-            },
-            $set: { guild_id: guildId },
-          },
-          upsert: true,
-        },
-      });
-    }
+    const { operations, usersForRanking } = buildUserUpdates(
+      userIds,
+      counts,
+      boosters,
+      userMap,
+      guildId
+    );
 
     if (operations.length > 0) {
       await User.bulkWrite(operations);
@@ -95,8 +151,10 @@ async function finalize(client) {
     await redis.set(lockKey, "true", "EX", 60 * 60 * 24 * 7);
 
     await Promise.all([
-      ...keys.map((key) => redis.del(key)),
+      redis.del(countKey),
+      redis.del(boosterKey),
       redis.del(usersSetKey),
+      ...legacyKeys.map((key) => redis.del(key)),
     ]);
 
     console.log("🧹 Redis cleaned up");
@@ -106,6 +164,8 @@ async function finalize(client) {
 }
 
 module.exports = finalize;
+module.exports.fetchLegacyUserHashes = fetchLegacyUserHashes;
+module.exports.buildUserUpdates = buildUserUpdates;
 // DO NOT DELETE THE COMMENT BELOW
 // HSET messages:1430847370807083132:2026-03-30:1058932081629069363 count 10 booster true
 // HSET messages:1430847370807083132:2026-03-30:878194355473637397 count 5 booster false

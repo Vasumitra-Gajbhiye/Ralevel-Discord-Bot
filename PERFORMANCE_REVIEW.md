@@ -11,33 +11,15 @@ Senior-engineer review of the codebase (~12k LOC, 124 JS files). Focus: bottlene
 The bot is a single-process Discord application with several hot paths that do not scale well under load:
 
 1. **Every guild message** can trigger up to three `messageCreate` handlers, each doing I/O (Redis and/or MongoDB).
-2. **Daily finalize** uses sequential Redis reads — the highest-risk batch job.
-3. **Reputation and poll voting** use read-modify-write patterns without atomic updates or caching.
-4. **Moderation log commands** load entire collections into memory and perform N+1 Discord user fetches.
-5. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
+2. **Reputation and poll voting** use read-modify-write patterns without atomic updates or caching.
+3. **Moderation log commands** load entire collections into memory and perform N+1 Discord user fetches.
+4. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
 Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining, adding missing indexes, and parallelizing rank updates.
 
 ---
 
 ## Critical & High Severity
-
-### 3. Sequential Redis `HGETALL` in daily finalize loop
-
-**Description:** The finalize loop awaits `redis.hgetall(key)` once per user sequentially.
-
-**Severity:** High
-
-**Why it matters:** 500 active users = 500 sequential REST round trips. Finalize can take minutes and hit Upstash rate limits.
-
-**Files involved:**
-- `utils/dailyFinalize.js`
-
-**Suggested fix:**
-- Batch with `Promise.all` in chunks (e.g. 50 keys at a time), or use Redis pipeline if supported by `@upstash/redis`.
-- Better: single-hash design (`HINCRBY messages:{guildId}:{date} {userId} 1` + one `HGETALL`) avoids the loop entirely.
-
----
 
 ### 4. Rank system processes users sequentially with Discord API calls
 
@@ -596,21 +578,21 @@ ModLogSchema.index({ moderatorId: 1, timestamp: -1 });
 
 | Priority | Issue # | Effort | Impact |
 |----------|---------|--------|--------|
-| 1 | #3 — Sequential HGETALL in daily finalize | Medium | Very high |
-| 2 | #9 — Finalize lock key mismatch | Low | High (correctness) |
-| 3 | #5, #6 — Modlog unbounded + N+1 | Medium | High |
-| 4 | #11 — Redis pipeline in messageTracker | Low | High |
-| 5 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
-| 6 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 7 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
-| 8 | #4 — Parallel rank updates | Medium | Medium |
-| 9 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
+| 1 | #9 — Finalize lock key mismatch | Low | High (correctness) |
+| 2 | #5, #6 — Modlog unbounded + N+1 | Medium | High |
+| 3 | #11 — Redis pipeline in messageTracker | Low | High |
+| 4 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
+| 5 | #14 — Missing indexes | Low | Medium (grows over time) |
+| 6 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
+| 7 | #4 — Parallel rank updates | Medium | Medium |
+| 8 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
 
 ## What's Already Done Well
 
 - **Daily finalize MongoDB writes** use `bulkWrite` — good batch pattern (`utils/dailyFinalize.js`).
+- **Daily finalize Redis reads** use aggregate guild+date hashes (2 parallel `HGETALL` calls) with pipelined legacy fallback for in-flight per-user keys (`utils/dailyFinalize.js`, `systems/messageTracker.js`).
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Audit command** paginates at DB level with `skip/limit` — use as template for modlogs.

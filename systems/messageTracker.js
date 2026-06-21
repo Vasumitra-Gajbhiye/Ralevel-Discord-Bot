@@ -19,20 +19,16 @@ module.exports = (client) => {
       const guildId = message.guild.id;
       const date = getTodayDate();
 
-      const key = `messages:${guildId}:${date}:${userId}`;
+      const countKey = `messages:${guildId}:${date}`;
+      const boosterKey = `messages:boosters:${guildId}:${date}`;
 
-      // 🔍 Check booster role
       const isBooster =
         message.member?.roles?.cache?.has(BOOSTER_ROLE_ID) || false;
 
-      // 🔥 Increment message count
-      await redis.hincrby(key, "count", 1);
-
-      // 🔥 Set booster status (overwrite is fine)
-      await redis.hset(key, { booster: isBooster ? "true" : "false" });
-
-      const usersSetKey = `messages:users:${guildId}:${date}`;
-      await redis.sadd(usersSetKey, userId);
+      const pipeline = redis.pipeline();
+      pipeline.hincrby(countKey, userId, 1);
+      pipeline.hset(boosterKey, userId, isBooster ? "true" : "false");
+      await pipeline.exec();
 
       // Debug
       // console.log(`+1 → ${userId} | booster: ${isBooster}`);

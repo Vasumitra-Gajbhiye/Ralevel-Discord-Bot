@@ -118,9 +118,11 @@ function hasWholeWord(str, list) {
 // DB Helpers
 //---------------------------------------------
 async function getRepRecord(userId) {
-  let doc = await Reputation.findOne({ userId });
-  if (!doc) doc = await Reputation.create({ userId, rep: 0 });
-  return doc;
+  return Reputation.findOneAndUpdate(
+    { userId },
+    { $setOnInsert: { userId, rep: 0 } },
+    { upsert: true, new: true }
+  );
 }
 
 async function addReputation(userId) {
