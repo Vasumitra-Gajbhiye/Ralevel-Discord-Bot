@@ -7,13 +7,17 @@ const {
 
 const MAX_BUTTONS = 25;
 
-function getVoteCounts(poll) {
+function resolveVotes(poll, votes) {
+  return votes ?? poll.votes ?? [];
+}
+
+function getVoteCounts(poll, votes) {
   const counts = {};
   for (const option of poll.options) {
     counts[option.id] = 0;
   }
 
-  for (const vote of poll.votes) {
+  for (const vote of resolveVotes(poll, votes)) {
     for (const optionId of vote.optionIds) {
       if (counts[optionId] !== undefined) {
         counts[optionId]++;
@@ -24,8 +28,8 @@ function getVoteCounts(poll) {
   return counts;
 }
 
-function getTotalVoters(poll) {
-  return poll.votes.filter((v) => v.optionIds.length > 0).length;
+function getTotalVoters(poll, votes) {
+  return resolveVotes(poll, votes).filter((v) => v.optionIds.length > 0).length;
 }
 
 function formatDeadline(deadline) {
@@ -37,8 +41,8 @@ function formatChoiceType(choiceType) {
   return choiceType === "single" ? "Single choice" : "Multiple choice";
 }
 
-function formatResultsLines(poll) {
-  const counts = getVoteCounts(poll);
+function formatResultsLines(poll, votes) {
+  const counts = getVoteCounts(poll, votes);
   const totalVotes = Object.values(counts).reduce((sum, n) => sum + n, 0);
   const maxCount = Math.max(...Object.values(counts), 1);
 
@@ -51,7 +55,7 @@ function formatResultsLines(poll) {
   });
 }
 
-function buildPollEmbed(poll, guild) {
+function buildPollEmbed(poll, guild, votes) {
   const roleMentions = poll.allowedRoleIds
     .map((id) => {
       const role = guild?.roles?.cache?.get(id);
@@ -82,20 +86,20 @@ function buildPollEmbed(poll, guild) {
         value: poll.options.map((o, i) => `${i + 1}. ${o.label}`).join("\n"),
       },
     )
-    .setFooter({ text: `Poll ID: ${poll.pollId} • ${getTotalVoters(poll)} voter(s)` })
+    .setFooter({ text: `Poll ID: ${poll.pollId} • ${getTotalVoters(poll, votes)} voter(s)` })
     .setTimestamp(poll.createdAt || undefined);
 
   return embed;
 }
 
-function buildResultsEmbed(poll, closed = false) {
-  const lines = formatResultsLines(poll);
+function buildResultsEmbed(poll, closed = false, votes) {
+  const lines = formatResultsLines(poll, votes);
   const embed = new EmbedBuilder()
     .setTitle(closed ? `📊 Poll closed — ${poll.question}` : `📊 Results — ${poll.question}`)
     .setColor(closed ? 0xed4245 : 0x57f287)
     .setDescription(lines.join("\n\n"))
     .setFooter({
-      text: `Poll ID: ${poll.pollId} • ${getTotalVoters(poll)} voter(s)${closed ? " • Voting closed" : ""}`,
+      text: `Poll ID: ${poll.pollId} • ${getTotalVoters(poll, votes)} voter(s)${closed ? " • Voting closed" : ""}`,
     })
     .setTimestamp();
 
@@ -109,10 +113,11 @@ function buildResultsEmbed(poll, closed = false) {
   return embed;
 }
 
-function buildBreakdownEmbed(poll) {
-  const counts = getVoteCounts(poll);
+function buildBreakdownEmbed(poll, votes) {
+  const resolvedVotes = resolveVotes(poll, votes);
+  const counts = getVoteCounts(poll, votes);
   const fields = poll.options.map((option) => {
-    const voters = poll.votes
+    const voters = resolvedVotes
       .filter((v) => v.optionIds.includes(option.id))
       .map((v) => `<@${v.userId}>`);
 
@@ -122,7 +127,7 @@ function buildBreakdownEmbed(poll) {
     };
   });
 
-  const noVoteUsers = poll.votes.filter((v) => v.optionIds.length === 0);
+  const noVoteUsers = resolvedVotes.filter((v) => v.optionIds.length === 0);
   if (noVoteUsers.length > 0) {
     fields.push({
       name: "Cleared votes",

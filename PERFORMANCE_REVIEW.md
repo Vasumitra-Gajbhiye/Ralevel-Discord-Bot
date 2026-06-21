@@ -11,7 +11,7 @@ Senior-engineer review of the codebase (~12k LOC, 124 JS files). Focus: bottlene
 The bot is a single-process Discord application with several hot paths that do not scale well under load:
 
 1. **Every guild message** can trigger up to three `messageCreate` handlers, each doing I/O (Redis and/or MongoDB).
-2. **Reputation and poll voting** use read-modify-write patterns without atomic updates or caching.
+2. **Reputation** uses read-modify-write patterns without atomic updates or caching.
 3. **Large monolithic files** (`certificates.js`, `logModAction.js`) duplicate logic that should be shared utilities.
 
 Most issues are fixable incrementally. The highest-impact wins are: Redis pipelining and adding missing indexes.
@@ -19,25 +19,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 ---
 
 ## Critical & High Severity
-
-### 7. Poll votes use non-atomic read-modify-write
-
-**Description:** Each vote loads the full poll document, mutates the embedded `votes` array in memory, and saves the entire document (`systems/polls.js` → `poll.save()`).
-
-**Severity:** High
-
-**Why it matters:** Concurrent votes on the same poll can race and lose updates. As `votes` grows, documents bloat — every vote rewrites the full array. MongoDB document size limit (16 MB) becomes a real constraint for large polls.
-
-**Files involved:**
-- `systems/polls.js`
-- `models/poll.js`
-- `commands/moderation/poll.js`
-
-**Suggested fix:**
-- Use positional atomic updates: `$pull` / `$addToSet` on `votes` with `arrayFilters`, or store votes in a separate `PollVote` collection keyed by `{ pollId, userId }`.
-- For vote counts only, use `$inc` on option counters and keep voter detail in a separate collection for breakdown view.
-
----
 
 ### 8. Race-prone sequential ID generation
 
@@ -520,7 +501,7 @@ taskSchema.index({ team: 1 });
 | 2 | #11 — Redis pipeline in messageTracker | Low | High |
 | 3 | #12, #13 — Reputation query batching + Set leak | Medium | Medium |
 | 4 | #14 — Missing indexes | Low | Medium (grows over time) |
-| 5 | #7, #8 — Poll atomicity + ID counters | Medium | Medium |
+| 5 | #8 — Poll ID counters | Medium | Medium |
 | 6 | #20, #22 — Router + shared rep tiers | Medium | Maintainability |
 
 ---
@@ -531,6 +512,7 @@ taskSchema.index({ team: 1 });
 - **Daily finalize MongoDB writes** use `bulkWrite` — good batch pattern (`utils/dailyFinalize.js`).
 - **Daily finalize Redis reads** use aggregate guild+date hashes (2 parallel `HGETALL` calls) with pipelined legacy fallback for in-flight per-user keys (`utils/dailyFinalize.js`, `systems/messageTracker.js`).
 - **Redis cleanup** uses `Promise.all` for parallel deletes after finalize.
+- **Poll votes** are stored in a separate `PollVote` collection with per-user atomic `findOneAndUpdate` operations (`utils/applyPollVote.js`, `models/pollVote.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Audit, moderation-logs, and moderator-logs commands** paginate at DB level with `skip/limit/.lean()` and compound indexes on ModLog.
 - **Moderation log moderator tags** are denormalized at write (`moderatorTag` on ModLog/Warning); read commands use stored tags with a batched Discord fallback only for legacy rows missing the field (`utils/fetchModeratorTags.js`).

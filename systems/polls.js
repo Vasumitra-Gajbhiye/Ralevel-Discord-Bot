@@ -1,5 +1,7 @@
 const { Events } = require("discord.js");
 const Poll = require("../models/poll");
+const applyPollVote = require("../utils/applyPollVote");
+const getPollVotes = require("../utils/getPollVotes");
 const {
   buildResultsEmbed,
   buildPollButtons,
@@ -16,15 +18,6 @@ function memberCanVote(member, poll) {
   return poll.allowedRoleIds.some((roleId) => member.roles.cache.has(roleId));
 }
 
-function findOrCreateVote(poll, userId) {
-  let vote = poll.votes.find((v) => v.userId === userId);
-  if (!vote) {
-    vote = { userId, optionIds: [], updatedAt: new Date() };
-    poll.votes.push(vote);
-  }
-  return vote;
-}
-
 async function closePoll(client, poll) {
   if (poll.status === "closed") return;
 
@@ -36,7 +29,8 @@ async function closePoll(client, poll) {
     if (!channel?.isTextBased()) return;
 
     const message = await channel.messages.fetch(poll.messageId);
-    const embed = buildResultsEmbed(poll, true);
+    const votes = await getPollVotes(poll);
+    const embed = buildResultsEmbed(poll, true, votes);
     const components = buildPollButtons(poll, true);
 
     await message.edit({ embeds: [embed], components });
@@ -112,33 +106,14 @@ module.exports = function pollSystem(client) {
       });
     }
 
-    const vote = findOrCreateVote(poll, interaction.user.id);
-    let message;
-
-    if (poll.choiceType === "single") {
-      const alreadySelected = vote.optionIds.includes(optionId);
-      if (alreadySelected) {
-        vote.optionIds = [];
-        message = "✅ Your vote has been removed.";
-      } else {
-        vote.optionIds = [optionId];
-        const optionLabel = poll.options.find((o) => o.id === optionId)?.label;
-        message = `✅ Vote recorded for **${optionLabel}**.`;
-      }
-    } else {
-      const idx = vote.optionIds.indexOf(optionId);
-      if (idx >= 0) {
-        vote.optionIds.splice(idx, 1);
-        message = "✅ Option removed from your vote.";
-      } else {
-        vote.optionIds.push(optionId);
-        const optionLabel = poll.options.find((o) => o.id === optionId)?.label;
-        message = `✅ **${optionLabel}** added to your vote.`;
-      }
-    }
-
-    vote.updatedAt = new Date();
-    await poll.save();
+    const optionLabel = poll.options.find((o) => o.id === optionId)?.label;
+    const { message } = await applyPollVote({
+      pollId,
+      userId: interaction.user.id,
+      optionId,
+      choiceType: poll.choiceType,
+      optionLabel,
+    });
 
     return interaction.reply({ content: message, ephemeral: true });
   }
@@ -159,7 +134,8 @@ module.exports = function pollSystem(client) {
     }
 
     const closed = poll.status === "closed" || isPollExpired(poll);
-    const embed = buildResultsEmbed(poll, closed);
+    const votes = await getPollVotes(poll);
+    const embed = buildResultsEmbed(poll, closed, votes);
 
     return interaction.reply({ embeds: [embed], ephemeral: true });
   }

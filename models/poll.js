@@ -70,6 +70,7 @@ const PollSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // Legacy embedded votes — new votes are stored in PollVote collection.
     votes: {
       type: [VoteSchema],
       default: [],

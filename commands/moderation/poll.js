@@ -4,6 +4,7 @@ const { getNextPollId } = require("../../utils/getNextPollId");
 const { parseAndValidatePollRoles } = require("../../utils/parsePollRoles");
 const { parsePollDeadline } = require("../../utils/parsePollDeadline");
 const canViewPollBreakdown = require("../../utils/canViewPollBreakdown");
+const getPollVotes = require("../../utils/getPollVotes");
 const {
   buildPollEmbed,
   buildBreakdownEmbed,
@@ -173,7 +174,6 @@ async function handleCreate(interaction) {
     choiceType,
     deadline,
     createdBy: interaction.user.id,
-    votes: [],
   });
 
   const embed = buildPollEmbed(poll, interaction.guild);
@@ -226,7 +226,8 @@ async function handleBreakdown(interaction) {
     });
   }
 
-  const embed = buildBreakdownEmbed(poll);
+  const votes = await getPollVotes(poll);
+  const embed = buildBreakdownEmbed(poll, votes);
 
   return interaction.reply({
     embeds: [embed],
