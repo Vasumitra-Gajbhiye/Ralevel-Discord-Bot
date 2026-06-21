@@ -20,24 +20,6 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 
 ## Medium Severity
 
-### 19. Task display scans 50 channel messages on every update
-
-**Description:** `utils/taskDisplay.js` fetches the last 50 messages and iterates to find the bot's task embed.
-
-**Severity:** Medium
-
-**Why it matters:** Called on task claim, finish, add, etc. High-churn task channels pay 50-message fetch + scan each time.
-
-**Files involved:**
-- `utils/taskDisplay.js`
-- All task commands that call `updateTaskDisplay`
-
-**Suggested fix:**
-- Store `displayMessageId` per team in MongoDB or Redis (similar to sticky's `lastMessageId`).
-- Fall back to channel scan only when ID is missing or message deleted.
-
----
-
 ### 20. Four separate `interactionCreate` handlers
 
 **Description:** `systems/commands.js`, `systems/certificates.js`, `systems/confessions.js`, and `systems/polls.js` each register their own `interactionCreate` listener.
@@ -262,7 +244,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 | Rep ban status | Mongo per rep event | Redis SET / in-memory Set | On repban/repunban |
 | QOTD rotation | In-memory cache + IST short-circuit (implemented) | N/A — already cached | Refresh on save / 30 min TTL; `/qotd-status` bypasses cache |
 | Leaderboard top 10 | Mongo per command | Redis JSON | 60–300s |
-| Task display message ID | 50-msg channel scan | Stored ID in Mongo/Redis | On missing message |
+| Task display message ID | In-memory Map + Mongo per team (implemented) | N/A — already cached | Fallback scan on missing/deleted message |
 | Mod log moderator tags | Denormalized at write (`moderatorTag` on ModLog/Warning) | N/A — already implemented | N/A |
 | Guild member for tier sync | `members.fetch` each time | Use `message.member` when available | N/A |
 
@@ -287,6 +269,7 @@ Most issues are fixable incrementally. The highest-impact wins are: Redis pipeli
 - **Poll deadline sweeper** uses adaptive `setTimeout` scheduling based on the nearest active deadline (5-minute idle cap), parallel poll closing with bounded concurrency, lazy close on vote/view interaction, and `wakePollSweeper()` on poll create (`utils/pollSweeper.js`). Verified via `npm run verify:poll-sweeper`.
 - **QOTD scheduler** short-circuits IST time check before MongoDB, caches active rotation in memory (30 min TTL, refreshed on save), and shares `getISTDateInfo` with daily finalize (`systems/qotd.js`, `utils/qotdHelpers.js`). Verified via `npm run verify:qotd`.
 - **Welcome background** is cached at module level after first load — no disk I/O or decode on subsequent joins (`systems/welcome.js`). Verified via `npm run verify:welcome`.
+- **Task display board** caches `displayMessageId` per team in MongoDB with an in-memory mirror; updates fetch by message ID and only scan channel history on cold start or deleted-message recovery (`utils/taskDisplay.js`, `models/taskDisplay.js`). Verified via `npm run verify:task-display`.
 - **Sequential public IDs** (poll, confession, task) use an atomic MongoDB counter collection with `$inc` and startup `$max` seeding (`models/counter.js`, `utils/getNextSequenceId.js`, `database.js`).
 - **Poll model** has sensible compound index `{ status: 1, deadline: 1 }`.
 - **Common query indexes** on `reputations.rep`, `users.xp`, and `tasks.team` support leaderboard sorts and team task lookups. Task compound indexes on `{ team, assignedTo }`, `{ team, finishedBy }`, and `{ team, selected }` support `/my-progress` count queries. Verified via `npm run verify:database-indexes` and `npm run verify:my-progress`.

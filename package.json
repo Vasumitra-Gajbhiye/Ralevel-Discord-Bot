@@ -18,7 +18,8 @@
     "verify:database-indexes": "node scripts/verify-database-indexes.js",
     "verify:my-progress": "node scripts/verify-my-progress.js",
     "verify:qotd": "node scripts/verify-qotd-scheduler.js",
-    "verify:welcome": "node scripts/verify-welcome.js"
+    "verify:welcome": "node scripts/verify-welcome.js",
+    "verify:task-display": "node scripts/verify-task-display.js"
   },
   "keywords": [],
   "author": "Myz",

@@ -379,7 +379,23 @@ Staff notes on users (separate from warnings).
 
 **Written by:** Task commands (`/add-task`, `/claim`, etc.)
 
-**Read by:** `/my-progress` (count-only queries), task display commands
+**Read by:** `/my-progress` (count-only queries), task display utility (`utils/taskDisplay.js`)
+
+---
+
+### `taskdisplays` — TaskDisplay
+
+**Model:** `models/taskDisplay.js`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `team` | String | `graphic`, `dev`, or `writer` (unique) |
+| `channelId` | String | Discord channel ID for the team's task board |
+| `displayMessageId` | String | Cached embed message ID for the live task list |
+
+**Written by:** `utils/taskDisplay.js` on each board update
+
+**Read by:** `utils/taskDisplay.js` — avoids scanning channel history on every update; falls back to a 50-message scan only when the ID is missing or the message was deleted
 
 ---
 

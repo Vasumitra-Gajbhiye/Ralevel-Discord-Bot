@@ -228,6 +228,7 @@ Run these after changing core systems:
 | Daily finalize | `npm run verify:finalize` | Redis finalize + lock behavior |
 | Message router | `npm run verify:message-router` | Single MessageCreate listener, rep gating |
 | Welcome system | `npm run verify:welcome` | Background image cache (no reload per join) |
+| Task display | `npm run verify:task-display` | Cached display message ID (no 50-msg scan per update) |
 
 ---
 

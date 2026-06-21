@@ -395,6 +395,18 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 ---
 
+## 12. Task display board
+
+**File:** `utils/taskDisplay.js`
+
+**Purpose:** Maintain a pinned-style embed listing active tasks per team channel.
+
+**Caching:** Each team's `displayMessageId` is stored in MongoDB (`TaskDisplay`) and mirrored in an in-memory `Map` keyed by `channelId`. Updates fetch the message by ID (one Discord API call); a 50-message channel scan runs only as a cold-start or recovery fallback when the stored ID is missing or deleted.
+
+**Verification:** `npm run verify:task-display`
+
+---
+
 ## Utility scripts (not wired into bot)
 
 | Script | Purpose |
