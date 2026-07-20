@@ -93,7 +93,7 @@ client.on(Events.MessageCreate, async (message) => {
 });
 ```
 
-**Reputation gating:** Skips reputation in channels/categories listed in `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` env vars.
+**Reputation gating:** Skips reputation in channels/categories listed in `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` / `STAFF_CHANNEL_IDS` env vars.
 
 **Dependencies:** Handlers injected from `index.js` — `messageTracker`, `sticky`, `reputation`
 

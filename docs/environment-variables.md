@@ -180,6 +180,21 @@ Used in: `systems/messageRouter.js`
 
 ---
 
+### `STAFF_CHANNEL_IDS`
+
+|                |                                                                    |
+| -------------- | ------------------------------------------------------------------ |
+| **Purpose**    | Comma-separated staff channel IDs where automatic reputation is disabled |
+| **Example**    | `1446768750509686925,1484060981658390579,1450047433433415733`      |
+| **Required**   | No                                                                 |
+| **If missing** | Reputation is not skipped based on staff channels                  |
+
+Uses the same substring matching as `DISABLED_CHANNELS`. All thank-word triggers (`thanks`, `thnx`, `tnx`, `ty`, etc.) are blocked; manual admin rep commands are unaffected.
+
+Used in: `systems/messageRouter.js`
+
+---
+
 ### `MOD_ROLES`
 
 |                |                                                              |
@@ -227,7 +242,7 @@ Quick reference for which variables each feature needs:
 | Bot startup             | `TOKEN`, `MONGO_URI`, `REDIS_URL`                                                                     |
 | Slash command deploy    | `TOKEN`, `CLIENT_ID`, `GUILD_ID`                                                                      |
 | Message tracking + XP   | `GUILD_ID`, `BOOSTER_ROLE_ID`, `LEVELUP_CHANNEL_ID`                                                   |
-| Reputation              | Tier role IDs, optional `DISABLED_CHANNELS` / `DISABLED_CATEGORIES`                                   |
+| Reputation              | Tier role IDs, optional `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` / `STAFF_CHANNEL_IDS`              |
 | Certificates            | `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, `ADMIN_ROLE_ID`, `SR_HELPER_ROLE_ID` |
 | Confessions             | `MOD_ACTION_CHANNEL`, `VENT_CHANNEL`                                                                  |
 | Tasks                   | `GRAPHIC_CHANNEL`, `DEV_CHANNEL`, `WRITER_CHANNEL`, designer role IDs                                 |

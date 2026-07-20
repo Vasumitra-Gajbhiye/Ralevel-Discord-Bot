@@ -166,13 +166,51 @@ async function testReputationSkippedInDisabledChannel() {
   }
 }
 
+async function testReputationSkippedInStaffChannel() {
+  const originalStaff = process.env.STAFF_CHANNEL_IDS;
+
+  process.env.STAFF_CHANNEL_IDS = "staff-channel-1,staff-channel-2";
+
+  try {
+    const client = createMockClient();
+    const calls = { tracker: 0, sticky: 0, reputation: 0 };
+
+    messageRouter(client, {
+      handleMessageTracker: async () => {
+        calls.tracker += 1;
+      },
+      handleSticky: async () => {
+        calls.sticky += 1;
+      },
+      handleReputation: async () => {
+        calls.reputation += 1;
+      },
+    });
+
+    await client.emitMessageCreate(
+      createGuildMessage({ channelId: "staff-channel-1" })
+    );
+
+    assert(calls.tracker === 1, "tracker should still run in staff channel");
+    assert(calls.sticky === 1, "sticky should still run in staff channel");
+    assert(
+      calls.reputation === 0,
+      "reputation should be skipped in staff channel"
+    );
+  } finally {
+    process.env.STAFF_CHANNEL_IDS = originalStaff;
+  }
+}
+
 function testIsReputationDisabledHelper() {
   const originalChannels = process.env.DISABLED_CHANNELS;
   const originalCategories = process.env.DISABLED_CATEGORIES;
+  const originalStaff = process.env.STAFF_CHANNEL_IDS;
   const { isReputationDisabled: checkDisabled } = require("../systems/messageRouter");
 
   process.env.DISABLED_CHANNELS = "disabled-channel";
   process.env.DISABLED_CATEGORIES = "disabled-category";
+  process.env.STAFF_CHANNEL_IDS = "staff-channel-1,staff-channel-2";
 
   try {
     assert(
@@ -186,12 +224,17 @@ function testIsReputationDisabledHelper() {
       "disabled category should be detected"
     );
     assert(
+      checkDisabled(createGuildMessage({ channelId: "staff-channel-2" })),
+      "staff channel should be detected"
+    );
+    assert(
       !checkDisabled(createGuildMessage({ channelId: "ok-channel", parentId: "ok-category" })),
       "normal channel should not be disabled"
     );
   } finally {
     process.env.DISABLED_CHANNELS = originalChannels;
     process.env.DISABLED_CATEGORIES = originalCategories;
+    process.env.STAFF_CHANNEL_IDS = originalStaff;
   }
 }
 
@@ -200,6 +243,7 @@ async function main() {
   await testSingleListenerRegistration();
   await testSharedGuardsSkipHandlers();
   await testReputationSkippedInDisabledChannel();
+  await testReputationSkippedInStaffChannel();
   testIsReputationDisabledHelper();
 
   console.log("verify-message-router: all checks passed");

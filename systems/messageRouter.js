@@ -3,8 +3,10 @@ const { Events } = require("discord.js");
 function isReputationDisabled(message) {
   const disabledChannels = process.env.DISABLED_CHANNELS;
   const disabledCategories = process.env.DISABLED_CATEGORIES;
+  const staffChannels = process.env.STAFF_CHANNEL_IDS;
 
   if (disabledChannels?.includes?.(message.channel.id)) return true;
+  if (staffChannels?.includes?.(message.channel.id)) return true;
   if (
     message.channel.parentId &&
     disabledCategories?.includes?.(message.channel.parentId)
