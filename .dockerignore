@@ -31,7 +31,7 @@ docs
 PERFORMANCE_REVIEW.md
 todo
 guild-message-activity.csv
-apps/web
+apps/web/.clerk
 README.md
 *.md
 !package.json

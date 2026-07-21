@@ -6,6 +6,8 @@ import { config as loadDotenv } from "dotenv";
 loadDotenv({ path: path.resolve(__dirname, "../../.env") });
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   transpilePackages: ["@ralevel/db", "@ralevel/shared"],
   serverExternalPackages: ["mongoose"],
 };
