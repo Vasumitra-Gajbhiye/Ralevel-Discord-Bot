@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { LabeledIdList } from "@/components/LabeledIdList";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { RoleSelect } from "@/components/RoleSelect";
 import { WordPillList } from "@/components/WordPillList";
 import { normalizeIdLabels } from "@/lib/reputationIds";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
@@ -31,6 +32,7 @@ export default function ReputationSettingsPage() {
     [config?.reputation],
   );
   const rep = draft ?? savedRep;
+  const roles = config?.roles ?? [];
 
   const isDirty = useMemo(
     () =>
@@ -86,11 +88,16 @@ export default function ReputationSettingsPage() {
             <div className="row" key={i}>
               <div className="field">
                 <label>Role key</label>
-                <input
+                <RoleSelect
+                  roles={roles}
                   value={tier.roleKey}
-                  onChange={(e) => {
+                  excludeKeys={rep.tiers
+                    .filter((_, j) => j !== i)
+                    .map((t) => t.roleKey)
+                    .filter(Boolean)}
+                  onChange={(roleKey) => {
                     const tiers = [...rep.tiers];
-                    tiers[i] = { ...tier, roleKey: e.target.value };
+                    tiers[i] = { ...tier, roleKey };
                     updateRep({ tiers });
                   }}
                 />
@@ -137,7 +144,7 @@ export default function ReputationSettingsPage() {
               updateRep({
                 tiers: [
                   ...rep.tiers,
-                  { roleKey: "beginner", threshold: 10, label: "New tier" },
+                  { roleKey: "", threshold: 10, label: "New tier" },
                 ],
               })
             }

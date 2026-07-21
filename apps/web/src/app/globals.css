@@ -575,6 +575,50 @@ table.data th {
   color: var(--text-muted);
 }
 
+.role-select {
+  width: 100%;
+}
+
+.role-select-trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.55rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.role-select-trigger:hover {
+  border-color: var(--accent);
+}
+
+.role-select-trigger-empty .role-select-trigger-label {
+  color: var(--text-muted);
+}
+
+.role-select-trigger-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.role-select-trigger-label {
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.role-select-trigger-key {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
