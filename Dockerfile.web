@@ -11,7 +11,8 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
 
-RUN pnpm install --frozen-lockfile --filter @ralevel/web...
+# Coolify may inject NODE_ENV=production at build time; devDeps are required for next build.
+RUN NODE_ENV=development pnpm install --frozen-lockfile --filter @ralevel/web...
 
 FROM base AS builder
 
@@ -31,9 +32,8 @@ ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
 ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_SIGN_UP_URL
 ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
 ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
-ENV NODE_ENV=production
 
-RUN pnpm --filter @ralevel/web build
+RUN NODE_ENV=development pnpm --filter @ralevel/web build
 
 FROM node:20-bookworm-slim AS runner
 
