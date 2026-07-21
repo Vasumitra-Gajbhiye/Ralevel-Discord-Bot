@@ -7,6 +7,7 @@ export type GuildConfigData = {
   roles: { key: string; label: string; roleId: string }[];
   commandPermissions: Record<string, string[]>;
   channels: Record<string, string>;
+  channelLabels: Record<string, string>;
   features: Record<string, boolean>;
   reputation: {
     tiers: { roleKey: string; threshold: number; label: string }[];
@@ -17,7 +18,7 @@ export type GuildConfigData = {
     staffChannelIds: string[];
   };
   ranks: {
-    ladder: { roleId: string; xp: number }[];
+    ladder: { roleId: string; xp: number; name: string }[];
     levelUpChannelKey: string;
     boosterRoleKey: string;
     boosterMultiplier: number;

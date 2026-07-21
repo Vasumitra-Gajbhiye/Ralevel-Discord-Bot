@@ -23,6 +23,7 @@ const PATCHABLE = [
   "roles",
   "commandPermissions",
   "channels",
+  "channelLabels",
   "features",
   "reputation",
   "ranks",

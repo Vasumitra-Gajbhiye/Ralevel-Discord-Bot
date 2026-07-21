@@ -134,23 +134,23 @@ const DEFAULT_WELCOME_WORDS = [
   "nws",
 ];
 
-/** Production XP rank ladder (roleId + xp threshold). */
+/** Production XP rank ladder (roleId + xp threshold + display name). */
 const DEFAULT_RANK_LADDER = [
-  { roleId: "1487405095627915315", xp: 0 },
-  { roleId: "1487405099440668782", xp: 20 },
-  { roleId: "1487405103244644404", xp: 100 },
-  { roleId: "1487405107929813052", xp: 250 },
-  { roleId: "1487405111935238266", xp: 500 },
-  { roleId: "1487405115735281744", xp: 1000 },
-  { roleId: "1487405119527059486", xp: 2500 },
-  { roleId: "1487405123058536642", xp: 5000 },
-  { roleId: "1487405128641282048", xp: 10000 },
-  { roleId: "1487405132911214614", xp: 15000 },
-  { roleId: "1487405136757395547", xp: 20000 },
-  { roleId: "1487405140897173536", xp: 30000 },
-  { roleId: "1487405144852140123", xp: 50000 },
-  { roleId: "1487405149184852068", xp: 75000 },
-  { roleId: "1487405153207189605", xp: 100000 },
+  { roleId: "1487405095627915315", xp: 0, name: "" },
+  { roleId: "1487405099440668782", xp: 20, name: "" },
+  { roleId: "1487405103244644404", xp: 100, name: "" },
+  { roleId: "1487405107929813052", xp: 250, name: "" },
+  { roleId: "1487405111935238266", xp: 500, name: "" },
+  { roleId: "1487405115735281744", xp: 1000, name: "" },
+  { roleId: "1487405119527059486", xp: 2500, name: "" },
+  { roleId: "1487405123058536642", xp: 5000, name: "" },
+  { roleId: "1487405128641282048", xp: 10000, name: "" },
+  { roleId: "1487405132911214614", xp: 15000, name: "" },
+  { roleId: "1487405136757395547", xp: 20000, name: "" },
+  { roleId: "1487405140897173536", xp: 30000, name: "" },
+  { roleId: "1487405144852140123", xp: 50000, name: "" },
+  { roleId: "1487405149184852068", xp: 75000, name: "" },
+  { roleId: "1487405153207189605", xp: 100000, name: "" },
 ];
 
 /**
@@ -274,6 +274,20 @@ function buildDefaultGuildConfig(guildId) {
       modLog: env("MOD_LOG_CHANNEL_ID"),
       levelUp: env("LEVELUP_CHANNEL_ID"),
       qotdReminder: env("QOTD_REMINDER_CHANNEL_ID"),
+    },
+    channelLabels: {
+      application: "",
+      review: "",
+      certUpdates: "",
+      graphic: "",
+      dev: "",
+      writer: "",
+      welcome: "",
+      modAction: "",
+      vent: "",
+      modLog: "",
+      levelUp: "",
+      qotdReminder: "",
     },
     features: {
       reputation: true,

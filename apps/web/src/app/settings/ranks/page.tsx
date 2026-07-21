@@ -1,15 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AddRankModal } from "@/components/AddRankModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
 
 export default function RanksPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<GuildConfigData["ranks"] | null>(null);
-  const ranks = draft ?? config?.ranks;
+  const [pendingRemoveIndex, setPendingRemoveIndex] = useState<number | null>(
+    null,
+  );
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const savedRanks = useMemo(() => config?.ranks, [config?.ranks]);
+  const ranks = draft ?? savedRanks;
+
+  const isDirty = useMemo(
+    () =>
+      draft !== null &&
+      JSON.stringify(draft) !== JSON.stringify(savedRanks),
+    [draft, savedRanks],
+  );
+
+  const pendingRank =
+    pendingRemoveIndex !== null && ranks
+      ? ranks.ladder[pendingRemoveIndex]
+      : null;
+
+  function updateLadder(
+    index: number,
+    field: "name" | "roleId" | "xp",
+    value: string,
+  ) {
+    if (!ranks) return;
+    const ladder = ranks.ladder.map((row, i) =>
+      i === index
+        ? {
+            ...row,
+            [field]: field === "xp" ? Number(value) || 0 : value,
+          }
+        : row,
+    );
+    setDraft({ ...ranks, ladder });
+  }
+
+  function handleAddRank(rank: { name: string; roleId: string; xp: number }) {
+    if (!ranks) return;
+    setDraft({
+      ...ranks,
+      ladder: [...ranks.ladder, rank],
+    });
+    setShowAddModal(false);
+  }
+
+  function confirmRemove() {
+    if (!ranks || pendingRemoveIndex === null) return;
+    setDraft({
+      ...ranks,
+      ladder: ranks.ladder.filter((_, i) => i !== pendingRemoveIndex),
+    });
+    setPendingRemoveIndex(null);
+  }
+
+  async function onSave() {
+    if (!ranks) return;
+    await save({ ranks });
+    setDraft(null);
+  }
 
   if (loading || !ranks) return <p className="muted">Loading…</p>;
+
+  const removeMessage = pendingRank
+    ? `Remove rank "${pendingRank.name || pendingRank.roleId}" (${pendingRank.xp} XP)? Changes apply after you save.`
+    : "";
 
   return (
     <>
@@ -57,10 +122,36 @@ export default function RanksPage() {
           </div>
         </div>
 
+        <div className="row row-between">
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setShowAddModal(true)}
+          >
+            Add rank
+          </button>
+          <div className="row">
+            {isDirty ? (
+              <span className="muted" style={{ fontSize: "0.8rem" }}>
+                Unsaved changes
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!isDirty || saving}
+              onClick={onSave}
+            >
+              {saving ? "Saving…" : "Save ranks"}
+            </button>
+          </div>
+        </div>
+
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
+                <th>Name</th>
                 <th>Role ID</th>
                 <th>XP threshold</th>
                 <th />
@@ -71,40 +162,35 @@ export default function RanksPage() {
                 <tr key={i}>
                   <td>
                     <input
-                      className="mono"
-                      value={row.roleId}
-                      onChange={(e) => {
-                        const ladder = [...ranks.ladder];
-                        ladder[i] = { ...row, roleId: e.target.value };
-                        setDraft({ ...ranks, ladder });
-                      }}
+                      className="input"
+                      value={row.name ?? ""}
+                      onChange={(e) => updateLadder(i, "name", e.target.value)}
                       style={{ width: "100%" }}
                     />
                   </td>
                   <td>
                     <input
+                      className="input mono"
+                      value={row.roleId}
+                      onChange={(e) =>
+                        updateLadder(i, "roleId", e.target.value)
+                      }
+                      style={{ width: "100%" }}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="input"
                       type="number"
                       value={row.xp}
-                      onChange={(e) => {
-                        const ladder = [...ranks.ladder];
-                        ladder[i] = {
-                          ...row,
-                          xp: Number(e.target.value) || 0,
-                        };
-                        setDraft({ ...ranks, ladder });
-                      }}
+                      onChange={(e) => updateLadder(i, "xp", e.target.value)}
                     />
                   </td>
                   <td>
                     <button
                       type="button"
-                      className="btn btn-danger"
-                      onClick={() =>
-                        setDraft({
-                          ...ranks,
-                          ladder: ranks.ladder.filter((_, j) => j !== i),
-                        })
-                      }
+                      className="btn btn-danger btn-sm"
+                      onClick={() => setPendingRemoveIndex(i)}
                     >
                       Remove
                     </button>
@@ -114,32 +200,23 @@ export default function RanksPage() {
             </tbody>
           </table>
         </div>
-        <div className="row">
-          <button
-            type="button"
-            className="btn"
-            onClick={() =>
-              setDraft({
-                ...ranks,
-                ladder: [...ranks.ladder, { roleId: "", xp: 0 }],
-              })
-            }
-          >
-            Add rank
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={saving}
-            onClick={async () => {
-              await save({ ranks });
-              setDraft(null);
-            }}
-          >
-            {saving ? "Saving…" : "Save ranks"}
-          </button>
-        </div>
       </div>
+
+      <AddRankModal
+        open={showAddModal}
+        onCancel={() => setShowAddModal(false)}
+        onAdd={handleAddRank}
+      />
+
+      <ConfirmModal
+        open={pendingRemoveIndex !== null}
+        title="Remove rank"
+        message={removeMessage}
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemoveIndex(null)}
+      />
     </>
   );
 }
