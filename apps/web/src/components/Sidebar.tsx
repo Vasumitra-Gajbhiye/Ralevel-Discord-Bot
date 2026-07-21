@@ -1,5 +1,6 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -87,6 +88,9 @@ export function Sidebar() {
           </div>
         );
       })}
+      <div className="sidebar-footer">
+        <UserButton />
+      </div>
     </aside>
   );
 }

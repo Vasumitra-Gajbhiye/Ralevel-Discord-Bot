@@ -22,6 +22,7 @@ import {
   TaskDisplay,
   HelperRole,
   GuildConfig,
+  DashboardAccess,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
 } from "@ralevel/db";
@@ -57,6 +58,7 @@ export async function ensureDb() {
     TaskDisplay,
     HelperRole,
     GuildConfig,
+    DashboardAccess,
     buildDefaultGuildConfig,
     DEFAULT_COMMAND_PERMISSIONS,
   };
@@ -112,6 +114,7 @@ export {
   TaskDisplay,
   HelperRole,
   GuildConfig,
+  DashboardAccess,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
 };

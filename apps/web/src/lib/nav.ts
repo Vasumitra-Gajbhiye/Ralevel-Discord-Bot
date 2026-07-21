@@ -31,6 +31,7 @@ export const NAV = [
     label: "Settings",
     children: [
       { href: "/settings/roles", label: "Roles" },
+      { href: "/settings/access", label: "Access" },
       { href: "/settings/commands", label: "Commands" },
       { href: "/settings/channels", label: "Channels" },
       { href: "/settings/reputation", label: "Reputation" },

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
@@ -28,12 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} ${plexMono.variable} antialiased`}>
-        <ThemeProvider>
-          <div className="dashboard-shell">
-            <Sidebar />
-            <main className="main">{children}</main>
-          </div>
-        </ThemeProvider>
+        <ClerkProvider dynamic>
+          <ThemeProvider>{children}</ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -3,10 +3,16 @@ import {
   getOrCreateGuildConfig,
   guildConfigToJson,
 } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const userId = await requireAuth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const doc = await getOrCreateGuildConfig();
     return NextResponse.json(guildConfigToJson(doc));
@@ -38,6 +44,11 @@ const PATCHABLE = [
 ] as const;
 
 export async function PUT(request: Request) {
+  const userId = await requireAuth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const doc = await getOrCreateGuildConfig();

@@ -92,10 +92,6 @@ export default async function OverviewPage() {
               Guild config last updated:{" "}
               <span className="mono">{configUpdatedAt}</span>
             </p>
-            <p className="muted" style={{ margin: "0.5rem 0 0" }}>
-              Auth is not enabled yet — treat this dashboard as private network
-              only until Clerk is wired up.
-            </p>
           </div>
         </>
       )}

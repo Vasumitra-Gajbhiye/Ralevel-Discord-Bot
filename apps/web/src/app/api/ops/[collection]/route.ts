@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Model } from "mongoose";
 import { ensureDb } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 type DbModels = Awaited<ReturnType<typeof ensureDb>>;
 type AnyModel = Model<Record<string, unknown>>;
@@ -70,6 +71,11 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ collection: string }> },
 ) {
+  const userId = await requireAuth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { collection } = await context.params;
     const db = await ensureDb();
@@ -133,6 +139,11 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ collection: string }> },
 ) {
+  const userId = await requireAuth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { collection } = await context.params;
     const db = await ensureDb();

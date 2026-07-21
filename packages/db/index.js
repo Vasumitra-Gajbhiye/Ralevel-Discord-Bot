@@ -20,6 +20,7 @@ const Task = require("./src/models/task");
 const TaskDisplay = require("./src/models/taskDisplay");
 const HelperRole = require("./src/models/helperRole");
 const GuildConfig = require("./src/models/guildConfig");
+const DashboardAccess = require("./src/models/dashboardAccess");
 const {
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
@@ -47,6 +48,7 @@ module.exports = {
   TaskDisplay,
   HelperRole,
   GuildConfig,
+  DashboardAccess,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
 };

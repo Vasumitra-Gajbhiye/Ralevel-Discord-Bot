@@ -6,10 +6,11 @@ Every environment variable used by the r/alevel monorepo. Copy `.env.example` to
 - `apps/bot` loads root `.env` via `loadEnv.js`
 - `apps/web` loads root `.env` via `next.config.ts` (`dotenv`); optional overrides in `apps/web/.env.local`
 - Shared between bot and web: `MONGO_URI`, `GUILD_ID`
+- Web-only (Clerk auth): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and Clerk URL redirects (see [Clerk variables](#clerk-web-dashboard-auth))
 - Bot-only secrets: Discord `TOKEN`, `CLIENT_ID`, `REDIS_URL`
 - **Guild settings** (channels, roles, command permissions, feature toggles, etc.) live in MongoDB `GuildConfig`, edited via the web dashboard. Env channel/role IDs are seed/fallback only.
 
-**Security:** Never commit `.env` to git. It is excluded by `.gitignore` and `.dockerignore`. Rotate credentials if they are ever exposed. The dashboard has **no auth yet** — do not expose it publicly until Clerk is wired up.
+**Security:** Never commit `.env` to git. It is excluded by `.gitignore` and `.dockerignore`. Rotate credentials if they are ever exposed. The web dashboard requires Clerk sign-in; only allowlisted emails can register (managed under **Settings → Access**).
 
 ---
 
@@ -88,6 +89,23 @@ Used in: `scripts/deploy-commands.js`, `systems/dailyFinalizeSystem.js`, `utils/
 | **Example**    | `1127197280651464714`                                 |
 | **Required**   | Deploy-only (not needed for `node index.js`)          |
 | **If missing** | `scripts/deploy-commands.js` fails                    |
+
+---
+
+## Clerk (web dashboard auth)
+
+Required for `apps/web` only. Create an application at [dashboard.clerk.com](https://dashboard.clerk.com), enable **Restricted** sign-up mode with **Allowlist**, and enable Email + Password (optionally Email verification code for OTP).
+
+| Variable | Purpose | Required |
+| -------- | ------- | -------- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_test_` / `pk_live_`) | Yes (web) |
+| `CLERK_SECRET_KEY` | Clerk secret key (`sk_test_` / `sk_live_`) — server only | Yes (web) |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Sign-in page path | Yes (web) |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Sign-up page path | Yes (web) |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | Redirect after sign-in (e.g. `/`) | Recommended |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Redirect after sign-up (e.g. `/`) | Recommended |
+
+Used in: `apps/web` middleware, API routes, and Clerk components. Allowlisted emails are managed via **Settings → Access** in the dashboard (stored in Clerk, not MongoDB).
 
 ---
 
