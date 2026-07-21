@@ -18,6 +18,14 @@ const RepTierSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const IdLabelSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
 const RankEntrySchema = new mongoose.Schema(
   {
     roleId: { type: String, required: true },
@@ -97,9 +105,9 @@ const GuildConfigSchema = new mongoose.Schema(
       tiers: { type: [RepTierSchema], default: [] },
       thankWords: { type: [String], default: [] },
       welcomeWords: { type: [String], default: [] },
-      disabledChannels: { type: [String], default: [] },
-      disabledCategories: { type: [String], default: [] },
-      staffChannelIds: { type: [String], default: [] },
+      disabledChannels: { type: [IdLabelSchema], default: [] },
+      disabledCategories: { type: [IdLabelSchema], default: [] },
+      staffChannelIds: { type: [IdLabelSchema], default: [] },
     },
     ranks: {
       ladder: { type: [RankEntrySchema], default: [] },

@@ -1,17 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { LabeledIdList } from "@/components/LabeledIdList";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { WordPillList } from "@/components/WordPillList";
+import { normalizeIdLabels } from "@/lib/reputationIds";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
+
+type ReputationConfig = GuildConfigData["reputation"];
+
+function normalizeReputation(rep: ReputationConfig): ReputationConfig {
+  return {
+    ...rep,
+    disabledChannels: normalizeIdLabels(rep.disabledChannels),
+    disabledCategories: normalizeIdLabels(rep.disabledCategories),
+    staffChannelIds: normalizeIdLabels(rep.staffChannelIds),
+  };
+}
 
 export default function ReputationSettingsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
-  const [draft, setDraft] = useState<GuildConfigData["reputation"] | null>(
-    null,
+  const [draft, setDraft] = useState<ReputationConfig | null>(null);
+  const [pendingRemoveTierIndex, setPendingRemoveTierIndex] = useState<
+    number | null
+  >(null);
+
+  const savedRep = useMemo(
+    () => (config?.reputation ? normalizeReputation(config.reputation) : null),
+    [config?.reputation],
   );
-  const rep = draft ?? config?.reputation;
+  const rep = draft ?? savedRep;
+
+  const isDirty = useMemo(
+    () =>
+      draft !== null && JSON.stringify(draft) !== JSON.stringify(savedRep),
+    [draft, savedRep],
+  );
+
+  const pendingTier =
+    pendingRemoveTierIndex !== null && rep
+      ? rep.tiers[pendingRemoveTierIndex]
+      : null;
+
+  function updateRep(patch: Partial<ReputationConfig>) {
+    if (!rep) return;
+    setDraft({ ...rep, ...patch });
+  }
+
+  function confirmRemoveTier() {
+    if (!rep || pendingRemoveTierIndex === null) return;
+    setDraft({
+      ...rep,
+      tiers: rep.tiers.filter((_, i) => i !== pendingRemoveTierIndex),
+    });
+    setPendingRemoveTierIndex(null);
+  }
+
+  async function onSave() {
+    if (!rep) return;
+    await save({ reputation: rep });
+    setDraft(null);
+  }
 
   if (loading || !rep) return <p className="muted">Loading…</p>;
+
+  const removeTierMessage = pendingTier
+    ? `Remove tier "${pendingTier.label || pendingTier.roleKey}" (${pendingTier.threshold} rep)? Changes apply after you save.`
+    : "";
 
   return (
     <>
@@ -35,7 +91,7 @@ export default function ReputationSettingsPage() {
                   onChange={(e) => {
                     const tiers = [...rep.tiers];
                     tiers[i] = { ...tier, roleKey: e.target.value };
-                    setDraft({ ...rep, tiers });
+                    updateRep({ tiers });
                   }}
                 />
               </div>
@@ -50,7 +106,7 @@ export default function ReputationSettingsPage() {
                       ...tier,
                       threshold: Number(e.target.value) || 0,
                     };
-                    setDraft({ ...rep, tiers });
+                    updateRep({ tiers });
                   }}
                 />
               </div>
@@ -61,19 +117,14 @@ export default function ReputationSettingsPage() {
                   onChange={(e) => {
                     const tiers = [...rep.tiers];
                     tiers[i] = { ...tier, label: e.target.value };
-                    setDraft({ ...rep, tiers });
+                    updateRep({ tiers });
                   }}
                 />
               </div>
               <button
                 type="button"
                 className="btn btn-danger"
-                onClick={() =>
-                  setDraft({
-                    ...rep,
-                    tiers: rep.tiers.filter((_, j) => j !== i),
-                  })
-                }
+                onClick={() => setPendingRemoveTierIndex(i)}
               >
                 Remove
               </button>
@@ -83,8 +134,7 @@ export default function ReputationSettingsPage() {
             type="button"
             className="btn"
             onClick={() =>
-              setDraft({
-                ...rep,
+              updateRep({
                 tiers: [
                   ...rep.tiers,
                   { roleKey: "beginner", threshold: 10, label: "New tier" },
@@ -97,98 +147,83 @@ export default function ReputationSettingsPage() {
         </div>
 
         <div className="card stack">
-          <div className="field">
-            <label>Thank words (one per line)</label>
-            <textarea
-              value={rep.thankWords.join("\n")}
-              onChange={(e) =>
-                setDraft({
-                  ...rep,
-                  thankWords: e.target.value
-                    .split("\n")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </div>
-          <div className="field">
-            <label>Welcome / yw words (one per line)</label>
-            <textarea
-              value={rep.welcomeWords.join("\n")}
-              onChange={(e) =>
-                setDraft({
-                  ...rep,
-                  welcomeWords: e.target.value
-                    .split("\n")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </div>
-          <div className="field">
-            <label>Disabled channel IDs (comma-separated)</label>
-            <input
-              className="mono"
-              value={rep.disabledChannels.join(", ")}
-              onChange={(e) =>
-                setDraft({
-                  ...rep,
-                  disabledChannels: e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </div>
-          <div className="field">
-            <label>Disabled category IDs (comma-separated)</label>
-            <input
-              className="mono"
-              value={rep.disabledCategories.join(", ")}
-              onChange={(e) =>
-                setDraft({
-                  ...rep,
-                  disabledCategories: e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </div>
-          <div className="field">
-            <label>Staff channel IDs (comma-separated)</label>
-            <input
-              className="mono"
-              value={rep.staffChannelIds.join(", ")}
-              onChange={(e) =>
-                setDraft({
-                  ...rep,
-                  staffChannelIds: e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </div>
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>Detection words</h3>
+          <WordPillList
+            label="Thank words"
+            description="Whole-word matches that trigger thank-you reputation."
+            words={rep.thankWords}
+            onChange={(thankWords) => updateRep({ thankWords })}
+          />
+          <WordPillList
+            label="Welcome / yw words"
+            description="Whole-word matches for welcome / you're welcome replies."
+            words={rep.welcomeWords}
+            onChange={(welcomeWords) => updateRep({ welcomeWords })}
+          />
         </div>
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={async () => {
-            await save({ reputation: rep });
-            setDraft(null);
-          }}
-        >
-          {saving ? "Saving…" : "Save reputation settings"}
-        </button>
+        <div className="card stack">
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>
+            Channels, categories & staff
+          </h3>
+          <LabeledIdList
+            title="Disabled channels"
+            description="Reputation is not awarded in these channels."
+            items={rep.disabledChannels}
+            onChange={(disabledChannels) => updateRep({ disabledChannels })}
+            addButtonLabel="Add channel"
+            addModalTitle="Add disabled channel"
+            idColumnLabel="Channel ID"
+          />
+          <LabeledIdList
+            title="Disabled categories"
+            description="Reputation is not awarded in channels under these category IDs."
+            items={rep.disabledCategories}
+            onChange={(disabledCategories) => updateRep({ disabledCategories })}
+            addButtonLabel="Add category"
+            addModalTitle="Add disabled category"
+            idColumnLabel="Category ID"
+          />
+          <LabeledIdList
+            title="Staff channels"
+            description="Reputation is not awarded in these staff-only channels."
+            items={rep.staffChannelIds}
+            onChange={(staffChannelIds) => updateRep({ staffChannelIds })}
+            addButtonLabel="Add staff channel"
+            addModalTitle="Add staff channel"
+            idColumnLabel="Channel ID"
+          />
+        </div>
+
+        <div className="row row-between">
+          <div />
+          <div className="row">
+            {isDirty ? (
+              <span className="muted" style={{ fontSize: "0.8rem" }}>
+                Unsaved changes
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!isDirty || saving}
+              onClick={onSave}
+            >
+              {saving ? "Saving…" : "Save reputation settings"}
+            </button>
+          </div>
+        </div>
       </div>
+
+      <ConfirmModal
+        open={pendingRemoveTierIndex !== null}
+        title="Remove tier"
+        message={removeTierMessage}
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={confirmRemoveTier}
+        onCancel={() => setPendingRemoveTierIndex(null)}
+      />
     </>
   );
 }

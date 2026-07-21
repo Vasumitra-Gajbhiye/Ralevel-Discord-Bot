@@ -241,6 +241,10 @@ function parseJsonIdList(raw) {
     .filter(Boolean);
 }
 
+function toIdLabels(ids) {
+  return ids.map((id) => ({ id: String(id), label: "" }));
+}
+
 function env(name, fallback = "") {
   return process.env[name] || fallback;
 }
@@ -314,12 +318,14 @@ function buildDefaultGuildConfig(guildId) {
       ],
       thankWords: [...DEFAULT_THANK_WORDS],
       welcomeWords: [...DEFAULT_WELCOME_WORDS],
-      disabledChannels: parseJsonIdList(env("DISABLED_CHANNELS")),
-      disabledCategories: parseJsonIdList(env("DISABLED_CATEGORIES")),
-      staffChannelIds: String(env("STAFF_CHANNEL_IDS"))
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      disabledChannels: toIdLabels(parseJsonIdList(env("DISABLED_CHANNELS"))),
+      disabledCategories: toIdLabels(parseJsonIdList(env("DISABLED_CATEGORIES"))),
+      staffChannelIds: toIdLabels(
+        String(env("STAFF_CHANNEL_IDS"))
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
     },
     ranks: {
       ladder: DEFAULT_RANK_LADDER.map((r) => ({ ...r })),
