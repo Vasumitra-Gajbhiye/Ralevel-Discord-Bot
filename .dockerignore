@@ -2,17 +2,17 @@ node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+.pnpm-store
 
 .env
 .env.*
+!.env.example
 config.json
 
 .git
 .gitignore
 .github
-
-README.md
-*.md
 
 .vscode
 .cursor
@@ -24,3 +24,14 @@ Dockerfile
 coverage
 .nyc_output
 *.log
+
+.turbo
+.next
+docs
+PERFORMANCE_REVIEW.md
+todo
+guild-message-activity.csv
+apps/web
+README.md
+*.md
+!package.json

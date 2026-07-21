@@ -1,3 +1,15 @@
 .env
+.env.local
+.env*.local
 config.json
 node_modules
+.turbo
+.next
+dist
+out
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+coverage
+.nyc_output

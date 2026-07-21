@@ -6,17 +6,21 @@ This document explains how the r/alevel Discord bot is structured, how it starts
 
 ## Overview
 
-The bot is a **single-process Node.js application**. There is no microservice split, no separate `events/` or `jobs/` folders, and no message queue. Everything runs in one `node index.js` process.
+This monorepo contains the **Discord bot** (`apps/bot`) and **web app** (`apps/web`), with shared packages for MongoDB models (`packages/db`) and cross-app config (`packages/shared`).
+
+The bot is a **single-process Node.js application**. There is no microservice split, no separate `events/` or `jobs/` folders, and no message queue. Everything for the bot runs in one `node apps/bot/index.js` process.
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| Entry point | `index.js` | Boot orchestration |
-| Commands | `commands/` | User-facing slash command handlers |
-| Systems | `systems/` | Event listeners, schedulers, feature logic |
-| Models | `models/` | Mongoose schemas (MongoDB) |
-| Utils | `utils/` | Shared helpers |
-| Config | `permissions.config.js`, `.env` | Access control and IDs |
-| Infrastructure | `database.js`, `redis.js` | DB connections |
+| Bot entry | `apps/bot/index.js` | Boot orchestration |
+| Web app | `apps/web` | Next.js (TypeScript, App Router) |
+| Commands | `apps/bot/commands/` | User-facing slash command handlers |
+| Systems | `apps/bot/systems/` | Event listeners, schedulers, feature logic |
+| Models | `packages/db` | Mongoose schemas + `connectDB` (shared) |
+| Shared | `packages/shared` | Permissions, legacy constants, types |
+| Utils | `apps/bot/utils/` | Bot helpers (Discord-specific) |
+| Config | `@ralevel/shared`, root `.env` | Access control and IDs |
+| Infrastructure | `packages/db`, `apps/bot/redis.js` | DB / Redis connections |
 
 **External services at runtime:** Discord Gateway + REST API only. No OpenAI, Stripe, or other third-party APIs in the main bot process.
 

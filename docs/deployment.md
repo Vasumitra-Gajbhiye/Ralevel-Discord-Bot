@@ -24,7 +24,7 @@ flowchart LR
 
 | Service | Where | Purpose |
 |---------|-------|---------|
-| Bot application | Coolify (Docker) | Runs `node index.js` |
+| Bot application | Coolify (Docker) | Runs `node apps/bot/index.js` |
 | Redis | Coolify service | Message counters, finalize locks |
 | MongoDB | MongoDB Atlas | All persistent data |
 | Discord | External | Gateway + REST API |
@@ -99,15 +99,22 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
-COPY package.json ./
-RUN npm install --omit=dev && npm cache clean --force
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
-COPY . .
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
+COPY apps/bot/package.json ./apps/bot/
+COPY packages/db/package.json ./packages/db/
+COPY packages/shared/package.json ./packages/shared/
+RUN pnpm install --frozen-lockfile --filter @ralevel/bot... --prod
+
+COPY apps/bot ./apps/bot
+COPY packages/db ./packages/db
+COPY packages/shared ./packages/shared
 ENV NODE_ENV=production
 RUN chown -R node:node /app
 USER node
 
-CMD ["node", "index.js"]
+CMD ["node", "apps/bot/index.js"]
 ```
 
 Key points:

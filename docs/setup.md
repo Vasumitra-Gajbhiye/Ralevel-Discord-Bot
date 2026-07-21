@@ -10,7 +10,7 @@ Install the following before you begin:
 |------|---------|---------|
 | **Git** | Latest | Clone and manage the repository |
 | **Node.js** | 20 LTS (matches Dockerfile) | Runtime |
-| **npm** | Bundled with Node | Package manager |
+| **pnpm** | 9+ (via Corepack) | Monorepo package manager |
 | **Redis** | 6+ | Required at startup — message counters and finalize locks |
 | **MongoDB Atlas account** | Free tier OK | Persistent data storage |
 
@@ -30,17 +30,17 @@ git clone https://github.com/Vasumitra-Gajbhiye/Ralevel-Discord-Bot
 cd Ralevel-Discord-Bot
 ```
 
-The local folder name may differ (e.g. `r-alevel bot code`). All commands below assume you are in the project root where `index.js` and `package.json` live.
+The local folder name may differ (e.g. `r-alevel bot code`). All commands below assume you are in the monorepo root (`pnpm-workspace.yaml`). The bot lives in `apps/bot`.
 
 ---
 
 ## 2. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
-This installs production dependencies including `discord.js`, `mongoose`, `ioredis`, and `@napi-rs/canvas`. Dev dependency `nodemon` is used for local hot reload.
+This installs workspace packages including the bot (`@ralevel/bot`) with `discord.js`, `mongoose`, `ioredis`, and `@napi-rs/canvas`. Dev dependency `nodemon` is used for local hot reload.
 
 ---
 
@@ -174,7 +174,8 @@ The code reads `ROLE_BEGINNER_ROLE_ID` for rep tier assignment but `BEGINNER_ROL
 ### Development (auto-reload)
 
 ```bash
-npm run dev
+pnpm --filter @ralevel/bot dev
+# or from root: pnpm dev:bot
 ```
 
 Uses `nodemon index.js` — restarts when you save files.
@@ -182,8 +183,8 @@ Uses `nodemon index.js` — restarts when you save files.
 ### Production-style
 
 ```bash
-npm start
-# equivalent to: node index.js
+pnpm --filter @ralevel/bot start
+# equivalent to: node apps/bot/index.js
 ```
 
 ### Expected startup output
@@ -201,15 +202,15 @@ The bot should appear online in Discord. If slash commands are missing, deploy t
 Slash commands are **not** registered automatically at startup. After adding or changing commands:
 
 ```bash
-node scripts/deploy-commands.js
+pnpm --filter @ralevel/bot exec node scripts/deploy-commands.js
 ```
 
-Requires `TOKEN`, `CLIENT_ID`, and `GUILD_ID` in `.env`.
+Requires `TOKEN`, `CLIENT_ID`, and `GUILD_ID` in the repo-root `.env`.
 
 This registers commands to **one guild only** (instant updates, no global propagation delay):
 
 ```javascript
-// scripts/deploy-commands.js
+// apps/bot/scripts/deploy-commands.js
 Routes.applicationGuildCommands(clientId, guildId)
 ```
 
@@ -221,14 +222,14 @@ Run these after changing core systems:
 
 | Script | Command | Purpose |
 |--------|---------|---------|
-| Rank system | `npm run verify:rank` | XP rank role assignment logic |
-| Poll votes | `npm run verify:poll-votes` | Poll vote integrity (needs `MONGO_URI`) |
-| Poll sweeper | `npm run verify:poll-sweeper` | Adaptive deadline scheduling + sweep logic (needs `MONGO_URI`) |
-| Sequential IDs | `npm run verify:sequential-ids` | Counter/ID generation (needs `MONGO_URI`) |
-| Daily finalize | `npm run verify:finalize` | Redis finalize + lock behavior |
-| Message router | `npm run verify:message-router` | Single MessageCreate listener, rep gating |
-| Welcome system | `npm run verify:welcome` | Background image cache (no reload per join) |
-| Task display | `npm run verify:task-display` | Cached display message ID (no 50-msg scan per update) |
+| Rank system | `pnpm --filter @ralevel/bot verify:rank` | XP rank role assignment logic |
+| Poll votes | `pnpm --filter @ralevel/bot verify:poll-votes` | Poll vote integrity (needs `MONGO_URI`) |
+| Poll sweeper | `pnpm --filter @ralevel/bot verify:poll-sweeper` | Adaptive deadline scheduling + sweep logic (needs `MONGO_URI`) |
+| Sequential IDs | `pnpm --filter @ralevel/bot verify:sequential-ids` | Counter/ID generation (needs `MONGO_URI`) |
+| Daily finalize | `pnpm --filter @ralevel/bot verify:finalize` | Redis finalize + lock behavior |
+| Message router | `pnpm --filter @ralevel/bot verify:message-router` | Single MessageCreate listener, rep gating |
+| Welcome system | `pnpm --filter @ralevel/bot verify:welcome` | Background image cache (no reload per join) |
+| Task display | `pnpm --filter @ralevel/bot verify:task-display` | Cached display message ID (no 50-msg scan per update) |
 
 ---
 

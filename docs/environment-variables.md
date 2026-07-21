@@ -1,6 +1,12 @@
 # Environment Variables
 
-Every environment variable used by the r/alevel bot. Copy `.env.example` to `.env` and fill in real values.
+Every environment variable used by the r/alevel monorepo. Copy `.env.example` to `.env` at the **repo root** and fill in real values.
+
+**Apps:**
+- `apps/bot` loads root `.env` via `loadEnv.js`
+- `apps/web` loads root `.env` via `next.config.ts` (`@next/env`); optional overrides in `apps/web/.env.local`
+- Shared between bot and web: `MONGO_URI`
+- Bot-only: Discord token/IDs, `REDIS_URL`
 
 **Security:** Never commit `.env` to git. It is excluded by `.gitignore` and `.dockerignore`. Rotate credentials if they are ever exposed.
 
@@ -8,10 +14,11 @@ Every environment variable used by the r/alevel bot. Copy `.env.example` to `.en
 
 ## How configuration is loaded
 
-- `require("dotenv").config()` runs in `index.js`, `permissions.config.js`, and several scripts
+- Bot: `require("./loadEnv")` in `apps/bot/index.js` and scripts (loads repo-root `.env`)
+- Permissions live in `@ralevel/shared` and read `process.env` after env is loaded
 - `redis.js` throws immediately if `REDIS_URL` is missing (before the bot can start)
 - `MONGO_URI` and `TOKEN` are not validated at startup — missing values fail at runtime
-- Most channel/role IDs come from `.env`; legacy hardcoded IDs remain in `config/constants.js` (marked DO NOT DELETE)
+- Most channel/role IDs come from `.env`; legacy hardcoded IDs remain in `@ralevel/shared` constants (marked DO NOT DELETE)
 
 ---
 

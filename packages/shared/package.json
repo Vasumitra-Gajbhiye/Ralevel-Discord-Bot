@@ -1,0 +1,22 @@
+{
+  "name": "@ralevel/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared constants, permissions, utilities, and types for r/alevel",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./permissions": {
+      "types": "./src/permissions.d.ts",
+      "default": "./src/permissions.js"
+    },
+    "./constants": {
+      "types": "./src/constants.d.ts",
+      "default": "./src/constants.js"
+    }
+  }
+}

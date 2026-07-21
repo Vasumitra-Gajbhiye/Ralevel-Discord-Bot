@@ -29,3 +29,8 @@ dc mod dep head should have access to all commands.
 dc mod dep head should have unban
 IAL access to mod logs
 add roles and remove role access
+
+pnpm install
+pnpm --filter @ralevel/bot dev    # or: pnpm dev:bot
+pnpm --filter @ralevel/web dev    # or: pnpm dev:web
+pnpm --filter @ralevel/web build

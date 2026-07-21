@@ -24,9 +24,19 @@ cd Ralevel-Discord-Bot
 ```
 
 ### 2. Install Dependencies
-Install the required packages using npm:
+Install workspace packages with pnpm:
 ```bash
-npm install
+pnpm install
+```
+
+Run the bot:
+```bash
+pnpm --filter @ralevel/bot dev
+```
+
+Run the web app:
+```bash
+pnpm --filter @ralevel/web dev
 ```
 
 

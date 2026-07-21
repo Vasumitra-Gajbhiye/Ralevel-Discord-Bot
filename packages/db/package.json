@@ -1,0 +1,17 @@
+{
+  "name": "@ralevel/db",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared Mongoose models and MongoDB connection for r/alevel",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "dependencies": {
+    "mongoose": "^7.8.7"
+  }
+}
