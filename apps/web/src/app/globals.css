@@ -138,6 +138,51 @@ button {
   padding: 0.55rem 0.65rem 0.25rem;
 }
 
+.nav-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem 0.25rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-section-toggle:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+}
+
+.nav-section-chevron {
+  display: inline-block;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.nav-section[data-expanded="true"] .nav-section-chevron {
+  transform: rotate(90deg);
+}
+
+.nav-section[data-expanded="false"] .nav-section-children {
+  display: none;
+}
+
+.nav-section-children {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-left: 0.5rem;
+}
+
 .nav-link {
   display: block;
   padding: 0.45rem 0.65rem;
