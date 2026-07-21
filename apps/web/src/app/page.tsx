@@ -1,6 +1,7 @@
 import { ensureDb, getOrCreateGuildConfig, guildConfigToJson } from "@/lib/db";
 import { PageHeader } from "@/components/PageHeader";
 import { RestartBanner } from "@/components/PageHeader";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,7 @@ export default async function OverviewPage() {
       <PageHeader
         title="Overview"
         description="Single-guild control panel for the r/alevel Discord bot."
+        actions={<ThemeToggle />}
       />
       <RestartBanner />
       {error ? (

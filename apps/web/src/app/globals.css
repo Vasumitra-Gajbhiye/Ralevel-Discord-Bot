@@ -1,21 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0c0e12;
-  --bg-elevated: #141820;
-  --bg-muted: #1a1f2a;
-  --border: #2a3140;
-  --text: #e8eaef;
-  --text-muted: #8b93a7;
-  --accent: #3d8bfd;
-  --accent-soft: rgba(61, 139, 253, 0.15);
-  --warn: #e5a00d;
-  --warn-soft: rgba(229, 160, 13, 0.12);
-  --danger: #e5484d;
-  --success: #30a46c;
+  --bg: #f6f7f9;
+  --bg-elevated: #ffffff;
+  --bg-muted: #eef0f4;
+  --border: #dde1e8;
+  --text: #1a1c22;
+  --text-muted: #6b7280;
+  --accent: #0891b2;
+  --accent-soft: rgba(8, 145, 178, 0.12);
+  --warn: #d97706;
+  --warn-soft: rgba(217, 119, 6, 0.1);
+  --warn-text: #b45309;
+  --warn-border: rgba(217, 119, 6, 0.3);
+  --danger: #e11d48;
+  --danger-soft: rgba(225, 29, 72, 0.1);
+  --danger-text: #be123c;
+  --danger-border: rgba(225, 29, 72, 0.35);
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.1);
+  --on-accent: #ffffff;
+  --shadow: 0 8px 24px rgba(26, 28, 34, 0.08);
+  --shadow-lg: 0 16px 48px rgba(26, 28, 34, 0.12);
+  --overlay: rgba(26, 28, 34, 0.4);
   --radius: 8px;
-  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.dark {
+  --bg: #1c1c1e;
+  --bg-elevated: #2a2a2d;
+  --bg-muted: #36363a;
+  --border: #45454a;
+  --text: #f2f2f3;
+  --text-muted: #a0a0a8;
+  --accent: #22d3ee;
+  --accent-soft: rgba(34, 211, 238, 0.15);
+  --warn: #f59e0b;
+  --warn-soft: rgba(245, 158, 11, 0.12);
+  --warn-text: #fbbf24;
+  --warn-border: rgba(245, 158, 11, 0.35);
+  --danger: #f43f5e;
+  --danger-soft: rgba(244, 63, 94, 0.12);
+  --danger-text: #fb7185;
+  --danger-border: rgba(244, 63, 94, 0.4);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.12);
+  --on-accent: #0c4a5e;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+  --overlay: rgba(0, 0, 0, 0.55);
 }
 
 @theme inline {
@@ -127,7 +162,19 @@ button {
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.25rem;
+}
+
+.page-header-main {
+  min-width: 0;
+}
+
+.page-header-actions {
+  flex-shrink: 0;
 }
 
 .page-header h2 {
@@ -145,8 +192,8 @@ button {
 
 .restart-banner {
   background: var(--warn-soft);
-  border: 1px solid rgba(229, 160, 13, 0.35);
-  color: #f0c674;
+  border: 1px solid var(--warn-border);
+  color: var(--warn-text);
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
   font-size: 0.875rem;
@@ -237,13 +284,13 @@ table.data input {
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .btn-danger {
   background: transparent;
-  border-color: rgba(229, 72, 77, 0.5);
-  color: #ff8d8d;
+  border-color: var(--danger-border);
+  color: var(--danger-text);
 }
 
 .btn-sm {
@@ -302,6 +349,12 @@ table.data th {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.85rem 1rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.stat:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .stat .value {
@@ -325,7 +378,7 @@ table.data th {
 }
 
 .status.err {
-  color: #ff8d8d;
+  color: var(--danger-text);
 }
 
 .checkbox-grid {
@@ -394,8 +447,8 @@ table.data th {
 }
 
 .role-pill-remove:hover {
-  background: rgba(229, 72, 77, 0.15);
-  color: #ff8d8d;
+  background: var(--danger-soft);
+  color: var(--danger-text);
 }
 
 .role-picker-add {
@@ -428,7 +481,7 @@ table.data th {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.5rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow);
 }
 
 .role-picker-search {
@@ -485,7 +538,7 @@ table.data th {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--overlay);
 }
 
 .modal-panel {
@@ -495,7 +548,7 @@ table.data th {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.25rem;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-panel h3 {
@@ -531,6 +584,6 @@ table.data th {
 
 .modal-error {
   margin: 0;
-  color: #ff8d8d;
+  color: var(--danger-text);
   font-size: 0.82rem;
 }

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export function RestartBanner() {
   return (
     <div className="restart-banner">
@@ -11,14 +13,19 @@ export function RestartBanner() {
 export function PageHeader({
   title,
   description,
+  actions,
 }: {
   title: string;
   description?: string;
+  actions?: ReactNode;
 }) {
   return (
     <div className="page-header">
-      <h2>{title}</h2>
-      {description ? <p>{description}</p> : null}
+      <div className="page-header-main">
+        <h2>{title}</h2>
+        {description ? <p>{description}</p> : null}
+      </div>
+      {actions ? <div className="page-header-actions">{actions}</div> : null}
     </div>
   );
 }
