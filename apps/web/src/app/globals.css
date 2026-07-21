@@ -351,6 +351,132 @@ table.data th {
   margin: 0.1rem;
 }
 
+.role-picker {
+  position: relative;
+  min-width: 200px;
+}
+
+.role-picker-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.25rem 0.2rem 0.55rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.role-pill-label {
+  color: var(--text);
+}
+
+.role-pill-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.role-pill-remove:hover {
+  background: rgba(229, 72, 77, 0.15);
+  color: #ff8d8d;
+}
+
+.role-picker-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.role-picker-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.role-picker-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 20;
+  width: min(280px, 100vw - 2rem);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.role-picker-search {
+  margin-bottom: 0.35rem;
+}
+
+.role-picker-options {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.role-picker-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.role-picker-option:hover {
+  background: var(--bg-muted);
+}
+
+.role-picker-option-label {
+  font-size: 0.85rem;
+}
+
+.role-picker-option-key {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.role-picker-empty {
+  margin: 0.35rem 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

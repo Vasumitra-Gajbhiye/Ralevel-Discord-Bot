@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { RolePicker } from "@/components/RolePicker";
 import { useGuildConfig } from "@/lib/useGuildConfig";
 
 export default function CommandsPage() {
@@ -13,31 +14,20 @@ export default function CommandsPage() {
     [draft, config?.commandPermissions],
   );
 
-  const roleKeys = config?.roles.map((r) => r.key) ?? [];
+  const roles = config?.roles ?? [];
 
   const commandNames = useMemo(() => {
     return Array.from(new Set(Object.keys(permissions))).sort();
   }, [permissions]);
 
-  function toggle(command: string, roleKey: string) {
-    const current = permissions[command] || [];
-    const nextKeys = current.includes(roleKey)
-      ? current.filter((k) => k !== roleKey)
-      : [...current, roleKey];
-    setDraft({ ...permissions, [command]: nextKeys });
+  function setCommandRoles(command: string, keys: string[]) {
+    setDraft({ ...permissions, [command]: keys });
   }
 
   function addCommand() {
     const name = prompt("Slash command name (must match Discord setName):");
     if (!name?.trim()) return;
     setDraft({ ...permissions, [name.trim()]: [] });
-  }
-
-  function removeCommand(name: string) {
-    if (!confirm(`Remove permission entry for /${name}?`)) return;
-    const next = { ...permissions };
-    delete next[name];
-    setDraft(next);
   }
 
   async function onSave() {
@@ -64,7 +54,6 @@ export default function CommandsPage() {
               <tr>
                 <th>Command</th>
                 <th>Allowed roles</th>
-                <th />
               </tr>
             </thead>
             <tbody>
@@ -72,27 +61,11 @@ export default function CommandsPage() {
                 <tr key={cmd}>
                   <td className="mono">/{cmd}</td>
                   <td>
-                    <div className="checkbox-grid">
-                      {roleKeys.map((key) => (
-                        <label key={key}>
-                          <input
-                            type="checkbox"
-                            checked={(permissions[cmd] || []).includes(key)}
-                            onChange={() => toggle(cmd, key)}
-                          />
-                          {key}
-                        </label>
-                      ))}
-                    </div>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn btn-danger"
-                      onClick={() => removeCommand(cmd)}
-                    >
-                      Remove
-                    </button>
+                    <RolePicker
+                      roles={roles}
+                      selectedKeys={permissions[cmd] || []}
+                      onChange={(keys) => setCommandRoles(cmd, keys)}
+                    />
                   </td>
                 </tr>
               ))}
