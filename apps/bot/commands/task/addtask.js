@@ -5,6 +5,7 @@ const {
   PermissionFlagsBits,
 } = require("discord.js");
 const { getNextSequenceId } = require("../../utils/getNextSequenceId");
+const { getTaskTeamFromChannel } = require("../../utils/getTaskTeam");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -73,15 +74,8 @@ module.exports = {
     const wordLimit = interaction.options.getString("word_limit");
 
     // TEAM DETECTION BASED ON CHANNEL
-    let team = null;
-
-    if (interaction.channelId === process.env.GRAPHIC_CHANNEL) {
-      team = "graphic";
-    } else if (interaction.channelId === process.env.DEV_CHANNEL) {
-      team = "dev";
-    } else if (interaction.channelId === process.env.WRITER_CHANNEL) {
-      team = "writer";
-    } else {
+    const team = getTaskTeamFromChannel(interaction.channelId);
+    if (!team) {
       return interaction.reply({
         content: "❌ Use this in a graphic, dev or writer task channel.",
         ephemeral: true,

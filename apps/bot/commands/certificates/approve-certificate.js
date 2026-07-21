@@ -5,11 +5,20 @@ const {
   EmbedBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
+const {
+  getGuildConfig,
+  getChannelId,
+  resolveRoleKeys,
+} = require("../../utils/guildConfigStore");
 
-const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
-const REVIEW_CHANNEL = process.env.REVIEW_CHANNEL;
-
-const CERT_UPDATES_CHANNEL = process.env.CERT_UPDATES_CHANNEL; // Public certificate updates channel
+function memberHasCertModRole(member) {
+  const cfg = getGuildConfig();
+  const ids = [
+    ...resolveRoleKeys(cfg.certificates?.modRoleKeys || []),
+    ...(cfg.certificates?.extraModRoleIds || []),
+  ];
+  return ids.some((id) => member?.roles?.cache?.has(id));
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -28,7 +37,7 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
 
     // Permission check (after deferring)
-    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    if (!memberHasCertModRole(interaction.member)) {
       return interaction.editReply({
         content: "❌ Only admins can use this command.",
       });
@@ -97,7 +106,7 @@ module.exports = {
       // Send update
       try {
         const updatesCh = await interaction.client.channels.fetch(
-          CERT_UPDATES_CHANNEL
+          getChannelId("certUpdates")
         );
         const applicantUser = await interaction.client.users.fetch(app.userId);
 
@@ -131,7 +140,7 @@ module.exports = {
     // Post to review channel
     try {
       const reviewCh = await interaction.client.channels
-        .fetch(REVIEW_CHANNEL)
+        .fetch(getChannelId("review"))
         .catch(() => null);
       if (reviewCh) {
         const embed = new EmbedBuilder()

@@ -15,13 +15,22 @@ const {
 
 require("../loadEnv");
 
-// CONFIG — change IDs if needed
-const APPLICATION_CHANNEL = process.env.APPLICATION_CHANNEL;
-const REVIEW_CHANNEL = process.env.REVIEW_CHANNEL;
-const SR_HELPER_ROLE_ID = process.env.SR_HELPER_ROLE_ID; // senior helper role (eligibility)
-const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID; // only this role can approve/reject / use submit command
-const RESOURCE_CONTRIBUTOR_ROLE_ID = process.env.RESOURCE_CONTRIBUTOR_ROLE_ID; // optional role to give on resource approval
-const CERT_UPDATES_CHANNEL = process.env.CERT_UPDATES_CHANNEL; // Public certificate updates channel
+const {
+  getGuildConfig,
+  getChannelId,
+  getRoleId,
+  resolveRoleKeys,
+  tryGetGuildConfig,
+} = require("../utils/guildConfigStore");
+
+function memberHasCertModRole(member) {
+  const cfg = getGuildConfig();
+  const ids = [
+    ...resolveRoleKeys(cfg.certificates?.modRoleKeys || []),
+    ...(cfg.certificates?.extraModRoleIds || []),
+  ];
+  return ids.some((id) => member?.roles?.cache?.has(id));
+}
 
 module.exports = function certificateSystem(client) {
   // Utility: get rep count
@@ -37,6 +46,9 @@ module.exports = function certificateSystem(client) {
   // Single InteractionCreate handler for all certificate interactions
   client.on(Events.InteractionCreate, async (interaction) => {
     try {
+      const cfgEarly = tryGetGuildConfig();
+      if (cfgEarly?.features?.certificates === false) return;
+
       // ---------------------------
       // Modal submit flows (reject modal)
       // ---------------------------
@@ -49,7 +61,7 @@ module.exports = function certificateSystem(client) {
 
           // Only admins should be able (we'll double-check interaction.member roles)
           const member = interaction.member;
-          if (!member || !member.roles.cache.has(ADMIN_ROLE_ID)) {
+          if (!member || !memberHasCertModRole(member)) {
             return interaction.reply({
               ephemeral: true,
               content: "❌ Only admins may reject applications.",
@@ -115,7 +127,7 @@ module.exports = function certificateSystem(client) {
             // Send update
             try {
               const updatesCh =
-                await client.channels.fetch(CERT_UPDATES_CHANNEL);
+                await client.channels.fetch(getChannelId("certUpdates"));
               const applicantUser = await client.users.fetch(app.userId);
 
               const updateEmbed = new EmbedBuilder()
@@ -151,7 +163,7 @@ module.exports = function certificateSystem(client) {
 
           try {
             const reviewCh = await client.channels
-              .fetch(REVIEW_CHANNEL)
+              .fetch(getChannelId("review"))
               .catch(() => null);
             if (reviewCh) {
               const embed = new EmbedBuilder()
@@ -214,9 +226,18 @@ module.exports = function certificateSystem(client) {
         if (guild)
           member = await guild.members.fetch(user.id).catch(() => null);
 
-        // Eligibility: Helper requires senior helper
+        // Eligibility: Helper requires configured roles
         if (type === "Helper") {
-          if (!member || !member.roles.cache.has(SR_HELPER_ROLE_ID)) {
+          const helperCfg = (getGuildConfig().certificates?.types || []).find(
+            (t) => t.id === "helper",
+          );
+          const requiredRoleIds = resolveRoleKeys(
+            helperCfg?.requiredRoleKeys || [],
+          );
+          if (
+            !member ||
+            !requiredRoleIds.some((rid) => member.roles.cache.has(rid))
+          ) {
             return interaction.editReply({
               content:
                 "❌ You are not eligible for the Helper Certificate. Only Senior Helpers may apply.\n" +
@@ -301,7 +322,7 @@ module.exports = function certificateSystem(client) {
 
         // send to review channel
         const reviewCh = await client.channels
-          .fetch(REVIEW_CHANNEL)
+          .fetch(getChannelId("review"))
           .catch(() => null);
         if (reviewCh) {
           await reviewCh
@@ -346,7 +367,7 @@ module.exports = function certificateSystem(client) {
         } catch {
           // Send update
           try {
-            const updatesCh = await client.channels.fetch(CERT_UPDATES_CHANNEL);
+            const updatesCh = await client.channels.fetch(getChannelId("certUpdates"));
             const applicantUser = await client.users.fetch(user.id);
 
             const updateEmbed = new EmbedBuilder()
@@ -401,7 +422,7 @@ module.exports = function certificateSystem(client) {
       ) {
         // Admin check
         const member = interaction.member;
-        if (!member || !member.roles.cache.has(ADMIN_ROLE_ID)) {
+        if (!member || !memberHasCertModRole(member)) {
           return interaction.reply({
             ephemeral: true,
             content: "❌ Only admins may perform this action.",
@@ -441,13 +462,17 @@ module.exports = function certificateSystem(client) {
               interaction.guild &&
               app.type.toLowerCase().includes("resource")
             ) {
+              const resourceCfg = (
+                getGuildConfig().certificates?.types || []
+              ).find((t) => t.id === "resource");
+              const rewardRoleId = resourceCfg?.rewardRoleKey
+                ? getRoleId(resourceCfg.rewardRoleKey)
+                : "";
               const guildMember = await interaction.guild.members
                 .fetch(app.userId)
                 .catch(() => null);
-              if (guildMember)
-                await guildMember.roles
-                  .add(RESOURCE_CONTRIBUTOR_ROLE_ID)
-                  .catch(() => {});
+              if (guildMember && rewardRoleId)
+                await guildMember.roles.add(rewardRoleId).catch(() => {});
             }
           } catch (err) {
             // ignore
@@ -483,7 +508,7 @@ module.exports = function certificateSystem(client) {
             // Send update
             try {
               const updatesCh =
-                await client.channels.fetch(CERT_UPDATES_CHANNEL);
+                await client.channels.fetch(getChannelId("certUpdates"));
               const applicantUser = await client.users.fetch(app.userId);
 
               const updateEmbed = new EmbedBuilder()
@@ -516,7 +541,7 @@ module.exports = function certificateSystem(client) {
           // Post to review channel
           try {
             const reviewCh = await client.channels
-              .fetch(REVIEW_CHANNEL)
+              .fetch(getChannelId("review"))
               .catch(() => null);
             if (reviewCh) {
               const embed = new EmbedBuilder()

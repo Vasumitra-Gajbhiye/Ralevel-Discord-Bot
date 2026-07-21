@@ -26,4 +26,4 @@ const ConfessionBanSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("ConfessionBan", ConfessionBanSchema);
+module.exports = mongoose.models["ConfessionBan"] || mongoose.model("ConfessionBan", ConfessionBanSchema);

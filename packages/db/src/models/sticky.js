@@ -34,4 +34,4 @@ const StickySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Sticky", StickySchema);
+module.exports = mongoose.models["Sticky"] || mongoose.model("Sticky", StickySchema);

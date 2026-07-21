@@ -1,9 +1,17 @@
 const { QotdRotation } = require("@ralevel/db");
+const {
+  getChannelId,
+  tryGetGuildConfig,
+} = require("./guildConfigStore");
 
-const REMINDER_HOUR_IST = 6;
 const ROTATION_CACHE_TTL_MS = 30 * 60 * 1000;
 
 let rotationCache = { doc: null, expiresAt: 0 };
+
+function getReminderHourIst() {
+  const cfg = tryGetGuildConfig();
+  return cfg?.schedules?.qotdHourIst ?? 6;
+}
 
 function getISTDateInfo() {
   const now = new Date();
@@ -67,11 +75,12 @@ function getRotationMembers(rotation) {
 }
 
 function getWouldSendReason({ dateStr, hour, rotation, channelId, clientReady }) {
+  const reminderHour = getReminderHourIst();
   if (!clientReady) return "Discord client not ready";
-  if (!channelId) return "QOTD_REMINDER_CHANNEL_ID is not set";
+  if (!channelId) return "QOTD reminder channel is not set";
   if (!rotation) return "No active rotation in MongoDB";
-  if (hour < REMINDER_HOUR_IST) {
-    return `Before ${REMINDER_HOUR_IST} AM IST (currently ${hour}:xx on ${dateStr})`;
+  if (hour < reminderHour) {
+    return `Before ${reminderHour} AM IST (currently ${hour}:xx on ${dateStr})`;
   }
   if (rotation.lastReminderDate === dateStr) {
     return `Already sent today (${dateStr})`;
@@ -84,15 +93,16 @@ function getWouldSendReason({ dateStr, hour, rotation, channelId, clientReady })
 }
 
 async function getQotdDiagnostics(client) {
-  const channelId = process.env.QOTD_REMINDER_CHANNEL_ID;
+  const channelId = getChannelId("qotdReminder");
   const { dateStr, hour } = getISTDateInfo();
   const rotation = await findActiveRotation({ bypassCache: true });
   const { current, next, validIndex } = getRotationMembers(rotation);
   const clientReady = client?.isReady?.() ?? false;
+  const reminderHour = getReminderHourIst();
 
   let channelStatus = "not checked";
   if (!channelId) {
-    channelStatus = "missing env var";
+    channelStatus = "missing channel config";
   } else if (!clientReady) {
     channelStatus = "client not ready";
   } else {
@@ -109,6 +119,7 @@ async function getQotdDiagnostics(client) {
   return {
     dateStr,
     hour,
+    reminderHourIst: reminderHour,
     channelId: channelId || null,
     channelStatus,
     clientReady,
@@ -131,7 +142,10 @@ async function getQotdDiagnostics(client) {
 }
 
 module.exports = {
-  REMINDER_HOUR_IST,
+  get REMINDER_HOUR_IST() {
+    return getReminderHourIst();
+  },
+  getReminderHourIst,
   ROTATION_CACHE_TTL_MS,
   getISTDateInfo,
   findActiveRotation,

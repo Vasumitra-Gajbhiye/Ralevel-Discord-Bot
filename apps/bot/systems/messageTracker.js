@@ -1,8 +1,5 @@
 const redis = require("../redis");
-
-// const BOOSTER_ROLE_ID = "1117393047861346335";
-// const BOOSTER_ROLE_ID = "1487420818148557011";
-const BOOSTER_ROLE_ID = process.env.BOOSTER_ROLE_ID;
+const { getRoleId, tryGetGuildConfig } = require("../utils/guildConfigStore");
 
 const MESSAGE_KEY_TTL_SEC = 60 * 60 * 72;
 
@@ -32,8 +29,14 @@ async function handleMessageTracker(message) {
     const countKey = `messages:${guildId}:${date}`;
     const boosterKey = `messages:boosters:${guildId}:${date}`;
 
+    const cfg = tryGetGuildConfig();
+    const boosterRoleKey = cfg?.ranks?.boosterRoleKey || "booster";
+    const boosterRoleId =
+      getRoleId(boosterRoleKey) || process.env.BOOSTER_ROLE_ID || "";
     const isBooster =
-      message.member?.roles?.cache?.has(BOOSTER_ROLE_ID) || false;
+      (boosterRoleId &&
+        message.member?.roles?.cache?.has(boosterRoleId)) ||
+      false;
 
     const pipeline = buildMessageTrackerPipeline(redis, {
       countKey,

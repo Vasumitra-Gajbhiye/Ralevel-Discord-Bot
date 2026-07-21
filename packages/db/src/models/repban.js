@@ -1,4 +1,5 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema, model } = mongoose;
 
 const RepBanSchema = new Schema(
   {
@@ -8,4 +9,4 @@ const RepBanSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = model("RepBan", RepBanSchema);
+module.exports = mongoose.models["RepBan"] || model("RepBan", RepBanSchema);

@@ -3,15 +3,13 @@ const { AttachmentBuilder, EmbedBuilder } = require("discord.js");
 const path = require("path");
 require("../loadEnv");
 
+const {
+  getGuildConfig,
+  getChannelId,
+  tryGetGuildConfig,
+} = require("../utils/guildConfigStore");
 
-// CONFIG
-const WELCOME_CHANNEL_ID = process.env.WELCOME_CHANNEL;
 const IMAGE_PATH = path.join(__dirname, "../assets/welcome.png");
-
-// Avatar placement (tuned for your image)
-const AVATAR_SIZE = 360;
-const AVATAR_X = 600; // center of 1000px canvas
-const AVATAR_Y = 225; // above "Welcome" text
 
 let cachedBackground;
 
@@ -25,10 +23,19 @@ async function getBackground() {
 function welcomeSystem(client) {
   client.on("guildMemberAdd", async (member) => {
     try {
-      const channel = await client.channels.fetch(
-        WELCOME_CHANNEL_ID
-      );
+      const cfg = tryGetGuildConfig();
+      if (cfg?.features?.welcome === false) return;
+
+      const welcomeCfg = getGuildConfig().welcome || {};
+      const welcomeChannelId = getChannelId("welcome");
+      if (!welcomeChannelId) return;
+
+      const channel = await client.channels.fetch(welcomeChannelId);
       if (!channel || !channel.isTextBased()) return;
+
+      const avatarSize = welcomeCfg.avatarSize ?? 360;
+      const avatarX = welcomeCfg.avatarX ?? 600;
+      const avatarY = welcomeCfg.avatarY ?? 225;
 
       // Canvas
       const canvas = createCanvas(1200, 675);
@@ -49,9 +56,9 @@ function welcomeSystem(client) {
       ctx.save();
       ctx.beginPath();
       ctx.arc(
-        AVATAR_X,
-        AVATAR_Y,
-        AVATAR_SIZE / 2,
+        avatarX,
+        avatarY,
+        avatarSize / 2,
         0,
         Math.PI * 2
       );
@@ -60,19 +67,19 @@ function welcomeSystem(client) {
 
       ctx.drawImage(
         avatar,
-        AVATAR_X - AVATAR_SIZE / 2,
-        AVATAR_Y - AVATAR_SIZE / 2,
-        AVATAR_SIZE,
-        AVATAR_SIZE
+        avatarX - avatarSize / 2,
+        avatarY - avatarSize / 2,
+        avatarSize,
+        avatarSize
       );
       ctx.restore();
 
       // Optional soft outline
       ctx.beginPath();
       ctx.arc(
-        AVATAR_X,
-        AVATAR_Y,
-        AVATAR_SIZE / 2,
+        avatarX,
+        avatarY,
+        avatarSize / 2,
         0,
         Math.PI * 2
       );
@@ -87,24 +94,24 @@ function welcomeSystem(client) {
         name: "welcome.png",
       });
 
+      const description = (
+        welcomeCfg.description ||
+        `<@{userId}> has joined the community!\n\nSelect/edit your subject roles from **Channels & Roles** to access subject channels and resources!`
+      ).replace(/\{userId\}/g, member.id);
 
       const welcomeEmbed = new EmbedBuilder()
-  .setTitle("Welcome to r/alevel 👋")
-  .setDescription(
-    `<@${member.id}> has joined the community!\n\n` +
-    `Select/edit your subject roles from **Channels & Roles** ` +
-    `to access subject channels and resources!`
-  )
-  .setImage("attachment://welcome.png")
-  .setColor("#2CDAF2");
+        .setTitle(welcomeCfg.title || "Welcome to r/alevel 👋")
+        .setDescription(description)
+        .setImage("attachment://welcome.png")
+        .setColor(welcomeCfg.color || "#2CDAF2");
 
-await channel.send({
-  embeds: [welcomeEmbed],
-  files: [attachment],
-  allowedMentions: {
-    users: [member.id],
-  },
-});
+      await channel.send({
+        embeds: [welcomeEmbed],
+        files: [attachment],
+        allowedMentions: {
+          users: [member.id],
+        },
+      });
     } catch (err) {
       console.error("Welcome system error:", err);
     }

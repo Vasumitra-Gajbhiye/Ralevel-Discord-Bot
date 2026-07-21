@@ -5,4 +5,4 @@ const helperSchema = new mongoose.Schema({
   roleId: { type: String, required: true }
 });
 
-module.exports = mongoose.model("HelperRole", helperSchema);
+module.exports = mongoose.models["HelperRole"] || mongoose.model("HelperRole", helperSchema);

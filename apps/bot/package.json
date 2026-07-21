@@ -20,7 +20,8 @@
     "verify:my-progress": "node scripts/verify-my-progress.js",
     "verify:qotd": "node scripts/verify-qotd-scheduler.js",
     "verify:welcome": "node scripts/verify-welcome.js",
-    "verify:task-display": "node scripts/verify-task-display.js"
+    "verify:task-display": "node scripts/verify-task-display.js",
+    "seed:guild-config": "node scripts/seed-guild-config.js"
   },
   "keywords": [],
   "author": "Myz",

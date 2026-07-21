@@ -1,5 +1,6 @@
 const { ModLog } = require("@ralevel/db");
 const { EmbedBuilder } = require("discord.js");
+const { getChannelId } = require("./guildConfigStore");
 
 module.exports = async function logModAction({
   interaction,
@@ -103,10 +104,10 @@ module.exports = async function logModAction({
   }
 
   // 2. Send to log channel
-  const logChannelId = process.env.MOD_LOG_CHANNEL_ID;
+  const logChannelId = getChannelId("modLog");
 
   if (!logChannelId) {
-    console.error("MOD_LOG_CHANNEL_ID is not set in .env");
+    console.error("modLog channel is not set in GuildConfig");
     return;
   }
 

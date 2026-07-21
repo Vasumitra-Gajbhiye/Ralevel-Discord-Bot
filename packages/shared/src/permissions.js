@@ -1,3 +1,9 @@
+/**
+ * Legacy default permission map (env-based).
+ * Runtime source of truth is MongoDB GuildConfig (loaded by the bot at startup,
+ * edited via the web dashboard). This file remains useful as a seed reference
+ * and for scripts that have not been migrated.
+ */
 // 1. Define your role groups
 // Using arrays makes it easy to combine them later
 const groups = {

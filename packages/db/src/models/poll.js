@@ -85,4 +85,4 @@ const PollSchema = new mongoose.Schema(
 
 PollSchema.index({ status: 1, deadline: 1 });
 
-module.exports = mongoose.model("Poll", PollSchema);
+module.exports = mongoose.models["Poll"] || mongoose.model("Poll", PollSchema);

@@ -50,4 +50,4 @@ const WarningSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Warning", WarningSchema);
+module.exports = mongoose.models["Warning"] || mongoose.model("Warning", WarningSchema);

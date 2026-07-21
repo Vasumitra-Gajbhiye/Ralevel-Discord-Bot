@@ -36,4 +36,4 @@ const QotdRotationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("QotdRotation", QotdRotationSchema);
+module.exports = mongoose.models["QotdRotation"] || mongoose.model("QotdRotation", QotdRotationSchema);

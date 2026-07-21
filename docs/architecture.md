@@ -12,15 +12,17 @@ The bot is a **single-process Node.js application**. There is no microservice sp
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| Bot entry | `apps/bot/index.js` | Boot orchestration |
-| Web app | `apps/web` | Next.js (TypeScript, App Router) |
+| Bot entry | `apps/bot/index.js` | Boot orchestration (DB → GuildConfig → systems) |
+| Web app | `apps/web` | Next.js dashboard for GuildConfig + operational CRUD |
 | Commands | `apps/bot/commands/` | User-facing slash command handlers |
 | Systems | `apps/bot/systems/` | Event listeners, schedulers, feature logic |
-| Models | `packages/db` | Mongoose schemas + `connectDB` (shared) |
-| Shared | `packages/shared` | Permissions, legacy constants, types |
-| Utils | `apps/bot/utils/` | Bot helpers (Discord-specific) |
-| Config | `@ralevel/shared`, root `.env` | Access control and IDs |
+| Models | `packages/db` | Mongoose schemas + `connectDB` + `GuildConfig` |
+| Shared | `packages/shared` | Legacy permissions defaults, constants, types |
+| Utils | `apps/bot/utils/` | Bot helpers (including `guildConfigStore`) |
+| Config | MongoDB `GuildConfig` (+ root `.env` secrets/seed) | Live bot settings |
 | Infrastructure | `packages/db`, `apps/bot/redis.js` | DB / Redis connections |
+
+**GuildConfig:** Single document per `GUILD_ID` storing roles, command permission matrix, channels, feature flags, reputation/XP settings, schedules, welcome copy, certificates/confessions/tasks/polls/sticky/helper settings. The web dashboard edits this document; the bot loads it once at startup (restart required for settings). Operational collections (warnings, stickies, etc.) are edited live from the dashboard without a restart.
 
 **External services at runtime:** Discord Gateway + REST API only. No OpenAI, Stripe, or other third-party APIs in the main bot process.
 

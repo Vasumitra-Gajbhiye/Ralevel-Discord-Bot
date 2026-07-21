@@ -5,6 +5,20 @@ const {
   EmbedBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
+const {
+  getGuildConfig,
+  getChannelId,
+  resolveRoleKeys,
+} = require("../../utils/guildConfigStore");
+
+function memberHasCertModRole(member) {
+  const cfg = getGuildConfig();
+  const ids = [
+    ...resolveRoleKeys(cfg.certificates?.modRoleKeys || []),
+    ...(cfg.certificates?.extraModRoleIds || []),
+  ];
+  return ids.some((id) => member?.roles?.cache?.has(id));
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -37,17 +51,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   async execute(interaction) {
-    const MOD_ROLES = process.env.MOD_ROLES?.split(",") || [];
-    const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
-    const REVIEW_CHANNEL = process.env.REVIEW_CHANNEL;
-    const CERT_UPDATES_CHANNEL = process.env.REVIEW_CHANNEL; // Public certificate updates channel
-
-    const member = interaction.member;
-    const isMod =
-      member.roles.cache.some((r) => MOD_ROLES.includes(r.id)) ||
-      member.roles.cache.has(ADMIN_ROLE_ID);
-
-    if (!isMod) {
+    if (!memberHasCertModRole(interaction.member)) {
       return interaction.reply({
         content: "❌ Only Mods/Admins may use this command.",
         ephemeral: true,
@@ -108,10 +112,10 @@ module.exports = {
           ],
         });
       } catch {
-        // Send update
+        // Send update — use certUpdates channel (not review)
         try {
           const updatesCh = await interaction.client.channels.fetch(
-            CERT_UPDATES_CHANNEL
+            getChannelId("certUpdates")
           );
           const applicantUser = await interaction.client.users.fetch(
             app.userId
@@ -167,7 +171,7 @@ module.exports = {
       // Log in review channel as an embed instead of plain text
       try {
         const reviewCh = await interaction.client.channels.fetch(
-          REVIEW_CHANNEL
+          getChannelId("review")
         );
         await reviewCh.send({
           embeds: [

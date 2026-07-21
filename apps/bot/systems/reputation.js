@@ -6,98 +6,13 @@ const { Reputation, RepBan } = require("@ralevel/db");
 
 const { PermissionsBitField } = require("discord.js");
 const { createBoundedSet } = require("../utils/boundedSet.js");
+const {
+  getGuildConfig,
+  getRoleId,
+  tryGetGuildConfig,
+} = require("../utils/guildConfigStore");
 
 const PROCESSED_MESSAGE_CACHE_SIZE = 10_000;
-
-// Words
-const THANK_WORDS = [
-  "thanks!!",
-  "thank you",
-  "thank u",
-  "thankuu",
-  "thankuuu",
-  "thankyou",
-  "thanks",
-  "thanks!",
-  "thankss",
-  "thankss!",
-  "thankss!!",
-  "thanksss",
-  "ty",
-  "tysm",
-  "tyvm",
-  "thx",
-  "thanx",
-  "thnx",
-  "tnx",
-  "tnx!",
-  "thnk u",
-  "thank you very much",
-  "thank you so much",
-  "thanks a lot",
-  "thanks a ton",
-  "many thanks",
-  "appreciate it",
-  "much appreciated",
-  "really appreciate it",
-  "appreciate ya",
-  "i appreciate it",
-  "tyty",
-  "tytyy",
-  "tyy",
-  "tyuu",
-  "tyssm",
-  "tysmmm",
-  "tysmm",
-  "tysmmm!!!",
-  "thxsm",
-  "ty <3",
-  "tysm <3",
-  "thank yoi",
-  "thank uo",
-  "thakns",
-  "thansk",
-  "tahnks",
-  "tahnx",
-  "tnk u",
-  "tyu",
-  "tyyyy",
-  "tyuy",
-  "ty!!",
-  "tysm!!",
-  "thx!!",
-  "thank you!!!",
-  "tyyy!!!",
-  "ty :D",
-  "tysm :)",
-  "ty <33",
-  "tysmmm <333",
-];
-const WELCOME_WORDS = [
-  "yw",
-  "welcome",
-  "np",
-  "noworries",
-  "noproblem",
-  "nw",
-  "nws",
-];
-
-// Tier roles
-const ROLE_BEGINNER = process.env.ROLE_BEGINNER_ROLE_ID;
-const ROLE_INTERMEDIATE = process.env.INTERMEDIATE_ROLE_ID;
-const ROLE_ADVANCED = process.env.ADVANCED_ROLE_ID;
-const ROLE_EXPERT = process.env.EXPERT_ROLE_ID;
-const ROLE_GIGACHAD = process.env.GIGACHAD_ROLE_ID;
-
-const TIERS = [
-  { amount: 1000, role: ROLE_GIGACHAD, label: "Giga Chad (1000+ Rep)" },
-  { amount: 500, role: ROLE_EXPERT, label: "Expert (500+ Rep)" },
-  { amount: 100, role: ROLE_ADVANCED, label: "Advanced (100+ Rep)" },
-  { amount: 50, role: ROLE_INTERMEDIATE, label: "Intermediate (50+ Rep)" },
-  { amount: 10, role: ROLE_BEGINNER, label: "Beginner (10+ Rep)" },
-];
-const ALL_TIER_IDS = TIERS.map((t) => t.role);
 
 //---------------------------------------------
 // Helper: token split
@@ -112,8 +27,20 @@ function hasWholeWord(str, list) {
   return tokens.some((t) => list.includes(t));
 }
 
+function getTiers() {
+  return (getGuildConfig().reputation?.tiers || [])
+    .slice()
+    .sort((a, b) => b.threshold - a.threshold)
+    .map((t) => ({
+      amount: t.threshold,
+      role: getRoleId(t.roleKey),
+      label: t.label || `${t.roleKey} (${t.threshold}+ Rep)`,
+    }))
+    .filter((t) => t.role);
+}
+
 function getTierByRep(rep) {
-  return TIERS.find((t) => rep >= t.amount) || null;
+  return getTiers().find((t) => rep >= t.amount) || null;
 }
 
 //---------------------------------------------
@@ -172,14 +99,16 @@ async function ensureTierRoleAndCheckAdded(guild, member, announceChannel, rep) 
     if (!me.permissions.has(PermissionsBitField.Flags.ManageRoles))
       return false;
 
-    const eligible = getTierByRep(rep);
+    const tiers = getTiers();
+    const ALL_TIER_IDS = tiers.map((t) => t.role);
+    const eligible = tiers.find((t) => rep >= t.amount) || null;
 
     if (!eligible) {
       await member.roles.remove(ALL_TIER_IDS).catch(() => {});
       return false;
     }
 
-    const previousTier = getTierByRep(rep - 1);
+    const previousTier = tiers.find((t) => rep - 1 >= t.amount) || null;
     const hadBefore = previousTier && previousTier.role === eligible.role;
 
     const toRemove = ALL_TIER_IDS.filter((r) => r !== eligible.role);
@@ -214,11 +143,17 @@ function reputationSystem(client) {
 
   async function handleReputationMessage(message) {
     try {
+      const cfg = tryGetGuildConfig();
+      if (cfg?.features?.reputation === false) return;
+
+      const thankWords = cfg?.reputation?.thankWords || [];
+      const welcomeWords = cfg?.reputation?.welcomeWords || [];
+
       const content = message.content?.toLowerCase() || "";
       if (processedMessageIds.has(message.id)) return;
 
       // ---------- CASE 1: thank reply ----------
-      if (message.reference && hasWholeWord(content, THANK_WORDS)) {
+      if (message.reference && hasWholeWord(content, thankWords)) {
         const replied = await message.fetchReference().catch(() => null);
         const target = replied?.member;
         if (!target) return;
@@ -241,7 +176,7 @@ function reputationSystem(client) {
       // ---------- CASE 2: thank @members ----------
       if (
         !message.reference &&
-        hasWholeWord(content, THANK_WORDS) &&
+        hasWholeWord(content, thankWords) &&
         message.mentions.members.size
       ) {
         const membersById = new Map();
@@ -277,7 +212,7 @@ function reputationSystem(client) {
       }
 
       // ---------- CASE 3: yw reply to a thank ----------
-      if (message.reference && hasWholeWord(content, WELCOME_WORDS)) {
+      if (message.reference && hasWholeWord(content, welcomeWords)) {
         const replied = await message.fetchReference().catch(() => null);
         if (!replied) return;
 

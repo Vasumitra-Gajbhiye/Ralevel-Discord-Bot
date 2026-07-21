@@ -1,5 +1,6 @@
 const { Task } = require("@ralevel/db");
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { getTaskTeamFromChannel } = require("../../utils/getTaskTeam");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,11 +12,8 @@ module.exports = {
         await interaction.deferReply({ ephemeral: true });
 
         // TEAM CHECK
-        let team = null;
-        if (interaction.channelId === process.env.GRAPHIC_CHANNEL) team = "graphic";
-        else if (interaction.channelId === process.env.DEV_CHANNEL) team = "dev";
-        else if (interaction.channelId === process.env.WRITER_CHANNEL) team = "writer";
-        else return interaction.editReply("❌ Use inside a graphics, dev or writer task channel.");
+        const team = getTaskTeamFromChannel(interaction.channelId);
+        if (!team) return interaction.editReply("❌ Use inside a graphics, dev or writer task channel.");
 
         const userId = interaction.user.id;
 

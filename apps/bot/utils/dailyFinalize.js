@@ -2,6 +2,7 @@ require("../loadEnv");
 const { connectDB, User } = require("@ralevel/db");
 const redis = require("../redis");
 const handleRanks = require("../systems/rankSystem");
+const { tryGetGuildConfig } = require("./guildConfigStore");
 
 const LOCK_TTL_PROCESSING_SEC = 60 * 60;
 const LOCK_TTL_COMPLETED_SEC = 60 * 60 * 24 * 7;
@@ -43,7 +44,9 @@ function buildUserUpdates(userIds, counts, boosters, userMap, guildId) {
     const count = parseInt(counts[userId] || "0", 10);
     const isBooster =
       boosters[userId] === "true" || boosters[userId] === true;
-    const xpGained = isBooster ? count * 2 : count;
+    const multiplier =
+      tryGetGuildConfig()?.ranks?.boosterMultiplier ?? 2;
+    const xpGained = isBooster ? count * multiplier : count;
 
     const existingUser = userMap[userId];
     const previousXp = existingUser?.xp || 0;

@@ -1,5 +1,6 @@
 // REPUTATION model
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
+const { Schema, model } = mongoose;
 
 const ReputationSchema = new Schema(
   {
@@ -11,4 +12,4 @@ const ReputationSchema = new Schema(
 
 ReputationSchema.index({ rep: -1 });
 
-module.exports = model("Reputation", ReputationSchema);
+module.exports = mongoose.models["Reputation"] || model("Reputation", ReputationSchema);

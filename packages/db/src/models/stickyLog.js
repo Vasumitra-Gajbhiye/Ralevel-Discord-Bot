@@ -46,4 +46,4 @@ const StickyLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("StickyLog", StickyLogSchema);
+module.exports = mongoose.models["StickyLog"] || mongoose.model("StickyLog", StickyLogSchema);

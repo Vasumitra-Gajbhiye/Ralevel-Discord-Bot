@@ -6,6 +6,21 @@ const {
 } = require("discord.js");
 require("../../loadEnv");
 
+const {
+  getGuildConfig,
+  getChannelId,
+  resolveRoleKeys,
+} = require("../../utils/guildConfigStore");
+
+function memberHasCertModRole(member) {
+  const cfg = getGuildConfig();
+  const ids = [
+    ...resolveRoleKeys(cfg.certificates?.modRoleKeys || []),
+    ...(cfg.certificates?.extraModRoleIds || []),
+  ];
+  return ids.some((id) => member?.roles?.cache?.has(id));
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("submit-cert-details")
@@ -33,10 +48,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   async execute(interaction) {
-    const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
-    const CERT_UPDATES_CHANNEL = process.env.CERT_UPDATES_CHANNEL; // Public certificate updates channel
-
-    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    if (!memberHasCertModRole(interaction.member)) {
       return interaction.reply({ ephemeral: true, content: "❌ Admins only." });
     }
 
@@ -111,7 +123,7 @@ module.exports = {
         // Send update
         try {
           const updatesCh = await interaction.client.channels.fetch(
-            CERT_UPDATES_CHANNEL
+            getChannelId("certUpdates")
           );
           const applicantUser = await interaction.client.users.fetch(
             app.userId
@@ -162,7 +174,7 @@ module.exports = {
 
       // ✅ NEW → Send EMBED in Review Channel
       const reviewCh = await interaction.client.channels
-        .fetch("1442441607671451648")
+        .fetch(getChannelId("review"))
         .catch(() => null);
       if (reviewCh) {
         await reviewCh

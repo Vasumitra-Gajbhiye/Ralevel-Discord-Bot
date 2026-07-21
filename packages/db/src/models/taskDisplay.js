@@ -20,4 +20,4 @@ const taskDisplaySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("TaskDisplay", taskDisplaySchema);
+module.exports = mongoose.models["TaskDisplay"] || mongoose.model("TaskDisplay", taskDisplaySchema);

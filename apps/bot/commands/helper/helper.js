@@ -9,6 +9,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 
+const { getGuildConfig } = require("../../utils/guildConfigStore");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,6 +32,8 @@ module.exports = {
     }
 
     const helperRoleId = helperData.roleId;
+    const pingDelayMs = getGuildConfig().helper?.pingDelayMs ?? 10_000;
+    const pingDelaySec = Math.max(1, Math.ceil(pingDelayMs / 1000));
 
     // Cancel request button
     const cancelBtn = new ButtonBuilder()
@@ -40,8 +43,7 @@ module.exports = {
 
     const row = new ActionRowBuilder().addComponents(cancelBtn);
 
-    // Time: 10 minutes from now, displayed as relative time
-    const triggerTime = Math.floor(Date.now() / 1000) + 10;
+    const triggerTime = Math.floor(Date.now() / 1000) + pingDelaySec;
     const relativeTime = `<t:${triggerTime}:R>`;
 
     const embed = new EmbedBuilder()
@@ -58,10 +60,9 @@ module.exports = {
     });
 
     try {
-      // Wait up to 10 minutes for cancel button press
       const button = await msg.awaitMessageComponent({
         filter: (i) => i.user.id === interaction.user.id,
-        time: 10_000,
+        time: pingDelayMs,
       });
 
       if (button.customId === "cancel_request") {

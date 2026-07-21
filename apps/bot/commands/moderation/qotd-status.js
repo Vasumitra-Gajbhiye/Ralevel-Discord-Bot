@@ -4,7 +4,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const {
-  REMINDER_HOUR_IST,
+  getReminderHourIst,
   getQotdDiagnostics,
 } = require("../../utils/qotdHelpers");
 
@@ -19,6 +19,7 @@ module.exports = {
 
     const status = await getQotdDiagnostics(interaction.client);
     const wouldSendNow = status.wouldSend === "Would send now";
+    const reminderHour = status.reminderHourIst ?? getReminderHourIst();
 
     const embed = new EmbedBuilder()
       .setColor(wouldSendNow ? 0x57f287 : 0xfee75c)
@@ -26,7 +27,7 @@ module.exports = {
       .addFields(
         {
           name: "IST time",
-          value: `${status.dateStr} · ${status.hour}:xx (fires after ${REMINDER_HOUR_IST} AM)`,
+          value: `${status.dateStr} · ${status.hour}:xx (fires after ${reminderHour} AM)`,
           inline: false,
         },
         {

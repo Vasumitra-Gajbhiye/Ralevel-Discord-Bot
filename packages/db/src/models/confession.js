@@ -69,4 +69,4 @@ const ConfessionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Confession", ConfessionSchema);
+module.exports = mongoose.models["Confession"] || mongoose.model("Confession", ConfessionSchema);

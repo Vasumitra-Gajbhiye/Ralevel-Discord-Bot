@@ -6,8 +6,7 @@ const {
 
 const logStickyAction = require("../../utils/logStickyAction");
 const { upsertStickyCache } = require("../../systems/sticky");
-
-const DEFAULT_LINE_THRESHOLD = 8;
+const { getGuildConfig } = require("../../utils/guildConfigStore");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -70,7 +69,8 @@ module.exports = {
     const lineThreshold =
       requestedLineThreshold ??
       sticky.lineThreshold ??
-      DEFAULT_LINE_THRESHOLD;
+      getGuildConfig().sticky?.defaultLineThreshold ??
+      8;
 
     // Delete old sticky message
     if (sticky.lastMessageId) {

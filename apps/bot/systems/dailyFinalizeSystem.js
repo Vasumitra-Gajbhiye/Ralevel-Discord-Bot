@@ -1,5 +1,6 @@
 const finalize = require("../utils/dailyFinalize");
 const { getISTDateInfo } = require("../utils/qotdHelpers");
+const { getGuildConfig } = require("../utils/guildConfigStore");
 const {
   getFinalizeDate,
   getFinalizeLockKey,
@@ -7,7 +8,6 @@ const {
 
 // ===== CONFIG =====
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // every 5 min
-const FINALIZE_HOUR_IST = 6;
 const FINALIZE_MINUTE_IST = 0;
 // ==================
 
@@ -15,11 +15,12 @@ module.exports = function dailyFinalizeSystem(client) {
   async function checkAndRun() {
     try {
       const { hour, minute } = getISTDateInfo();
+      const finalizeHourIst =
+        getGuildConfig().schedules?.finalizeHourIst ?? 6;
 
-      // ⛔ Not time yet (before 9:25 AM IST)
       if (
-        hour < FINALIZE_HOUR_IST ||
-        (hour === FINALIZE_HOUR_IST && minute < FINALIZE_MINUTE_IST)
+        hour < finalizeHourIst ||
+        (hour === finalizeHourIst && minute < FINALIZE_MINUTE_IST)
       ) {
         return;
       }

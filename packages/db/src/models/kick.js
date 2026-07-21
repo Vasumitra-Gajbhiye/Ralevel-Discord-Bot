@@ -36,4 +36,4 @@ const KickSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Kick", KickSchema);
+module.exports = mongoose.models["Kick"] || mongoose.model("Kick", KickSchema);

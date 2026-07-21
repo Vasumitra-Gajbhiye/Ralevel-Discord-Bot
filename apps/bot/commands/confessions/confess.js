@@ -1,6 +1,10 @@
 const { Confession, ConfessionBan } = require("@ralevel/db");
 const { SlashCommandBuilder } = require("discord.js");
 const { getNextConfessionId } = require("../../utils/getNextConfessionId");
+const {
+  getGuildConfig,
+  getChannelId,
+} = require("../../utils/guildConfigStore");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -57,9 +61,11 @@ module.exports = {
       attachment: attachment?.url ?? null,
     });
 
+    const modChannelKey =
+      getGuildConfig().confessions?.modChannelKey || "modAction";
     const modChannel =
       await interaction.client.channels.fetch(
-        process.env.MOD_ACTION_CHANNEL
+        getChannelId(modChannelKey),
       );
 
     const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } =

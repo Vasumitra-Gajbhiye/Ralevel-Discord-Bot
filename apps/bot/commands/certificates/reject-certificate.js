@@ -3,10 +3,20 @@ const { Certificate } = require("@ralevel/db");
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
 require("../../loadEnv");
 
-const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
-const REVIEW_CHANNEL = process.env.REVIEW_CHANNEL;
+const {
+  getGuildConfig,
+  getChannelId,
+  resolveRoleKeys,
+} = require("../../utils/guildConfigStore");
 
-const CERT_UPDATES_CHANNEL = process.env.CERT_UPDATES_CHANNEL; // Public certificate updates channel
+function memberHasCertModRole(member) {
+  const cfg = getGuildConfig();
+  const ids = [
+    ...resolveRoleKeys(cfg.certificates?.modRoleKeys || []),
+    ...(cfg.certificates?.extraModRoleIds || []),
+  ];
+  return ids.some((id) => member?.roles?.cache?.has(id));
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,7 +34,7 @@ module.exports = {
     ).setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   async execute(interaction) {
-    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    if (!memberHasCertModRole(interaction.member)) {
       return interaction.reply({ content: "❌ Only admins can use this command.", ephemeral: true });
     }
 
@@ -67,7 +77,7 @@ module.exports = {
     } catch {
        // Send update 
               try {
-                const updatesCh = await client.channels.fetch(CERT_UPDATES_CHANNEL);
+                const updatesCh = await client.channels.fetch(getChannelId("certUpdates"));
                 const applicantUser = await client.users.fetch(app.userId);
     
                 const updateEmbed =  new EmbedBuilder()
@@ -97,7 +107,7 @@ module.exports = {
              await interaction.editReply({ content: `✅ Rejected` }); 
              
                        try {
-                         const reviewCh = await interaction.client.channels.fetch(REVIEW_CHANNEL).catch(() => null);
+                         const reviewCh = await interaction.client.channels.fetch(getChannelId("review")).catch(() => null);
                          if (reviewCh) {
                            const embed = new EmbedBuilder()
                            .setTitle("✅ Certificate Application Rejected")

@@ -11,9 +11,12 @@ const {
 } = require("discord.js");
 
 const { getNextConfessionId } = require("../utils/getNextConfessionId");
-
-const MOD_ACTION_CHANNEL = process.env.MOD_ACTION_CHANNEL;
-const VENT_CHANNEL = process.env.VENT_CHANNEL;
+const {
+  getGuildConfig,
+  getChannelId,
+  resolveRoleKeys,
+  tryGetGuildConfig,
+} = require("../utils/guildConfigStore");
 
 /* ================= HELPERS ================= */
 
@@ -36,6 +39,9 @@ function confessionButtons(confessionId) {
 
 module.exports = function confessionSystem(client) {
   client.on(Events.InteractionCreate, async (interaction) => {
+    const cfgEarly = tryGetGuildConfig();
+    if (cfgEarly?.features?.confessions === false) return;
+
     /* =====================================================
        BUTTON INTERACTIONS
     ===================================================== */
@@ -114,6 +120,22 @@ module.exports = function confessionSystem(client) {
         return;
       }
 
+      const cfg = getGuildConfig();
+      const approverRoleIds = resolveRoleKeys(
+        cfg.confessions?.approverRoleKeys || [],
+      );
+      const member = interaction.member;
+      if (
+        approverRoleIds.length &&
+        (!member ||
+          !approverRoleIds.some((rid) => member.roles.cache.has(rid)))
+      ) {
+        return interaction.reply({
+          content: "❌ You do not have permission to review confessions.",
+          ephemeral: true,
+        });
+      }
+
       await interaction.deferUpdate();
 
       const [action, confessionId] = id.split(":");
@@ -132,8 +154,10 @@ module.exports = function confessionSystem(client) {
 
       /* ---------- APPROVE ---------- */
       if (action === "confess_approve") {
+        const ventChannelKey =
+          cfg.confessions?.ventChannelKey || "vent";
         const vent = await client.channels.fetch(
-          VENT_CHANNEL
+          getChannelId(ventChannelKey),
         );
 
         const embed = new EmbedBuilder()
@@ -257,9 +281,11 @@ await thread.send({
           authorId: interaction.user.id,
         });
 
+        const modChannelKey =
+          getGuildConfig().confessions?.modChannelKey || "modAction";
         const modChannel =
           await client.channels.fetch(
-            MOD_ACTION_CHANNEL
+            getChannelId(modChannelKey),
           );
 
         const embed = new EmbedBuilder()

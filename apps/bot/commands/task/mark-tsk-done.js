@@ -82,6 +82,7 @@ const { Task } = require("@ralevel/db");
 // };
 
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { getTaskTeamFromChannel } = require("../../utils/getTaskTeam");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -116,12 +117,8 @@ module.exports = {
     if (!task) return interaction.editReply("❌ Task not found.");
 
     // TEAM DETECTION
-    let team = null;
-    if (interaction.channelId === process.env.GRAPHIC_CHANNEL) team = "graphic";
-    else if (interaction.channelId === process.env.DEV_CHANNEL) team = "dev";
-    else if (interaction.channelId === process.env.WRITER_CHANNEL)
-      team = "writer";
-    else
+    const team = getTaskTeamFromChannel(interaction.channelId);
+    if (!team)
       return interaction.editReply("❌ Use this inside a team task channel.");
 
     // SET TASK AS COMPLETED

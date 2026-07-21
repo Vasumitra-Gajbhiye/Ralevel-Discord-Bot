@@ -33,4 +33,4 @@ const CertificateSchema = new mongoose.Schema({
   joinedAt: { type: Date, default: null },
 });
 
-module.exports = mongoose.model("CertificateApplication", CertificateSchema);
+module.exports = mongoose.models["CertificateApplication"] || mongoose.model("CertificateApplication", CertificateSchema);

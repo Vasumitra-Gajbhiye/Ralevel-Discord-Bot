@@ -1,5 +1,18 @@
 const { Certificate } = require("@ralevel/db");
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  getGuildConfig,
+  resolveRoleKeys,
+} = require("../../utils/guildConfigStore");
+
+function memberHasCertModRole(member) {
+  const cfg = getGuildConfig();
+  const ids = [
+    ...resolveRoleKeys(cfg.certificates?.modRoleKeys || []),
+    ...(cfg.certificates?.extraModRoleIds || []),
+  ];
+  return ids.some((id) => member?.roles?.cache?.has(id));
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,10 +28,7 @@ module.exports = {
     const targetUser = interaction.options.getUser("user");
     const applicationId = interaction.options.getString("application_id");
 
-    const modRoles = process.env.MOD_ROLES?.split(",") || [];
-    const isMod =
-      interaction.member?.roles.cache.some(r => modRoles.includes(r.id)) ||
-      interaction.member?.roles.cache.has(process.env.ADMIN_ROLE_ID);
+    const isMod = memberHasCertModRole(interaction.member);
 
     // =========================================================
     // 1️⃣ If searching by application ID

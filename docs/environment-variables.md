@@ -4,21 +4,24 @@ Every environment variable used by the r/alevel monorepo. Copy `.env.example` to
 
 **Apps:**
 - `apps/bot` loads root `.env` via `loadEnv.js`
-- `apps/web` loads root `.env` via `next.config.ts` (`@next/env`); optional overrides in `apps/web/.env.local`
-- Shared between bot and web: `MONGO_URI`
-- Bot-only: Discord token/IDs, `REDIS_URL`
+- `apps/web` loads root `.env` via `next.config.ts` (`dotenv`); optional overrides in `apps/web/.env.local`
+- Shared between bot and web: `MONGO_URI`, `GUILD_ID`
+- Bot-only secrets: Discord `TOKEN`, `CLIENT_ID`, `REDIS_URL`
+- **Guild settings** (channels, roles, command permissions, feature toggles, etc.) live in MongoDB `GuildConfig`, edited via the web dashboard. Env channel/role IDs are seed/fallback only.
 
-**Security:** Never commit `.env` to git. It is excluded by `.gitignore` and `.dockerignore`. Rotate credentials if they are ever exposed.
+**Security:** Never commit `.env` to git. It is excluded by `.gitignore` and `.dockerignore`. Rotate credentials if they are ever exposed. The dashboard has **no auth yet** — do not expose it publicly until Clerk is wired up.
 
 ---
 
 ## How configuration is loaded
 
 - Bot: `require("./loadEnv")` in `apps/bot/index.js` and scripts (loads repo-root `.env`)
-- Permissions live in `@ralevel/shared` and read `process.env` after env is loaded
+- On startup the bot loads `GuildConfig` for `GUILD_ID` (creates from env defaults if missing) via `utils/loadGuildConfig.js`
+- Runtime permissions/channels/roles come from that in-memory config — **restart the bot** after dashboard settings changes
+- Seed/overwrite manually: `pnpm --filter @ralevel/bot seed:guild-config` (add `--force` to overwrite)
+- `@ralevel/shared` permissions remain a historical/default reference; live ACL is `GuildConfig.commandPermissions`
 - `redis.js` throws immediately if `REDIS_URL` is missing (before the bot can start)
 - `MONGO_URI` and `TOKEN` are not validated at startup — missing values fail at runtime
-- Most channel/role IDs come from `.env`; legacy hardcoded IDs remain in `@ralevel/shared` constants (marked DO NOT DELETE)
 
 ---
 

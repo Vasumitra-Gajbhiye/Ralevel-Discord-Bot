@@ -30,10 +30,9 @@ const fs = require("fs");
 const path = require("path");
 const { Collection } = require("discord.js");
 
-// 1. Import your new config file
-const permissionsConfig = require("@ralevel/shared");
 const checkRoleHierarchy = require("../utils/checkRoleHierarchy.js");
 const checkRoleAssignment = require("../utils/checkRoleAssignment.js");
+const { getCommandAllowedRoleIds } = require("../utils/guildConfigStore");
 
 // Commands that act on a member and require role hierarchy checks.
 // Value is the slash-command option name that holds the target user.
@@ -85,9 +84,9 @@ module.exports = (client) => {
     // ==========================================
     // 🛡️ GLOBAL ROLE ACCESS CHECK
     // ==========================================
-    const allowedRoles = permissionsConfig.commands[interaction.commandName];
+    const allowedRoles = getCommandAllowedRoleIds(interaction.commandName);
 
-    if (allowedRoles) {
+    if (allowedRoles && allowedRoles.length > 0) {
       // Prevent crashes if someone tries to use a restricted command in a DM
       if (!interaction.member) {
         return interaction.reply({

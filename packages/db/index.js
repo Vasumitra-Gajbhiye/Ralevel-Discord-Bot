@@ -19,6 +19,11 @@ const Kick = require("./src/models/kick");
 const Task = require("./src/models/task");
 const TaskDisplay = require("./src/models/taskDisplay");
 const HelperRole = require("./src/models/helperRole");
+const GuildConfig = require("./src/models/guildConfig");
+const {
+  buildDefaultGuildConfig,
+  DEFAULT_COMMAND_PERMISSIONS,
+} = require("./src/defaultGuildConfig");
 
 module.exports = {
   connectDB,
@@ -41,4 +46,7 @@ module.exports = {
   Task,
   TaskDisplay,
   HelperRole,
+  GuildConfig,
+  buildDefaultGuildConfig,
+  DEFAULT_COMMAND_PERMISSIONS,
 };

@@ -1,7 +1,11 @@
 const { Sticky } = require("@ralevel/db");
+const { tryGetGuildConfig } = require("../utils/guildConfigStore");
 
-const DEFAULT_LINE_THRESHOLD = 8; // repost after 8 lines
 const FLUSH_DEBOUNCE_MS = 5000;
+
+function getDefaultLineThreshold() {
+  return tryGetGuildConfig()?.sticky?.defaultLineThreshold ?? 8;
+}
 
 const pendingLastMessageIds = new Map();
 let flushTimer = null;
@@ -77,13 +81,16 @@ function stickySystem(client) {
 
   async function handleStickyMessage(message) {
     try {
+      const cfg = tryGetGuildConfig();
+      if (cfg?.features?.sticky === false) return;
+
       const sticky = client.stickies.get(message.channel.id);
       if (!sticky) return;
 
       const lineThreshold =
         Number.isInteger(sticky.lineThreshold) && sticky.lineThreshold > 0
           ? sticky.lineThreshold
-          : DEFAULT_LINE_THRESHOLD;
+          : getDefaultLineThreshold();
 
       if (message.id === sticky.lastMessageId) return;
 

@@ -1,17 +1,15 @@
 require("../loadEnv");
 
-const BREAKDOWN_ROLE_IDS = [
-  process.env.ADMIN_ROLE_ID,
-  process.env.DC_HEAD_ROLE_ID,
-  process.env.SR_MOD_ROLE_ID,
-  process.env.JR_MOD_ROLE_ID,
-].filter(Boolean);
+const {
+  getGuildConfig,
+  resolveRoleKeys,
+} = require("./guildConfigStore");
 
 function canViewPollBreakdown(member) {
   if (!member) return false;
-  return member.roles.cache.some((role) =>
-    BREAKDOWN_ROLE_IDS.includes(role.id),
-  );
+  const keys = getGuildConfig().polls?.breakdownRoleKeys || [];
+  const ids = resolveRoleKeys(keys);
+  return member.roles.cache.some((role) => ids.includes(role.id));
 }
 
 module.exports = canViewPollBreakdown;

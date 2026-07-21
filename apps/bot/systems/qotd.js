@@ -1,40 +1,40 @@
 const {
-  REMINDER_HOUR_IST,
+  getReminderHourIst,
   getISTDateInfo,
   findActiveRotation,
   getRotationMembers,
   updateRotationCache,
 } = require("../utils/qotdHelpers");
+const {
+  getChannelId,
+  tryGetGuildConfig,
+} = require("../utils/guildConfigStore");
 
-// ===== CONFIG =====
-const REMINDER_CHANNEL_ID = process.env.QOTD_REMINDER_CHANNEL_ID;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // every 5 minutes
-// ==================
 
 module.exports = function qotdSystem(client) {
-  if (!REMINDER_CHANNEL_ID) {
-    console.warn(
-      "[QOTD] QOTD_REMINDER_CHANNEL_ID is not set — reminders will not send.",
-    );
-  }
-
   async function checkAndSendReminder() {
     try {
+      const cfg = tryGetGuildConfig();
+      if (cfg?.features?.qotd === false) return;
+
       if (!client.isReady()) {
         console.log("[QOTD] Skip: Discord client not ready yet.");
         return;
       }
 
-      if (!REMINDER_CHANNEL_ID) {
-        console.warn("[QOTD] Skip: QOTD_REMINDER_CHANNEL_ID is missing.");
+      const reminderChannelId = getChannelId("qotdReminder");
+      if (!reminderChannelId) {
+        console.warn("[QOTD] Skip: qotdReminder channel is missing.");
         return;
       }
 
       const { dateStr, hour } = getISTDateInfo();
+      const reminderHour = getReminderHourIst();
 
-      if (hour < REMINDER_HOUR_IST) {
+      if (hour < reminderHour) {
         console.log(
-          `[QOTD] Skip: before ${REMINDER_HOUR_IST} AM IST (currently ${hour}:xx on ${dateStr}).`,
+          `[QOTD] Skip: before ${reminderHour} AM IST (currently ${hour}:xx on ${dateStr}).`,
         );
         return;
       }
@@ -67,17 +67,17 @@ module.exports = function qotdSystem(client) {
         return;
       }
 
-      const channel = await client.channels.fetch(REMINDER_CHANNEL_ID);
+      const channel = await client.channels.fetch(reminderChannelId);
       if (!channel) {
         console.warn(
-          `[QOTD] Skip: channel ${REMINDER_CHANNEL_ID} not found.`,
+          `[QOTD] Skip: channel ${reminderChannelId} not found.`,
         );
         return;
       }
 
       if (!channel.isTextBased()) {
         console.warn(
-          `[QOTD] Skip: channel ${REMINDER_CHANNEL_ID} is not text-based.`,
+          `[QOTD] Skip: channel ${reminderChannelId} is not text-based.`,
         );
         return;
       }

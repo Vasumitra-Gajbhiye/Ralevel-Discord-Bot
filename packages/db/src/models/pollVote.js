@@ -25,4 +25,4 @@ const PollVoteSchema = new mongoose.Schema(
 
 PollVoteSchema.index({ pollId: 1, userId: 1 }, { unique: true });
 
-module.exports = mongoose.model("PollVote", PollVoteSchema);
+module.exports = mongoose.models["PollVote"] || mongoose.model("PollVote", PollVoteSchema);

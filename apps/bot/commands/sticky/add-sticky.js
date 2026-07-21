@@ -6,8 +6,7 @@ const {
 
 const logStickyAction = require("../../utils/logStickyAction");
 const { upsertStickyCache } = require("../../systems/sticky");
-
-const DEFAULT_LINE_THRESHOLD = 8;
+const { getGuildConfig } = require("../../utils/guildConfigStore");
 
 function formatSticky(content) {
   return `__**Stickied Message:**__\n\n${content}`;
@@ -83,7 +82,8 @@ module.exports = {
     const lineThreshold =
       requestedLineThreshold ??
       sticky?.lineThreshold ??
-      DEFAULT_LINE_THRESHOLD;
+      getGuildConfig().sticky?.defaultLineThreshold ??
+      8;
 
     if (sticky?.lastMessageId) {
       try {
