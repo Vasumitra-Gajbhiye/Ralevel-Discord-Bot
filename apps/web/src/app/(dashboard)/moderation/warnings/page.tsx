@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import { useOpsCollection } from "@/lib/useOpsCollection";
 
 type Warning = {
@@ -15,8 +18,66 @@ type Warning = {
 };
 
 export default function WarningsPage() {
-  const { items, total, loading, error, q, setQ, load, patch, remove } =
-    useOpsCollection<Warning>("warnings");
+  const {
+    items,
+    total,
+    loading,
+    error,
+    q,
+    setQ,
+    page,
+    setPage,
+    pageSize,
+    load,
+    patch,
+    remove,
+  } = useOpsCollection<Warning>("warnings", { pageSize: 15 });
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingDeactivate, setPendingDeactivate] = useState<Warning | null>(
+    null,
+  );
+  const [pendingDelete, setPendingDelete] = useState<Warning | null>(null);
+
+  async function confirmDeactivate() {
+    if (!pendingDeactivate) return;
+    setActionError(null);
+    try {
+      await patch(pendingDeactivate._id, {
+        active: false,
+      } as Partial<Warning>);
+      setPendingDeactivate(null);
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "Failed to deactivate warning",
+      );
+    }
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setActionError(null);
+    try {
+      await remove(pendingDelete._id);
+      setPendingDelete(null);
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "Failed to delete warning",
+      );
+    }
+  }
+
+  async function activateWarning(warning: Warning) {
+    setActionError(null);
+    try {
+      await patch(warning._id, { active: true } as Partial<Warning>);
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "Failed to activate warning",
+      );
+    }
+  }
+
+  const displayError = actionError || error;
 
   return (
     <>
@@ -38,8 +99,7 @@ export default function WarningsPage() {
             Refresh
           </button>
         </div>
-        {error ? <p className="status err">{error}</p> : null}
-        <p className="muted">{loading ? "Loading…" : `${total} total`}</p>
+        {displayError ? <p className="status err">{displayError}</p> : null}
         <div className="table-wrap">
           <table className="data">
             <thead>
@@ -68,21 +128,27 @@ export default function WarningsPage() {
                       : "—"}
                   </td>
                   <td className="row">
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() =>
-                        patch(w._id, { active: !w.active } as Partial<Warning>)
-                      }
-                    >
-                      {w.active ? "Deactivate" : "Activate"}
-                    </button>
+                    {w.active ? (
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => setPendingDeactivate(w)}
+                      >
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => activateWarning(w)}
+                      >
+                        Activate
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn-danger"
-                      onClick={() => {
-                        if (confirm("Delete warning?")) remove(w._id);
-                      }}
+                      onClick={() => setPendingDelete(w)}
                     >
                       Delete
                     </button>
@@ -92,7 +158,43 @@ export default function WarningsPage() {
             </tbody>
           </table>
         </div>
+        {pageSize ? (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={loading}
+            onPageChange={setPage}
+          />
+        ) : null}
       </div>
+
+      <ConfirmModal
+        open={pendingDeactivate !== null}
+        title="Deactivate warning"
+        message={
+          pendingDeactivate
+            ? `Deactivate the warning for ${pendingDeactivate.userTag}${pendingDeactivate.reason ? `: ${pendingDeactivate.reason}` : ""}?`
+            : ""
+        }
+        confirmLabel="Deactivate"
+        onConfirm={confirmDeactivate}
+        onCancel={() => setPendingDeactivate(null)}
+      />
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title="Delete warning"
+        message={
+          pendingDelete
+            ? `Permanently delete the warning for ${pendingDelete.userTag}${pendingDelete.reason ? `: ${pendingDelete.reason}` : ""}? This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </>
   );
 }
