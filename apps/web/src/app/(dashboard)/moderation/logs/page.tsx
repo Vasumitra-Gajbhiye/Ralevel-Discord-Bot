@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import { useOpsCollection } from "@/lib/useOpsCollection";
 
 type ModLog = {
@@ -15,8 +16,18 @@ type ModLog = {
 };
 
 export default function ModLogsPage() {
-  const { items, total, loading, error, q, setQ, load } =
-    useOpsCollection<ModLog>("modlogs");
+  const {
+    items,
+    total,
+    loading,
+    error,
+    q,
+    setQ,
+    page,
+    setPage,
+    pageSize,
+    load,
+  } = useOpsCollection<ModLog>("modlogs", { pageSize: 15 });
 
   return (
     <>
@@ -35,7 +46,6 @@ export default function ModLogsPage() {
           </button>
         </div>
         {error ? <p className="status err">{error}</p> : null}
-        <p className="muted">{loading ? "Loading…" : `${total} total`}</p>
         <div className="table-wrap">
           <table className="data">
             <thead>
@@ -67,6 +77,15 @@ export default function ModLogsPage() {
             </tbody>
           </table>
         </div>
+        {pageSize ? (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={loading}
+            onPageChange={setPage}
+          />
+        ) : null}
       </div>
     </>
   );
