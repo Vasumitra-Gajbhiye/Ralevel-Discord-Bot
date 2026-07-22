@@ -32,8 +32,10 @@ ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
 ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_SIGN_UP_URL
 ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
 ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
+# next build requires NODE_ENV=production; development only for the install stage above
+ENV NODE_ENV=production
 
-RUN NODE_ENV=development pnpm --filter @ralevel/web build
+RUN pnpm --filter @ralevel/web build
 
 FROM node:20-bookworm-slim AS runner
 
