@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { currentUser, clerkClient } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { requireAllowlistedAuth } from "@/lib/auth";
 import {
-  deleteAccessLabel,
+  deleteAccessEntryById,
   findAccessEntryById,
-  invalidateAllowlistCache,
+  normalizeEmail,
   SEED_EMAIL,
   upsertAccessLabel,
 } from "@/lib/access";
@@ -84,7 +84,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (entry.email.toLowerCase() === SEED_EMAIL) {
+    if (normalizeEmail(entry.email) === SEED_EMAIL) {
       return NextResponse.json(
         { error: "The default admin email cannot be removed from the allowlist" },
         { status: 400 },
@@ -99,17 +99,14 @@ export async function DELETE(
       user?.emailAddresses[0]?.emailAddress?.toLowerCase() ??
       null;
 
-    if (currentEmail && entry.email.toLowerCase() === currentEmail) {
+    if (currentEmail && normalizeEmail(entry.email) === currentEmail) {
       return NextResponse.json(
         { error: "You cannot remove your own email from the allowlist" },
         { status: 400 },
       );
     }
 
-    const client = await clerkClient();
-    await client.allowlistIdentifiers.deleteAllowlistIdentifier(id);
-    await deleteAccessLabel(entry.email);
-    invalidateAllowlistCache();
+    await deleteAccessEntryById(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[DELETE /api/access/[id]]", err);

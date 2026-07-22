@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { clerkClient } from "@clerk/nextjs/server";
 import { requireAllowlistedAuth } from "@/lib/auth";
 import {
+  addAccessEntry,
   ensureSeedAllowlist,
-  invalidateAllowlistCache,
   listAccessEntries,
-  upsertAccessLabel,
+  normalizeEmail,
 } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
@@ -63,32 +62,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const email = parsed.data.email.toLowerCase();
+    const email = normalizeEmail(parsed.data.email);
     const name = parsed.data.name?.trim() ?? "";
     const existing = await listAccessEntries();
-    if (existing.some((entry) => entry.email === email)) {
+    if (existing.some((entry) => normalizeEmail(entry.email) === email)) {
       return NextResponse.json(
         { error: "Email is already on the allowlist" },
         { status: 409 },
       );
     }
 
-    const client = await clerkClient();
-    const created = await client.allowlistIdentifiers.createAllowlistIdentifier({
-      identifier: email,
-      notify: false,
-    });
-    await upsertAccessLabel(email, name);
-    invalidateAllowlistCache();
-
-    return NextResponse.json({
-      entry: {
-        id: created.id,
-        email: created.identifier,
-        name,
-        createdAt: created.createdAt,
-      },
-    });
+    const entry = await addAccessEntry(email, name);
+    return NextResponse.json({ entry });
   } catch (err) {
     console.error("[POST /api/access]", err);
     return NextResponse.json(

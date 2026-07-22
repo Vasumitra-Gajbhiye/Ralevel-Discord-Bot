@@ -148,7 +148,7 @@ export default function AccessPage() {
     <>
       <PageHeader
         title="Access"
-        description="Manage who can sign up and sign in to this dashboard."
+        description="Manage who can access this dashboard."
       />
 
       {error ? <p className="status err">{error}</p> : null}
@@ -158,8 +158,7 @@ export default function AccessPage() {
         <div className="row row-between">
           <p className="muted" style={{ margin: 0 }}>
             {entries.length} allowlisted {entries.length === 1 ? "person" : "people"}.
-            Only these emails can create accounts when Clerk restricted mode is
-            enabled.
+            Only these emails can access the dashboard.
           </p>
           <button
             type="button"
@@ -279,7 +278,7 @@ export default function AccessPage() {
         title="Remove person"
         message={
           pendingRemove
-            ? `Remove ${pendingRemove.name ? `${pendingRemove.name} (${pendingRemove.email})` : pendingRemove.email} from the allowlist? They will no longer be able to sign in.`
+            ? `Remove ${pendingRemove.name ? `${pendingRemove.name} (${pendingRemove.email})` : pendingRemove.email} from the allowlist? They will no longer be able to access the dashboard.`
             : ""
         }
         confirmLabel="Remove"
