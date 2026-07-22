@@ -3,14 +3,19 @@ import {
   getOrCreateGuildConfig,
   guildConfigToJson,
 } from "@/lib/db";
-import { requireAuth } from "@/lib/auth";
+import { requireAllowlistedAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {
@@ -44,9 +49,14 @@ const PATCHABLE = [
 ] as const;
 
 export async function PUT(request: Request) {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {

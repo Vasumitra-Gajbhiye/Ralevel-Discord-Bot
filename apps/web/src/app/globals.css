@@ -146,6 +146,25 @@ button {
   max-width: 28rem;
 }
 
+.access-denied-card {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.access-denied-card h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 650;
+}
+
+.access-denied-card p {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 .sidebar-brand {
   padding: 0.35rem 0.65rem 0.85rem;
   border-bottom: 1px solid var(--border);

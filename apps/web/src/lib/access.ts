@@ -4,6 +4,40 @@ import { ensureDb } from "@/lib/db";
 export const SEED_EMAIL = "vasumitragajbhiye20@gmail.com";
 export const SEED_NAME = "Admin";
 
+const ALLOWLIST_CACHE_TTL_MS = 60_000;
+let allowlistCache: { emails: Set<string>; expiresAt: number } | null = null;
+
+export function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+export function invalidateAllowlistCache(): void {
+  allowlistCache = null;
+}
+
+async function getAllowlistedEmails(): Promise<Set<string>> {
+  const now = Date.now();
+  if (allowlistCache && allowlistCache.expiresAt > now) {
+    return allowlistCache.emails;
+  }
+
+  const identifiers = await listAllowlistIdentifiers();
+  const emails = new Set(
+    identifiers.map((entry) => normalizeEmail(entry.identifier)),
+  );
+  emails.add(SEED_EMAIL);
+
+  allowlistCache = { emails, expiresAt: now + ALLOWLIST_CACHE_TTL_MS };
+  return emails;
+}
+
+export async function isEmailAllowlisted(email: string): Promise<boolean> {
+  const normalized = normalizeEmail(email);
+  if (normalized === SEED_EMAIL) return true;
+  const emails = await getAllowlistedEmails();
+  return emails.has(normalized);
+}
+
 export type AccessEntry = {
   id: string;
   email: string;
@@ -82,6 +116,7 @@ export async function ensureSeedAllowlist(): Promise<void> {
       identifier: SEED_EMAIL,
       notify: false,
     });
+    invalidateAllowlistCache();
   }
 
   const { DashboardAccess } = await ensureDb();

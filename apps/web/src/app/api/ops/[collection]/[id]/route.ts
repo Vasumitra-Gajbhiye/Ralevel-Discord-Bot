@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Model } from "mongoose";
 import { ensureDb } from "@/lib/db";
-import { requireAuth } from "@/lib/auth";
+import { requireAllowlistedAuth } from "@/lib/auth";
 
 type DbModels = Awaited<ReturnType<typeof ensureDb>>;
 type AnyModel = Model<Record<string, unknown>>;
@@ -34,9 +34,14 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ collection: string; id: string }> },
 ) {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {
@@ -71,9 +76,14 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ collection: string; id: string }> },
 ) {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {

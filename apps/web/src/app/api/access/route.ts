@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { clerkClient } from "@clerk/nextjs/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAllowlistedAuth } from "@/lib/auth";
 import {
   ensureSeedAllowlist,
+  invalidateAllowlistCache,
   listAccessEntries,
   upsertAccessLabel,
 } from "@/lib/access";
@@ -11,9 +12,14 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {
@@ -37,9 +43,14 @@ const addAccessSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {
@@ -68,6 +79,7 @@ export async function POST(request: Request) {
       notify: false,
     });
     await upsertAccessLabel(email, name);
+    invalidateAllowlistCache();
 
     return NextResponse.json({
       entry: {

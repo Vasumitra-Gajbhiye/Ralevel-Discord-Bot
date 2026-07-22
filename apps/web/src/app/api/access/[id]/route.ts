@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAllowlistedAuth } from "@/lib/auth";
 import {
   deleteAccessLabel,
   findAccessEntryById,
+  invalidateAllowlistCache,
+  SEED_EMAIL,
   upsertAccessLabel,
 } from "@/lib/access";
 
@@ -18,9 +20,14 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {
@@ -60,9 +67,14 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const userId = await requireAuth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireAllowlistedAuth();
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      {
+        error: authResult.status === 401 ? "Unauthorized" : "Forbidden",
+      },
+      { status: authResult.status },
+    );
   }
 
   try {
@@ -70,6 +82,13 @@ export async function DELETE(
     const entry = await findAccessEntryById(id);
     if (!entry) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (entry.email.toLowerCase() === SEED_EMAIL) {
+      return NextResponse.json(
+        { error: "The default admin email cannot be removed from the allowlist" },
+        { status: 400 },
+      );
     }
 
     const user = await currentUser();
@@ -90,6 +109,7 @@ export async function DELETE(
     const client = await clerkClient();
     await client.allowlistIdentifiers.deleteAllowlistIdentifier(id);
     await deleteAccessLabel(entry.email);
+    invalidateAllowlistCache();
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[DELETE /api/access/[id]]", err);
