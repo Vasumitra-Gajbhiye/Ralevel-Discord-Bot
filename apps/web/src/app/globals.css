@@ -53,6 +53,26 @@
   --overlay: rgba(0, 0, 0, 0.55);
 }
 
+:root,
+.dark {
+  --clerk-color-primary: var(--accent);
+  --clerk-color-primary-foreground: var(--on-accent);
+}
+
+/* Clerk auth — primary button must beat Tailwind preflight + Clerk unset */
+.cl-formButtonPrimary {
+  background-color: var(--accent) !important;
+  color: var(--on-accent) !important;
+  border: 1px solid var(--accent);
+}
+
+.cl-formButtonPrimary:hover,
+.cl-formButtonPrimary:focus,
+.cl-formButtonPrimary:active {
+  background-color: color-mix(in srgb, var(--accent) 88%, black) !important;
+  border-color: color-mix(in srgb, var(--accent) 88%, black);
+}
+
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text);

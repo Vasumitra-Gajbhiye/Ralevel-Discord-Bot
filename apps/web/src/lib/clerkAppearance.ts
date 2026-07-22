@@ -16,10 +16,6 @@ export const clerkAppearance = {
       border: "1px solid var(--border)",
       boxShadow: "var(--shadow)",
     },
-    formButtonPrimary: {
-      backgroundColor: "var(--accent)",
-      color: "var(--on-accent)",
-    },
     footerActionLink: {
       color: "var(--accent)",
     },
