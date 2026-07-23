@@ -7,8 +7,10 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { WordPillList } from "@/components/WordPillList";
+import { SaveActions } from "@/components/SaveActions";
 import { normalizeIdLabels } from "@/lib/reputationIds";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 type ReputationConfig = GuildConfigData["reputation"];
 
@@ -64,6 +66,11 @@ export default function ReputationSettingsPage() {
     await save({ reputation: rep });
     setDraft(null);
   }
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
 
   if (loading || !rep) return <p className="muted">Loading…</p>;
 
@@ -207,21 +214,14 @@ export default function ReputationSettingsPage() {
 
         <div className="row row-between">
           <div />
-          <div className="row">
-            {isDirty ? (
-              <span className="muted" style={{ fontSize: "0.8rem" }}>
-                Unsaved changes
-              </span>
-            ) : null}
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!isDirty || saving}
-              onClick={onSave}
-            >
-              {saving ? "Saving…" : "Save reputation settings"}
-            </button>
-          </div>
+          <SaveActions
+            saveBarRef={saveBarRef}
+            isDirty={isDirty}
+            saving={saving}
+            onSave={onSave}
+            onDiscard={() => setDraft(null)}
+            saveLabel="Save reputation settings"
+          />
         </div>
       </div>
 

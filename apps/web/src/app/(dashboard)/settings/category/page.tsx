@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { AddCategoryModal } from "@/components/AddCategoryModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 type CategoryEntry = { key: string; label: string; categoryId: string };
 
@@ -59,6 +61,11 @@ export default function CategoryPage() {
     setDraft(null);
   }
 
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
+
   if (loading) return <p className="muted">Loading…</p>;
 
   const removeMessage = pendingCategory
@@ -84,21 +91,14 @@ export default function CategoryPage() {
           >
             Add category
           </button>
-          <div className="row">
-            {isDirty ? (
-              <span className="muted" style={{ fontSize: "0.8rem" }}>
-                Unsaved changes
-              </span>
-            ) : null}
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!isDirty || saving}
-              onClick={onSave}
-            >
-              {saving ? "Saving…" : "Save categories"}
-            </button>
-          </div>
+          <SaveActions
+            saveBarRef={saveBarRef}
+            isDirty={isDirty}
+            saving={saving}
+            onSave={onSave}
+            onDiscard={() => setDraft(null)}
+            saveLabel="Save categories"
+          />
         </div>
 
         <div className="table-wrap">

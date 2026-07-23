@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
+import { isDraftDirty, useUnsavedChanges } from "@/lib/unsaved-changes";
 
 const FINALIZE_HOUR_HELP =
   "The hour (IST, 24-hour clock) when daily XP is finalized and level-up messages are sent.";
@@ -13,7 +15,28 @@ const QOTD_HOUR_HELP =
 export default function SchedulesPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<GuildConfigData["schedules"] | null>(null);
-  const schedules = draft ?? config?.schedules;
+
+  const savedSchedules = useMemo(
+    () => config?.schedules,
+    [config?.schedules],
+  );
+  const schedules = draft ?? savedSchedules;
+
+  const isDirty = useMemo(
+    () => isDraftDirty(draft, savedSchedules),
+    [draft, savedSchedules],
+  );
+
+  async function onSave() {
+    if (!schedules) return;
+    await save({ schedules });
+    setDraft(null);
+  }
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
 
   if (loading || !schedules) return <p className="muted">Loading…</p>;
 
@@ -65,17 +88,14 @@ export default function SchedulesPage() {
             />
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={async () => {
-            await save({ schedules });
-            setDraft(null);
-          }}
-        >
-          {saving ? "Saving…" : "Save schedules"}
-        </button>
+        <SaveActions
+          saveBarRef={saveBarRef}
+          isDirty={isDirty}
+          saving={saving}
+          onSave={onSave}
+          onDiscard={() => setDraft(null)}
+          saveLabel="Save schedules"
+        />
       </div>
     </>
   );

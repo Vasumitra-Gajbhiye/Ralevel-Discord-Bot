@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 export default function WelcomeSettingsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
@@ -15,6 +17,17 @@ export default function WelcomeSettingsPage() {
       draft !== null && JSON.stringify(draft) !== JSON.stringify(savedWelcome),
     [draft, savedWelcome],
   );
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
+
+  async function onSave() {
+    if (!welcome) return;
+    await save({ welcome });
+    setDraft(null);
+  }
 
   if (loading || !welcome) return <p className="muted">Loading…</p>;
 
@@ -86,24 +99,14 @@ export default function WelcomeSettingsPage() {
             />
           </div>
         </div>
-        <div className="row">
-          {isDirty ? (
-            <span className="muted" style={{ fontSize: "0.8rem" }}>
-              Unsaved changes
-            </span>
-          ) : null}
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={!isDirty || saving}
-            onClick={async () => {
-              await save({ welcome });
-              setDraft(null);
-            }}
-          >
-            {saving ? "Saving…" : "Save welcome"}
-          </button>
-        </div>
+        <SaveActions
+          saveBarRef={saveBarRef}
+          isDirty={isDirty}
+          saving={saving}
+          onSave={onSave}
+          onDiscard={() => setDraft(null)}
+          saveLabel="Save welcome"
+        />
       </div>
     </>
   );

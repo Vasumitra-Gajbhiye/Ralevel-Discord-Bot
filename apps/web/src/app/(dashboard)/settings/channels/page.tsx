@@ -5,7 +5,9 @@ import { AddChannelModal } from "@/components/AddChannelModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 type ChannelEntry = { key: string; label: string; channelId: string };
 
@@ -62,6 +64,11 @@ export default function ChannelsPage() {
     setDraft(null);
   }
 
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
+
   if (loading) return <p className="muted">Loading…</p>;
 
   const removeMessage = pendingChannel
@@ -87,21 +94,14 @@ export default function ChannelsPage() {
           >
             Add channel
           </button>
-          <div className="row">
-            {isDirty ? (
-              <span className="muted" style={{ fontSize: "0.8rem" }}>
-                Unsaved changes
-              </span>
-            ) : null}
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!isDirty || saving}
-              onClick={onSave}
-            >
-              {saving ? "Saving…" : "Save channels"}
-            </button>
-          </div>
+          <SaveActions
+            saveBarRef={saveBarRef}
+            isDirty={isDirty}
+            saving={saving}
+            onSave={onSave}
+            onDiscard={() => setDraft(null)}
+            saveLabel="Save channels"
+          />
         </div>
 
         <div className="table-wrap">

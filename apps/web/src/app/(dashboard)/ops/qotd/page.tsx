@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 type Qotd = {
   _id: string;
@@ -12,11 +14,30 @@ type Qotd = {
   enabled: boolean;
 };
 
+type QotdDraft = {
+  modOrderText: string;
+  enabled: boolean;
+  currentIndex: number;
+};
+
+function modOrderToText(modOrder: { id: string; tag: string }[]): string {
+  return modOrder.map((m) => `${m.id}|${m.tag}`).join("\n");
+}
+
 export default function OpsQotdPage() {
   const [item, setItem] = useState<Qotd | null>(null);
-  const [modOrderText, setModOrderText] = useState("");
+  const [saved, setSaved] = useState<QotdDraft | null>(null);
+  const [draft, setDraft] = useState<QotdDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const form = draft ?? saved;
+
+  const isDirty = useMemo(
+    () => draft !== null && JSON.stringify(draft) !== JSON.stringify(saved),
+    [draft, saved],
+  );
 
   async function load() {
     setError(null);
@@ -28,21 +49,39 @@ export default function OpsQotdPage() {
     const data = await res.json();
     const doc = data.items?.[0] || null;
     setItem(doc);
-    setModOrderText(
-      (doc?.modOrder || [])
-        .map((m: { id: string; tag: string }) => `${m.id}|${m.tag}`)
-        .join("\n"),
-    );
+    if (doc) {
+      const snapshot: QotdDraft = {
+        modOrderText: modOrderToText(doc.modOrder || []),
+        enabled: doc.enabled,
+        currentIndex: doc.currentIndex,
+      };
+      setSaved(snapshot);
+      setDraft(null);
+    } else {
+      setSaved(null);
+      setDraft(null);
+    }
   }
 
   useEffect(() => {
     load();
   }, []);
 
-  async function save() {
-    if (!item) return;
+  function updateDraft(patch: Partial<QotdDraft>) {
+    if (!form) return;
+    setDraft({ ...form, ...patch });
+  }
+
+  function onDiscard() {
+    setDraft(null);
+  }
+
+  async function onSave() {
+    if (!item || !form) return;
+    setSaving(true);
     setStatus(null);
-    const modOrder = modOrderText
+    setError(null);
+    const modOrder = form.modOrderText
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean)
@@ -56,10 +95,11 @@ export default function OpsQotdPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         modOrder,
-        currentIndex: item.currentIndex,
-        enabled: item.enabled,
+        currentIndex: form.currentIndex,
+        enabled: form.enabled,
       }),
     });
+    setSaving(false);
     if (!res.ok) {
       setError(await res.text());
       return;
@@ -67,6 +107,11 @@ export default function OpsQotdPage() {
     setStatus("Saved");
     await load();
   }
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard,
+  });
 
   return (
     <>
@@ -77,20 +122,20 @@ export default function OpsQotdPage() {
       <div className="card stack">
         {error ? <p className="status err">{error}</p> : null}
         {status ? <p className="status ok">{status}</p> : null}
-        {!item ? (
+        {!item || !form ? (
           <p className="muted">
             No QOTD rotation document yet. Create one from Discord or seed
             manually.
           </p>
         ) : (
           <>
-            <label style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+            <label
+              style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}
+            >
               <input
                 type="checkbox"
-                checked={item.enabled}
-                onChange={(e) =>
-                  setItem({ ...item, enabled: e.target.checked })
-                }
+                checked={form.enabled}
+                onChange={(e) => updateDraft({ enabled: e.target.checked })}
               />
               Enabled
             </label>
@@ -98,10 +143,9 @@ export default function OpsQotdPage() {
               <label>Current index</label>
               <input
                 type="number"
-                value={item.currentIndex}
+                value={form.currentIndex}
                 onChange={(e) =>
-                  setItem({
-                    ...item,
+                  updateDraft({
                     currentIndex: Number(e.target.value) || 0,
                   })
                 }
@@ -110,16 +154,21 @@ export default function OpsQotdPage() {
             <div className="field">
               <label>Mod order (userId|tag)</label>
               <textarea
-                value={modOrderText}
-                onChange={(e) => setModOrderText(e.target.value)}
+                value={form.modOrderText}
+                onChange={(e) => updateDraft({ modOrderText: e.target.value })}
               />
             </div>
             <p className="muted">
               Last reminder date: {item.lastReminderDate || "—"}
             </p>
-            <button type="button" className="btn btn-primary" onClick={save}>
-              Save
-            </button>
+            <SaveActions
+              saveBarRef={saveBarRef}
+              isDirty={isDirty}
+              saving={saving}
+              onSave={onSave}
+              onDiscard={onDiscard}
+              saveLabel="Save"
+            />
           </>
         )}
       </div>

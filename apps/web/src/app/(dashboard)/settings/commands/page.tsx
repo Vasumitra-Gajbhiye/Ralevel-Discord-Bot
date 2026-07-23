@@ -3,15 +3,23 @@
 import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { RolePicker } from "@/components/RolePicker";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
+import { isDraftDirty, useUnsavedChanges } from "@/lib/unsaved-changes";
 
 export default function CommandsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<Record<string, string[]> | null>(null);
 
-  const permissions = useMemo(
-    () => draft ?? config?.commandPermissions ?? {},
-    [draft, config?.commandPermissions],
+  const savedPermissions = useMemo(
+    () => config?.commandPermissions ?? {},
+    [config?.commandPermissions],
+  );
+  const permissions = draft ?? savedPermissions;
+
+  const isDirty = useMemo(
+    () => isDraftDirty(draft, savedPermissions),
+    [draft, savedPermissions],
   );
 
   const roles = config?.roles ?? [];
@@ -34,6 +42,11 @@ export default function CommandsPage() {
     await save({ commandPermissions: permissions });
     setDraft(null);
   }
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
 
   if (loading) return <p className="muted">Loading…</p>;
 
@@ -72,18 +85,18 @@ export default function CommandsPage() {
             </tbody>
           </table>
         </div>
-        <div className="row">
+        <div className="row row-between">
           <button type="button" className="btn" onClick={addCommand}>
             Add command
           </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={saving}
-            onClick={onSave}
-          >
-            {saving ? "Saving…" : "Save permissions"}
-          </button>
+          <SaveActions
+            saveBarRef={saveBarRef}
+            isDirty={isDirty}
+            saving={saving}
+            onSave={onSave}
+            onDiscard={() => setDraft(null)}
+            saveLabel="Save permissions"
+          />
         </div>
       </div>
     </>

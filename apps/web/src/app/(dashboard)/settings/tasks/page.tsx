@@ -1,13 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
+import { isDraftDirty, useUnsavedChanges } from "@/lib/unsaved-changes";
 
 export default function TasksSettingsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<GuildConfigData["tasks"] | null>(null);
-  const tasks = draft ?? config?.tasks;
+
+  const savedTasks = useMemo(() => config?.tasks, [config?.tasks]);
+  const tasks = draft ?? savedTasks;
+
+  const isDirty = useMemo(
+    () => isDraftDirty(draft, savedTasks),
+    [draft, savedTasks],
+  );
+
+  async function onSave() {
+    if (!tasks) return;
+    await save({ tasks });
+    setDraft(null);
+  }
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
 
   if (loading || !tasks) return <p className="muted">Loading…</p>;
 
@@ -77,17 +97,14 @@ export default function TasksSettingsPage() {
             </div>
           </div>
         ))}
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={async () => {
-            await save({ tasks });
-            setDraft(null);
-          }}
-        >
-          {saving ? "Saving…" : "Save task settings"}
-        </button>
+        <SaveActions
+          saveBarRef={saveBarRef}
+          isDirty={isDirty}
+          saving={saving}
+          onSave={onSave}
+          onDiscard={() => setDraft(null)}
+          saveLabel="Save task settings"
+        />
       </div>
     </>
   );

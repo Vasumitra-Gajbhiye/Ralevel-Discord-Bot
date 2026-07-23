@@ -579,6 +579,27 @@ table.data th {
   color: var(--danger-text);
 }
 
+#save-actions {
+  scroll-margin-top: 1.5rem;
+  scroll-margin-bottom: 1.5rem;
+}
+
+#save-actions[data-highlight="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+  animation: save-actions-pulse 1.5s ease-out;
+}
+
+@keyframes save-actions-pulse {
+  0% {
+    outline-color: var(--accent);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

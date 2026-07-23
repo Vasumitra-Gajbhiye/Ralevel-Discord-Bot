@@ -5,7 +5,9 @@ import { AddRoleModal } from "@/components/AddRoleModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 const KEY_HELP =
   "Input the same text as label, but in lowercase. Dash and underscore are allowed. Spaces are strictly not allowed.";
@@ -72,6 +74,11 @@ export default function RolesPage() {
     setDraft(null);
   }
 
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
+
   if (loading) return <p className="muted">Loading…</p>;
 
   const removeMessage = pendingRole
@@ -101,21 +108,14 @@ export default function RolesPage() {
           >
             Add role
           </button>
-          <div className="row">
-            {isDirty ? (
-              <span className="muted" style={{ fontSize: "0.8rem" }}>
-                Unsaved changes
-              </span>
-            ) : null}
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!isDirty || saving}
-              onClick={onSave}
-            >
-              {saving ? "Saving…" : "Save roles"}
-            </button>
-          </div>
+          <SaveActions
+            saveBarRef={saveBarRef}
+            isDirty={isDirty}
+            saving={saving}
+            onSave={onSave}
+            onDiscard={() => setDraft(null)}
+            saveLabel="Save roles"
+          />
         </div>
 
         <div className="table-wrap">

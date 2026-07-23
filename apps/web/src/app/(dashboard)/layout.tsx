@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import { Sidebar } from "@/components/Sidebar";
+import { DashboardShell } from "@/components/DashboardShell";
 import { ensureSeedAllowlist, isEmailAllowlisted } from "@/lib/access";
 import { getEmailFromUser } from "@/lib/auth";
 
@@ -19,10 +19,5 @@ export default async function DashboardLayout({
 
   await ensureSeedAllowlist();
 
-  return (
-    <div className="dashboard-shell">
-      <Sidebar />
-      <main className="main">{children}</main>
-    </div>
-  );
+  return <DashboardShell>{children}</DashboardShell>;
 }

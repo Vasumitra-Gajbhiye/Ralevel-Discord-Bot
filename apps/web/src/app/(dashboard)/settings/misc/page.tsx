@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 export default function MiscSettingsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
@@ -14,9 +16,44 @@ export default function MiscSettingsPage() {
   );
   const [helper, setHelper] = useState<{ pingDelayMs: number } | null>(null);
 
-  const pollsData = polls ?? config?.polls;
-  const stickyData = sticky ?? config?.sticky;
-  const helperData = helper ?? config?.helper;
+  const savedPolls = config?.polls;
+  const savedSticky = config?.sticky;
+  const savedHelper = config?.helper;
+
+  const pollsData = polls ?? savedPolls;
+  const stickyData = sticky ?? savedSticky;
+  const helperData = helper ?? savedHelper;
+
+  const isDirty = useMemo(() => {
+    return (
+      (polls !== null &&
+        JSON.stringify(polls) !== JSON.stringify(savedPolls)) ||
+      (sticky !== null &&
+        JSON.stringify(sticky) !== JSON.stringify(savedSticky)) ||
+      (helper !== null && JSON.stringify(helper) !== JSON.stringify(savedHelper))
+    );
+  }, [polls, sticky, helper, savedPolls, savedSticky, savedHelper]);
+
+  function onDiscard() {
+    setPolls(null);
+    setSticky(null);
+    setHelper(null);
+  }
+
+  async function onSave() {
+    if (!pollsData || !stickyData || !helperData) return;
+    await save({
+      polls: pollsData,
+      sticky: stickyData,
+      helper: helperData,
+    });
+    onDiscard();
+  }
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard,
+  });
 
   if (loading || !pollsData || !stickyData || !helperData) {
     return <p className="muted">Loading…</p>;
@@ -112,23 +149,14 @@ export default function MiscSettingsPage() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={async () => {
-            await save({
-              polls: pollsData,
-              sticky: stickyData,
-              helper: helperData,
-            });
-            setPolls(null);
-            setSticky(null);
-            setHelper(null);
-          }}
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
+        <SaveActions
+          saveBarRef={saveBarRef}
+          isDirty={isDirty}
+          saving={saving}
+          onSave={onSave}
+          onDiscard={onDiscard}
+          saveLabel="Save"
+        />
       </div>
     </>
   );

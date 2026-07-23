@@ -1,16 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
+import { isDraftDirty, useUnsavedChanges } from "@/lib/unsaved-changes";
 
 export default function ConfessionsSettingsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<GuildConfigData["confessions"] | null>(
     null,
   );
-  const confessions = draft ?? config?.confessions;
+
+  const savedConfessions = useMemo(
+    () => config?.confessions,
+    [config?.confessions],
+  );
+  const confessions = draft ?? savedConfessions;
   const channelOptions = config?.channels ?? [];
+
+  const isDirty = useMemo(
+    () => isDraftDirty(draft, savedConfessions),
+    [draft, savedConfessions],
+  );
+
+  async function onSave() {
+    if (!confessions) return;
+    await save({ confessions });
+    setDraft(null);
+  }
+
+  const { saveBarRef } = useUnsavedChanges({
+    isDirty,
+    onDiscard: () => setDraft(null),
+  });
 
   if (loading || !confessions) return <p className="muted">Loading…</p>;
 
@@ -71,17 +94,14 @@ export default function ConfessionsSettingsPage() {
             }
           />
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={async () => {
-            await save({ confessions });
-            setDraft(null);
-          }}
-        >
-          {saving ? "Saving…" : "Save confession settings"}
-        </button>
+        <SaveActions
+          saveBarRef={saveBarRef}
+          isDirty={isDirty}
+          saving={saving}
+          onSave={onSave}
+          onDiscard={() => setDraft(null)}
+          saveLabel="Save confession settings"
+        />
       </div>
     </>
   );
