@@ -3,10 +3,17 @@
 import { useMemo, useState } from "react";
 import { AddChannelModal } from "@/components/AddChannelModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { useGuildConfig } from "@/lib/useGuildConfig";
 
 type ChannelEntry = { key: string; label: string; channelId: string };
+
+const KEY_HELP =
+  "Input the same text as label, but in lowercase. Dash and underscore are allowed. Spaces are strictly not allowed.";
+const LABEL_HELP =
+  "Input the exact name of the channel as in Discord (include emojis if channel name has them).";
+const CHANNEL_ID_HELP = "Input channel ID. No space.";
 
 export default function ChannelsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
@@ -101,9 +108,24 @@ export default function ChannelsPage() {
           <table className="data">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Label</th>
-                <th>Channel ID</th>
+                <th>
+                  <span className="th-with-help">
+                    Key
+                    <InfoHelpIcon content={KEY_HELP} />
+                  </span>
+                </th>
+                <th>
+                  <span className="th-with-help">
+                    Label
+                    <InfoHelpIcon content={LABEL_HELP} />
+                  </span>
+                </th>
+                <th>
+                  <span className="th-with-help">
+                    Channel ID
+                    <InfoHelpIcon content={CHANNEL_ID_HELP} />
+                  </span>
+                </th>
                 <th />
               </tr>
             </thead>
@@ -114,7 +136,13 @@ export default function ChannelsPage() {
                     <input
                       className="input mono"
                       value={channel.key}
-                      onChange={(e) => updateChannel(i, "key", e.target.value)}
+                      onChange={(e) =>
+                        updateChannel(
+                          i,
+                          "key",
+                          e.target.value.replace(/\s/g, ""),
+                        )
+                      }
                     />
                   </td>
                   <td>

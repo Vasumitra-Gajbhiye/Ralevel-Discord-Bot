@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 
 type RoleDraft = { key: string; label: string; roleId: string };
 
@@ -13,6 +14,12 @@ type AddRoleModalProps = {
 };
 
 const emptyForm: RoleDraft = { key: "", label: "", roleId: "" };
+
+const KEY_HELP =
+  "Input the same text as label, but in lowercase. Dash and underscore are allowed. Spaces are strictly not allowed.";
+const LABEL_HELP =
+  "Input the exact name of the role as in Discord (include emojis if role name has them).";
+const ROLE_ID_HELP = "Input role ID. No space.";
 
 export function AddRoleModal({
   open,
@@ -42,7 +49,8 @@ export function AddRoleModal({
   }, [open, saving, onCancel]);
 
   function updateField(field: keyof RoleDraft, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    const nextValue = field === "key" ? value.replace(/\s/g, "") : value;
+    setForm((prev) => ({ ...prev, [field]: nextValue }));
     setError(null);
   }
 
@@ -88,7 +96,10 @@ export function AddRoleModal({
 
         <form className="modal-form" onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="add-role-key">Key</label>
+            <label htmlFor="add-role-key" className="label-with-help">
+              Key
+              <InfoHelpIcon content={KEY_HELP} />
+            </label>
             <input
               id="add-role-key"
               className="input mono"
@@ -100,7 +111,10 @@ export function AddRoleModal({
             />
           </div>
           <div className="field">
-            <label htmlFor="add-role-label">Label</label>
+            <label htmlFor="add-role-label" className="label-with-help">
+              Label
+              <InfoHelpIcon content={LABEL_HELP} />
+            </label>
             <input
               id="add-role-label"
               className="input"
@@ -111,7 +125,10 @@ export function AddRoleModal({
             />
           </div>
           <div className="field">
-            <label htmlFor="add-role-id">Discord role ID</label>
+            <label htmlFor="add-role-id" className="label-with-help">
+              Discord role ID
+              <InfoHelpIcon content={ROLE_ID_HELP} />
+            </label>
             <input
               id="add-role-id"
               className="input mono"

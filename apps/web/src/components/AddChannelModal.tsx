@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 
 type ChannelDraft = { key: string; label: string; channelId: string };
 
@@ -13,6 +14,12 @@ type AddChannelModalProps = {
 };
 
 const emptyForm: ChannelDraft = { key: "", label: "", channelId: "" };
+
+const KEY_HELP =
+  "Input the same text as label, but in lowercase. Dash and underscore are allowed. Spaces are strictly not allowed.";
+const LABEL_HELP =
+  "Input the exact name of the channel as in Discord (include emojis if channel name has them).";
+const CHANNEL_ID_HELP = "Input channel ID. No space.";
 
 export function AddChannelModal({
   open,
@@ -42,7 +49,8 @@ export function AddChannelModal({
   }, [open, saving, onCancel]);
 
   function updateField(field: keyof ChannelDraft, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    const nextValue = field === "key" ? value.replace(/\s/g, "") : value;
+    setForm((prev) => ({ ...prev, [field]: nextValue }));
     setError(null);
   }
 
@@ -91,7 +99,10 @@ export function AddChannelModal({
 
         <form className="modal-form" onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="add-channel-key">Key</label>
+            <label htmlFor="add-channel-key" className="label-with-help">
+              Key
+              <InfoHelpIcon content={KEY_HELP} />
+            </label>
             <input
               id="add-channel-key"
               className="input mono"
@@ -103,7 +114,10 @@ export function AddChannelModal({
             />
           </div>
           <div className="field">
-            <label htmlFor="add-channel-label">Label</label>
+            <label htmlFor="add-channel-label" className="label-with-help">
+              Label
+              <InfoHelpIcon content={LABEL_HELP} />
+            </label>
             <input
               id="add-channel-label"
               className="input"
@@ -114,7 +128,10 @@ export function AddChannelModal({
             />
           </div>
           <div className="field">
-            <label htmlFor="add-channel-id">Discord channel ID</label>
+            <label htmlFor="add-channel-id" className="label-with-help">
+              Discord channel ID
+              <InfoHelpIcon content={CHANNEL_ID_HELP} />
+            </label>
             <input
               id="add-channel-id"
               className="input mono"

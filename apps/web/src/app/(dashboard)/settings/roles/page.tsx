@@ -3,8 +3,15 @@
 import { useMemo, useState } from "react";
 import { AddRoleModal } from "@/components/AddRoleModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { useGuildConfig } from "@/lib/useGuildConfig";
+
+const KEY_HELP =
+  "Input the same text as label, but in lowercase. Dash and underscore are allowed. Spaces are strictly not allowed.";
+const LABEL_HELP =
+  "Input the exact name of the role as in Discord (include emojis if role name has them).";
+const ROLE_ID_HELP = "Input role ID. No space.";
 
 export default function RolesPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
@@ -115,9 +122,24 @@ export default function RolesPage() {
           <table className="data">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Label</th>
-                <th>Discord role ID</th>
+                <th>
+                  <span className="th-with-help">
+                    Key
+                    <InfoHelpIcon content={KEY_HELP} />
+                  </span>
+                </th>
+                <th>
+                  <span className="th-with-help">
+                    Label
+                    <InfoHelpIcon content={LABEL_HELP} />
+                  </span>
+                </th>
+                <th>
+                  <span className="th-with-help">
+                    Discord role ID
+                    <InfoHelpIcon content={ROLE_ID_HELP} />
+                  </span>
+                </th>
                 <th />
               </tr>
             </thead>
@@ -128,7 +150,13 @@ export default function RolesPage() {
                     <input
                       className="input mono"
                       value={role.key}
-                      onChange={(e) => updateRole(i, "key", e.target.value)}
+                      onChange={(e) =>
+                        updateRole(
+                          i,
+                          "key",
+                          e.target.value.replace(/\s/g, ""),
+                        )
+                      }
                     />
                   </td>
                   <td>
