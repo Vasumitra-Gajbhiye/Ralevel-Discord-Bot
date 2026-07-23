@@ -15,7 +15,6 @@ export type GuildConfigData = {
     welcomeWords: string[];
     disabledChannels: { id: string; label: string }[];
     disabledCategories: { id: string; label: string }[];
-    staffChannelIds: { id: string; label: string }[];
   };
   ranks: {
     ladder: { roleId: string; xp: number; name: string }[];

@@ -12,25 +12,46 @@ function normalizeIdLabels(raw) {
     .filter((entry) => entry.id);
 }
 
+function mergeIdLabels(...lists) {
+  const seen = new Set();
+  const merged = [];
+
+  for (const list of lists) {
+    for (const entry of normalizeIdLabels(list)) {
+      if (seen.has(entry.id)) continue;
+      seen.add(entry.id);
+      merged.push(entry);
+    }
+  }
+
+  return merged;
+}
+
 function normalizeReputationIdLabels(reputation) {
   if (!reputation || typeof reputation !== "object") return reputation;
 
+  const disabledChannels = mergeIdLabels(
+    reputation.disabledChannels,
+    reputation.staffChannelIds,
+  );
+
+  const { staffChannelIds: _staffChannelIds, ...rest } = reputation;
+
   return {
-    ...reputation,
-    disabledChannels: normalizeIdLabels(reputation.disabledChannels),
+    ...rest,
+    disabledChannels,
     disabledCategories: normalizeIdLabels(reputation.disabledCategories),
-    staffChannelIds: normalizeIdLabels(reputation.staffChannelIds),
   };
 }
 
 function reputationIdLabelsNeedMigration(reputation) {
   if (!reputation || typeof reputation !== "object") return false;
 
-  for (const key of [
-    "disabledChannels",
-    "disabledCategories",
-    "staffChannelIds",
-  ]) {
+  if ("staffChannelIds" in reputation) {
+    return true;
+  }
+
+  for (const key of ["disabledChannels", "disabledCategories"]) {
     const arr = reputation[key];
     if (!Array.isArray(arr)) continue;
     for (const item of arr) {
@@ -113,6 +134,12 @@ function migrateGuildConfigInPlace(doc) {
 
   if (reputationIdLabelsNeedMigration(doc.reputation)) {
     doc.reputation = normalizeReputationIdLabels(doc.reputation);
+    doc.markModified("reputation");
+    changed = true;
+  }
+
+  if (doc.reputation?.staffChannelIds !== undefined) {
+    delete doc.reputation.staffChannelIds;
     doc.markModified("reputation");
     changed = true;
   }

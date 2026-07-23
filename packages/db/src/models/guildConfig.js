@@ -99,7 +99,6 @@ const GuildConfigSchema = new mongoose.Schema(
       welcomeWords: { type: [String], default: [] },
       disabledChannels: { type: [IdLabelSchema], default: [] },
       disabledCategories: { type: [IdLabelSchema], default: [] },
-      staffChannelIds: { type: [IdLabelSchema], default: [] },
     },
     ranks: {
       ladder: { type: [RankEntrySchema], default: [] },

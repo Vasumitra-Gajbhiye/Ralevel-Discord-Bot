@@ -10,16 +10,10 @@ function toIds(list) {
 function isReputationDisabled(message) {
   const cfg = tryGetGuildConfig();
   if (cfg?.reputation) {
-    const {
-      disabledChannels = [],
-      disabledCategories = [],
-      staffChannelIds = [],
-    } = cfg.reputation;
+    const { disabledChannels = [], disabledCategories = [] } = cfg.reputation;
     const channelIds = toIds(disabledChannels);
     const categoryIds = toIds(disabledCategories);
-    const staffIds = toIds(staffChannelIds);
     if (channelIds.includes(message.channel.id)) return true;
-    if (staffIds.includes(message.channel.id)) return true;
     if (
       message.channel.parentId &&
       categoryIds.includes(message.channel.parentId)
@@ -32,10 +26,8 @@ function isReputationDisabled(message) {
   // Env fallback (verify scripts / pre-config)
   const disabledChannels = process.env.DISABLED_CHANNELS;
   const disabledCategories = process.env.DISABLED_CATEGORIES;
-  const staffChannels = process.env.STAFF_CHANNEL_IDS;
 
   if (disabledChannels?.includes?.(message.channel.id)) return true;
-  if (staffChannels?.includes?.(message.channel.id)) return true;
   if (
     message.channel.parentId &&
     disabledCategories?.includes?.(message.channel.parentId)

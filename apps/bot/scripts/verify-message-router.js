@@ -167,9 +167,9 @@ async function testReputationSkippedInDisabledChannel() {
 }
 
 async function testReputationSkippedInStaffChannel() {
-  const originalStaff = process.env.STAFF_CHANNEL_IDS;
+  const originalChannels = process.env.DISABLED_CHANNELS;
 
-  process.env.STAFF_CHANNEL_IDS = "staff-channel-1,staff-channel-2";
+  process.env.DISABLED_CHANNELS = "staff-channel-1,staff-channel-2";
 
   try {
     const client = createMockClient();
@@ -198,19 +198,18 @@ async function testReputationSkippedInStaffChannel() {
       "reputation should be skipped in staff channel"
     );
   } finally {
-    process.env.STAFF_CHANNEL_IDS = originalStaff;
+    process.env.DISABLED_CHANNELS = originalChannels;
   }
 }
 
 function testIsReputationDisabledHelper() {
   const originalChannels = process.env.DISABLED_CHANNELS;
   const originalCategories = process.env.DISABLED_CATEGORIES;
-  const originalStaff = process.env.STAFF_CHANNEL_IDS;
   const { isReputationDisabled: checkDisabled } = require("../systems/messageRouter");
 
-  process.env.DISABLED_CHANNELS = "disabled-channel";
+  process.env.DISABLED_CHANNELS =
+    "disabled-channel,staff-channel-1,staff-channel-2";
   process.env.DISABLED_CATEGORIES = "disabled-category";
-  process.env.STAFF_CHANNEL_IDS = "staff-channel-1,staff-channel-2";
 
   try {
     assert(
@@ -234,7 +233,6 @@ function testIsReputationDisabledHelper() {
   } finally {
     process.env.DISABLED_CHANNELS = originalChannels;
     process.env.DISABLED_CATEGORIES = originalCategories;
-    process.env.STAFF_CHANNEL_IDS = originalStaff;
   }
 }
 

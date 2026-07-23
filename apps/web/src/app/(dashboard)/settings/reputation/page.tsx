@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CategoryIdPicker } from "@/components/CategoryIdPicker";
+import { ChannelIdPicker } from "@/components/ChannelIdPicker";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { LabeledIdList } from "@/components/LabeledIdList";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { WordPillList } from "@/components/WordPillList";
@@ -16,7 +17,6 @@ function normalizeReputation(rep: ReputationConfig): ReputationConfig {
     ...rep,
     disabledChannels: normalizeIdLabels(rep.disabledChannels),
     disabledCategories: normalizeIdLabels(rep.disabledCategories),
-    staffChannelIds: normalizeIdLabels(rep.staffChannelIds),
   };
 }
 
@@ -75,7 +75,7 @@ export default function ReputationSettingsPage() {
     <>
       <PageHeader
         title="Reputation settings"
-        description="Tiers, detection words, and disabled channels/categories."
+        description="Tiers, detection words, and disabled channels and categories."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -170,36 +170,39 @@ export default function ReputationSettingsPage() {
         </div>
 
         <div className="card stack">
-          <h3 style={{ margin: 0, fontSize: "1rem" }}>
-            Channels, categories & staff
-          </h3>
-          <LabeledIdList
-            title="Disabled channels"
-            description="Reputation is not awarded in these channels."
-            items={rep.disabledChannels}
-            onChange={(disabledChannels) => updateRep({ disabledChannels })}
-            addButtonLabel="Add channel"
-            addModalTitle="Add disabled channel"
-            idColumnLabel="Channel ID"
-          />
-          <LabeledIdList
-            title="Disabled categories"
-            description="Reputation is not awarded in channels under these category IDs."
-            items={rep.disabledCategories}
-            onChange={(disabledCategories) => updateRep({ disabledCategories })}
-            addButtonLabel="Add category"
-            addModalTitle="Add disabled category"
-            idColumnLabel="Category ID"
-          />
-          <LabeledIdList
-            title="Staff channels"
-            description="Reputation is not awarded in these staff-only channels."
-            items={rep.staffChannelIds}
-            onChange={(staffChannelIds) => updateRep({ staffChannelIds })}
-            addButtonLabel="Add staff channel"
-            addModalTitle="Add staff channel"
-            idColumnLabel="Channel ID"
-          />
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>Channels & categories</h3>
+          <div className="stack" style={{ gap: "0.75rem" }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: "0.95rem" }}>Disabled channels</h4>
+              <p
+                className="muted"
+                style={{ fontSize: "0.85rem", margin: "0.25rem 0 0.5rem" }}
+              >
+                Reputation is not awarded in these channels.
+              </p>
+              <ChannelIdPicker
+                channels={config?.channels ?? []}
+                selected={rep.disabledChannels}
+                onChange={(disabledChannels) => updateRep({ disabledChannels })}
+              />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: "0.95rem" }}>Disabled categories</h4>
+              <p
+                className="muted"
+                style={{ fontSize: "0.85rem", margin: "0.25rem 0 0.5rem" }}
+              >
+                Reputation is not awarded in channels under these categories.
+              </p>
+              <CategoryIdPicker
+                categories={config?.categories ?? []}
+                selected={rep.disabledCategories}
+                onChange={(disabledCategories) =>
+                  updateRep({ disabledCategories })
+                }
+              />
+            </div>
+          </div>
         </div>
 
         <div className="row row-between">

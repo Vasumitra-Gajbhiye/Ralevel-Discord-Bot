@@ -1,0 +1,175 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  CategorySearchMenu,
+  type CategoryOption,
+} from "@/components/CategorySearchMenu";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import type { IdLabel } from "@/lib/reputationIds";
+
+type CategoryIdPickerProps = {
+  categories: CategoryOption[];
+  selected: IdLabel[];
+  onChange: (selected: IdLabel[]) => void;
+  emptyLinkHref?: string;
+  emptyLinkLabel?: string;
+};
+
+export function CategoryIdPicker({
+  categories,
+  selected,
+  onChange,
+  emptyLinkHref = "/settings/category",
+  emptyLinkLabel = "Add categories",
+}: CategoryIdPickerProps) {
+  const [open, setOpen] = useState(false);
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const selectedIds = useMemo(
+    () => selected.map((item) => item.id),
+    [selected],
+  );
+
+  const pendingItem = pendingRemoveId
+    ? selected.find((item) => item.id === pendingRemoveId)
+    : null;
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  function addCategory(category: CategoryOption) {
+    onChange([
+      ...selected,
+      { id: category.categoryId, label: category.label || category.key },
+    ]);
+  }
+
+  function confirmRemove() {
+    if (!pendingRemoveId) return;
+    onChange(selected.filter((item) => item.id !== pendingRemoveId));
+    setPendingRemoveId(null);
+  }
+
+  function toggleOpen() {
+    setOpen((prev) => !prev);
+  }
+
+  if (categories.length === 0) {
+    return (
+      <p className="muted" style={{ fontSize: "0.82rem", margin: 0 }}>
+        No categories configured.{" "}
+        <Link href={emptyLinkHref} style={{ color: "var(--accent)" }}>
+          {emptyLinkLabel}
+        </Link>
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <div className="role-picker" ref={containerRef}>
+        <div className="role-picker-pills">
+          {selected.map((item) => {
+            const label = item.label || item.id;
+            return (
+              <span key={item.id} className="role-pill">
+                <span className="role-pill-label">{label}</span>
+                <button
+                  type="button"
+                  className="role-pill-remove"
+                  aria-label={`Remove ${label}`}
+                  onClick={() => setPendingRemoveId(item.id)}
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3 3l6 6M9 3L3 9"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </span>
+            );
+          })}
+          <button
+            type="button"
+            className="role-picker-add"
+            aria-label="Add category"
+            aria-expanded={open}
+            onClick={toggleOpen}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M7 2.5v9M2.5 7h9"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {open ? (
+          <CategorySearchMenu
+            categories={categories}
+            excludeIds={selectedIds}
+            onSelect={addCategory}
+            searchRef={searchRef}
+          />
+        ) : null}
+      </div>
+
+      <ConfirmModal
+        open={pendingRemoveId !== null}
+        title="Remove category"
+        message={
+          pendingItem
+            ? `Remove "${pendingItem.label || pendingItem.id}" from disabled categories? Changes apply after you save.`
+            : "Remove this category from disabled categories?"
+        }
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemoveId(null)}
+      />
+    </>
+  );
+}

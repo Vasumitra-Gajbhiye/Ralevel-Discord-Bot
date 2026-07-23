@@ -208,18 +208,18 @@ Used in: `systems/messageRouter.js`
 
 ---
 
-### `STAFF_CHANNEL_IDS`
+### `STAFF_CHANNEL_IDS` (deprecated)
 
 |                |                                                                    |
 | -------------- | ------------------------------------------------------------------ |
-| **Purpose**    | Comma-separated staff channel IDs where automatic reputation is disabled |
+| **Purpose**    | Legacy comma-separated staff channel IDs. New configs merge these into `DISABLED_CHANNELS` instead. |
 | **Example**    | `1446768750509686925,1484060981658390579,1450047433433415733`      |
 | **Required**   | No                                                                 |
-| **If missing** | Reputation is not skipped based on staff channels                  |
+| **If missing** | No effect on reputation gating                                     |
 
-Uses the same substring matching as `DISABLED_CHANNELS`. All thank-word triggers (`thanks`, `thnx`, `tnx`, `ty`, etc.) are blocked; manual admin rep commands are unaffected.
+Prefer adding staff channels to `DISABLED_CHANNELS` (or the disabled channels list in the web dashboard). Existing `STAFF_CHANNEL_IDS` values are migrated into `DISABLED_CHANNELS` when guild config is loaded or saved.
 
-Used in: `systems/messageRouter.js`
+Used in: `packages/db/src/defaultGuildConfig.js` (seed only; merged into `disabledChannels`)
 
 ---
 
@@ -270,7 +270,7 @@ Quick reference for which variables each feature needs:
 | Bot startup             | `TOKEN`, `MONGO_URI`, `REDIS_URL`                                                                     |
 | Slash command deploy    | `TOKEN`, `CLIENT_ID`, `GUILD_ID`                                                                      |
 | Message tracking + XP   | `GUILD_ID`, `BOOSTER_ROLE_ID`, `LEVELUP_CHANNEL_ID`                                                   |
-| Reputation              | Tier role IDs, optional `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` / `STAFF_CHANNEL_IDS`              |
+| Reputation              | Tier role IDs, optional `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` (legacy `STAFF_CHANNEL_IDS` merged into `DISABLED_CHANNELS`) |
 | Certificates            | `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, `ADMIN_ROLE_ID`, `SR_HELPER_ROLE_ID` |
 | Confessions             | `MOD_ACTION_CHANNEL`, `VENT_CHANNEL`                                                                  |
 | Tasks                   | `GRAPHIC_CHANNEL`, `DEV_CHANNEL`, `WRITER_CHANNEL`, designer role IDs                                 |

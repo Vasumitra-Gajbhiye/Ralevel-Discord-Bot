@@ -311,14 +311,14 @@ function buildDefaultGuildConfig(guildId) {
       ],
       thankWords: [...DEFAULT_THANK_WORDS],
       welcomeWords: [...DEFAULT_WELCOME_WORDS],
-      disabledChannels: toIdLabels(parseJsonIdList(env("DISABLED_CHANNELS"))),
-      disabledCategories: toIdLabels(parseJsonIdList(env("DISABLED_CATEGORIES"))),
-      staffChannelIds: toIdLabels(
-        String(env("STAFF_CHANNEL_IDS"))
+      disabledChannels: toIdLabels([
+        ...parseJsonIdList(env("DISABLED_CHANNELS")),
+        ...String(env("STAFF_CHANNEL_IDS"))
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
-      ),
+      ]),
+      disabledCategories: toIdLabels(parseJsonIdList(env("DISABLED_CATEGORIES"))),
     },
     ranks: {
       ladder: DEFAULT_RANK_LADDER.map((r) => ({ ...r })),
