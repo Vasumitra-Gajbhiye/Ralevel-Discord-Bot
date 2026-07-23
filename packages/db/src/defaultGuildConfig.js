@@ -60,6 +60,21 @@ const ROLE_DEFS = [
   { key: "gigachad", label: "Giga Chad (rep)", env: "GIGACHAD_ROLE_ID" },
 ];
 
+const CHANNEL_DEFS = [
+  { key: "application", label: "Application", env: "APPLICATION_CHANNEL" },
+  { key: "review", label: "Certificate review", env: "REVIEW_CHANNEL" },
+  { key: "certUpdates", label: "Certificate updates", env: "CERT_UPDATES_CHANNEL" },
+  { key: "graphic", label: "Graphic tasks", env: "GRAPHIC_CHANNEL" },
+  { key: "dev", label: "Dev tasks", env: "DEV_CHANNEL" },
+  { key: "writer", label: "Writer tasks", env: "WRITER_CHANNEL" },
+  { key: "welcome", label: "Welcome", env: "WELCOME_CHANNEL" },
+  { key: "modAction", label: "Mod action (confessions)", env: "MOD_ACTION_CHANNEL" },
+  { key: "vent", label: "Vent / public confessions", env: "VENT_CHANNEL" },
+  { key: "modLog", label: "Moderation logs", env: "MOD_LOG_CHANNEL_ID" },
+  { key: "levelUp", label: "Level-up announcements", env: "LEVELUP_CHANNEL_ID" },
+  { key: "qotdReminder", label: "QOTD reminder", env: "QOTD_REMINDER_CHANNEL_ID" },
+];
+
 const DEFAULT_THANK_WORDS = [
   "thanks!!",
   "thank you",
@@ -265,34 +280,12 @@ function buildDefaultGuildConfig(guildId) {
     guildId: String(guildId),
     roles,
     commandPermissions: { ...DEFAULT_COMMAND_PERMISSIONS },
-    channels: {
-      application: env("APPLICATION_CHANNEL"),
-      review: env("REVIEW_CHANNEL"),
-      certUpdates: env("CERT_UPDATES_CHANNEL"),
-      graphic: env("GRAPHIC_CHANNEL"),
-      dev: env("DEV_CHANNEL"),
-      writer: env("WRITER_CHANNEL"),
-      welcome: env("WELCOME_CHANNEL"),
-      modAction: env("MOD_ACTION_CHANNEL"),
-      vent: env("VENT_CHANNEL"),
-      modLog: env("MOD_LOG_CHANNEL_ID"),
-      levelUp: env("LEVELUP_CHANNEL_ID"),
-      qotdReminder: env("QOTD_REMINDER_CHANNEL_ID"),
-    },
-    channelLabels: {
-      application: "",
-      review: "",
-      certUpdates: "",
-      graphic: "",
-      dev: "",
-      writer: "",
-      welcome: "",
-      modAction: "",
-      vent: "",
-      modLog: "",
-      levelUp: "",
-      qotdReminder: "",
-    },
+    channels: CHANNEL_DEFS.map(({ key, label, env: envName }) => ({
+      key,
+      label,
+      channelId: env(envName) || "",
+    })),
+    categories: [],
     features: {
       reputation: true,
       sticky: true,
@@ -428,4 +421,5 @@ module.exports = {
   DEFAULT_WELCOME_WORDS,
   DEFAULT_RANK_LADDER,
   ROLE_DEFS,
+  CHANNEL_DEFS,
 };

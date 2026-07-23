@@ -1,18 +1,3 @@
-export const CHANNEL_KEYS = [
-  { key: "application", label: "Application" },
-  { key: "review", label: "Certificate review" },
-  { key: "certUpdates", label: "Certificate updates" },
-  { key: "graphic", label: "Graphic tasks" },
-  { key: "dev", label: "Dev tasks" },
-  { key: "writer", label: "Writer tasks" },
-  { key: "welcome", label: "Welcome" },
-  { key: "modAction", label: "Mod action (confessions)" },
-  { key: "vent", label: "Vent / public confessions" },
-  { key: "modLog", label: "Moderation logs" },
-  { key: "levelUp", label: "Level-up announcements" },
-  { key: "qotdReminder", label: "QOTD reminder" },
-] as const;
-
 export const FEATURE_KEYS = [
   { key: "reputation", label: "Reputation" },
   { key: "sticky", label: "Sticky messages" },
@@ -34,6 +19,7 @@ export const NAV = [
       { href: "/settings/access", label: "Access" },
       { href: "/settings/commands", label: "Commands" },
       { href: "/settings/channels", label: "Channels" },
+      { href: "/settings/category", label: "Categories" },
       { href: "/settings/reputation", label: "Reputation" },
       { href: "/settings/ranks", label: "XP / Ranks" },
       { href: "/settings/welcome", label: "Welcome" },

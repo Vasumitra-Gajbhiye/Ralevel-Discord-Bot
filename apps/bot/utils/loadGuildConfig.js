@@ -1,4 +1,4 @@
-const { GuildConfig, buildDefaultGuildConfig } = require("@ralevel/db");
+const { GuildConfig, buildDefaultGuildConfig, migrateGuildConfigDocument } = require("@ralevel/db");
 const {
   setGuildConfig,
   toPlainConfig,
@@ -13,6 +13,8 @@ async function loadGuildConfig(client) {
   if (!guildId) {
     throw new Error("GUILD_ID is required to load GuildConfig");
   }
+
+  await migrateGuildConfigDocument(GuildConfig, guildId);
 
   let doc = await GuildConfig.findOne({ guildId });
   if (!doc) {

@@ -25,6 +25,12 @@ const {
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
 } = require("./src/defaultGuildConfig");
+const {
+  migrateGuildConfigDocument,
+  migrateGuildConfigInPlace,
+  normalizeIdLabels,
+  normalizeReputationIdLabels,
+} = require("./src/migrateGuildConfig");
 
 module.exports = {
   connectDB,
@@ -51,4 +57,8 @@ module.exports = {
   DashboardAccess,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
+  migrateGuildConfigDocument,
+  migrateGuildConfigInPlace,
+  normalizeIdLabels,
+  normalizeReputationIdLabels,
 };

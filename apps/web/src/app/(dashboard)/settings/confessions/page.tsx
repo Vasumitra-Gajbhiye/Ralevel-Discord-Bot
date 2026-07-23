@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
-import { CHANNEL_KEYS } from "@/lib/nav";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
 
 export default function ConfessionsSettingsPage() {
@@ -11,7 +10,7 @@ export default function ConfessionsSettingsPage() {
     null,
   );
   const confessions = draft ?? config?.confessions;
-  const channelOptions = CHANNEL_KEYS.map((c) => c.key);
+  const channelOptions = config?.channels ?? [];
 
   if (loading || !confessions) return <p className="muted">Loading…</p>;
 
@@ -34,9 +33,9 @@ export default function ConfessionsSettingsPage() {
                 setDraft({ ...confessions, modChannelKey: e.target.value })
               }
             >
-              {channelOptions.map((k) => (
-                <option key={k} value={k}>
-                  {k}
+              {channelOptions.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.label ? `${c.label} (${c.key})` : c.key}
                 </option>
               ))}
             </select>
@@ -49,9 +48,9 @@ export default function ConfessionsSettingsPage() {
                 setDraft({ ...confessions, ventChannelKey: e.target.value })
               }
             >
-              {channelOptions.map((k) => (
-                <option key={k} value={k}>
-                  {k}
+              {channelOptions.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.label ? `${c.label} (${c.key})` : c.key}
                 </option>
               ))}
             </select>

@@ -6,8 +6,8 @@ export type GuildConfigData = {
   guildId: string;
   roles: { key: string; label: string; roleId: string }[];
   commandPermissions: Record<string, string[]>;
-  channels: Record<string, string>;
-  channelLabels: Record<string, string>;
+  channels: { key: string; label: string; channelId: string }[];
+  categories: { key: string; label: string; categoryId: string }[];
   features: Record<string, boolean>;
   reputation: {
     tiers: { roleKey: string; threshold: number; label: string }[];

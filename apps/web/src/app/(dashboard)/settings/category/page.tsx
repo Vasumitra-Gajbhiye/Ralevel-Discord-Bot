@@ -1,71 +1,75 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AddChannelModal } from "@/components/AddChannelModal";
+import { AddCategoryModal } from "@/components/AddCategoryModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { useGuildConfig } from "@/lib/useGuildConfig";
 
-type ChannelEntry = { key: string; label: string; channelId: string };
+type CategoryEntry = { key: string; label: string; categoryId: string };
 
-export default function ChannelsPage() {
+export default function CategoryPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
-  const [draft, setDraft] = useState<ChannelEntry[] | null>(null);
+  const [draft, setDraft] = useState<CategoryEntry[] | null>(null);
   const [pendingRemoveIndex, setPendingRemoveIndex] = useState<number | null>(
     null,
   );
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const savedChannels = useMemo(() => config?.channels ?? [], [config?.channels]);
-  const channels = draft ?? savedChannels;
+  const savedCategories = useMemo(
+    () => config?.categories ?? [],
+    [config?.categories],
+  );
+  const categories = draft ?? savedCategories;
 
   const isDirty = useMemo(
     () =>
-      draft !== null && JSON.stringify(draft) !== JSON.stringify(savedChannels),
-    [draft, savedChannels],
+      draft !== null &&
+      JSON.stringify(draft) !== JSON.stringify(savedCategories),
+    [draft, savedCategories],
   );
 
-  const pendingChannel =
-    pendingRemoveIndex !== null ? channels[pendingRemoveIndex] : null;
+  const pendingCategory =
+    pendingRemoveIndex !== null ? categories[pendingRemoveIndex] : null;
 
-  function updateChannel(
+  function updateCategory(
     index: number,
-    field: "key" | "label" | "channelId",
+    field: "key" | "label" | "categoryId",
     value: string,
   ) {
-    const next = channels.map((c, i) =>
+    const next = categories.map((c, i) =>
       i === index ? { ...c, [field]: value } : c,
     );
     setDraft(next);
   }
 
-  function handleAddChannel(channel: ChannelEntry) {
-    setDraft([...channels, channel]);
+  function handleAddCategory(category: CategoryEntry) {
+    setDraft([...categories, category]);
     setShowAddModal(false);
   }
 
   function confirmRemove() {
     if (pendingRemoveIndex === null) return;
-    setDraft(channels.filter((_, i) => i !== pendingRemoveIndex));
+    setDraft(categories.filter((_, i) => i !== pendingRemoveIndex));
     setPendingRemoveIndex(null);
   }
 
   async function onSave() {
-    await save({ channels });
+    await save({ categories });
     setDraft(null);
   }
 
   if (loading) return <p className="muted">Loading…</p>;
 
-  const removeMessage = pendingChannel
-    ? `Remove channel "${pendingChannel.label || pendingChannel.key}"? Changes apply after you save.`
+  const removeMessage = pendingCategory
+    ? `Remove category "${pendingCategory.label || pendingCategory.key}"? Changes apply after you save.`
     : "";
 
   return (
     <>
       <PageHeader
-        title="Channels"
-        description="Discord channel snowflake IDs used by bot features. Add display names to remember what each channel is."
+        title="Categories"
+        description="Discord category snowflake IDs for reference. Add display names to remember what each category is."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -78,7 +82,7 @@ export default function ChannelsPage() {
             className="btn"
             onClick={() => setShowAddModal(true)}
           >
-            Add channel
+            Add category
           </button>
           <div className="row">
             {isDirty ? (
@@ -92,7 +96,7 @@ export default function ChannelsPage() {
               disabled={!isDirty || saving}
               onClick={onSave}
             >
-              {saving ? "Saving…" : "Save channels"}
+              {saving ? "Saving…" : "Save categories"}
             </button>
           </div>
         </div>
@@ -103,35 +107,35 @@ export default function ChannelsPage() {
               <tr>
                 <th>Key</th>
                 <th>Label</th>
-                <th>Channel ID</th>
+                <th>Category ID</th>
                 <th />
               </tr>
             </thead>
             <tbody>
-              {channels.map((channel, i) => (
-                <tr key={`${channel.key}-${i}`}>
+              {categories.map((category, i) => (
+                <tr key={`${category.key}-${i}`}>
                   <td>
                     <input
                       className="input mono"
-                      value={channel.key}
-                      onChange={(e) => updateChannel(i, "key", e.target.value)}
+                      value={category.key}
+                      onChange={(e) => updateCategory(i, "key", e.target.value)}
                     />
                   </td>
                   <td>
                     <input
                       className="input"
-                      value={channel.label}
+                      value={category.label}
                       onChange={(e) =>
-                        updateChannel(i, "label", e.target.value)
+                        updateCategory(i, "label", e.target.value)
                       }
                     />
                   </td>
                   <td>
                     <input
                       className="input mono"
-                      value={channel.channelId}
+                      value={category.categoryId}
                       onChange={(e) =>
-                        updateChannel(i, "channelId", e.target.value.trim())
+                        updateCategory(i, "categoryId", e.target.value.trim())
                       }
                     />
                   </td>
@@ -151,17 +155,17 @@ export default function ChannelsPage() {
         </div>
       </div>
 
-      <AddChannelModal
+      <AddCategoryModal
         open={showAddModal}
         saving={saving}
-        existingKeys={channels.map((c) => c.key)}
+        existingKeys={categories.map((c) => c.key)}
         onCancel={() => setShowAddModal(false)}
-        onAdd={handleAddChannel}
+        onAdd={handleAddCategory}
       />
 
       <ConfirmModal
         open={pendingRemoveIndex !== null}
-        title="Remove channel"
+        title="Remove category"
         message={removeMessage}
         confirmLabel="Remove"
         variant="danger"

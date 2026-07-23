@@ -35,9 +35,20 @@ function getRoleId(key, config = guildConfig) {
   return getRoleMap(config)[key] || "";
 }
 
+function getChannelMap(config = guildConfig) {
+  const map = {};
+  if (!config?.channels) return map;
+  if (Array.isArray(config.channels)) {
+    for (const c of config.channels) {
+      if (c?.key) map[c.key] = c.channelId || "";
+    }
+    return map;
+  }
+  return config.channels;
+}
+
 function getChannelId(key, config = guildConfig) {
-  if (!config?.channels) return "";
-  return config.channels[key] || "";
+  return getChannelMap(config)[key] || "";
 }
 
 function resolveRoleKeys(keys = [], config = guildConfig) {
@@ -71,6 +82,7 @@ module.exports = {
   tryGetGuildConfig,
   getRoleMap,
   getRoleId,
+  getChannelMap,
   getChannelId,
   resolveRoleKeys,
   getCommandAllowedRoleIds,

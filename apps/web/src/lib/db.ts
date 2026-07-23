@@ -25,6 +25,8 @@ import {
   DashboardAccess,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
+  migrateGuildConfigDocument,
+  migrateGuildConfigInPlace,
 } from "@ralevel/db";
 
 let connected = false;
@@ -70,6 +72,9 @@ export async function getOrCreateGuildConfig() {
   if (!guildId) {
     throw new Error("GUILD_ID is not set");
   }
+
+  await migrateGuildConfigDocument(GuildConfig, guildId);
+
   let doc = await GuildConfig.findOne({ guildId });
   if (!doc) {
     doc = await GuildConfig.create(buildDefaultGuildConfig(guildId));
@@ -117,4 +122,6 @@ export {
   DashboardAccess,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
+  migrateGuildConfigDocument,
+  migrateGuildConfigInPlace,
 };

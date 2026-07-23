@@ -4,6 +4,7 @@ import {
   guildConfigToJson,
 } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
+import { normalizeReputationIdLabels } from "@ralevel/db";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ const PATCHABLE = [
   "roles",
   "commandPermissions",
   "channels",
-  "channelLabels",
+  "categories",
   "features",
   "reputation",
   "ranks",
@@ -65,12 +66,21 @@ export async function PUT(request: Request) {
 
     for (const key of PATCHABLE) {
       if (body[key] !== undefined) {
+        const value =
+          key === "reputation"
+            ? normalizeReputationIdLabels(body.reputation)
+            : body[key];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (doc as any)[key] = body[key];
-        if (key === "commandPermissions") {
-          doc.markModified("commandPermissions");
+        (doc as any)[key] = value;
+        if (key === "commandPermissions" || key === "reputation") {
+          doc.markModified(key);
         }
       }
+    }
+
+    if (doc.reputation) {
+      doc.reputation = normalizeReputationIdLabels(doc.reputation);
+      doc.markModified("reputation");
     }
 
     await doc.save();

@@ -9,6 +9,24 @@ const RoleEntrySchema = new mongoose.Schema(
   { _id: false },
 );
 
+const ChannelEntrySchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    label: { type: String, default: "" },
+    channelId: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
+const CategoryEntrySchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    label: { type: String, default: "" },
+    categoryId: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
 const RepTierSchema = new mongoose.Schema(
   {
     roleKey: { type: String, required: true },
@@ -62,34 +80,8 @@ const GuildConfigSchema = new mongoose.Schema(
     roles: { type: [RoleEntrySchema], default: [] },
     // Map of commandName -> array of role keys
     commandPermissions: { type: Map, of: [String], default: {} },
-    channels: {
-      application: { type: String, default: "" },
-      review: { type: String, default: "" },
-      certUpdates: { type: String, default: "" },
-      graphic: { type: String, default: "" },
-      dev: { type: String, default: "" },
-      writer: { type: String, default: "" },
-      welcome: { type: String, default: "" },
-      modAction: { type: String, default: "" },
-      vent: { type: String, default: "" },
-      modLog: { type: String, default: "" },
-      levelUp: { type: String, default: "" },
-      qotdReminder: { type: String, default: "" },
-    },
-    channelLabels: {
-      application: { type: String, default: "" },
-      review: { type: String, default: "" },
-      certUpdates: { type: String, default: "" },
-      graphic: { type: String, default: "" },
-      dev: { type: String, default: "" },
-      writer: { type: String, default: "" },
-      welcome: { type: String, default: "" },
-      modAction: { type: String, default: "" },
-      vent: { type: String, default: "" },
-      modLog: { type: String, default: "" },
-      levelUp: { type: String, default: "" },
-      qotdReminder: { type: String, default: "" },
-    },
+    channels: { type: [ChannelEntrySchema], default: [] },
+    categories: { type: [CategoryEntrySchema], default: [] },
     features: {
       reputation: { type: Boolean, default: true },
       sticky: { type: Boolean, default: true },
