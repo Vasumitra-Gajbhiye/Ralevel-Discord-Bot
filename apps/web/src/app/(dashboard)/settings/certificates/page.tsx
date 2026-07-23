@@ -176,6 +176,25 @@ export default function CertificatesSettingsPage() {
 
       <div className="stack">
         <div className="card stack">
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>Staff permissions</h3>
+          <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
+            Members with these roles can approve or reject applications from the
+            review channel and use mod certificate commands such as{" "}
+            <code>/approve-certificate</code>, <code>/reject-certificate</code>,{" "}
+            <code>/submit-cert-details</code>, <code>/mark-cert-delivered</code>,
+            and <code>/certificate-status-mod</code>.
+          </p>
+          <div className="field">
+            <label>Mod roles</label>
+            <RolePicker
+              roles={roles}
+              selectedKeys={certs.modRoleKeys}
+              onChange={(modRoleKeys) => updateCerts({ modRoleKeys })}
+            />
+          </div>
+        </div>
+
+        <div className="card stack">
           <h3 style={{ margin: 0, fontSize: "1rem" }}>Application panel</h3>
           <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
             The bot posts this embed in the selected channel on restart (or when
@@ -223,15 +242,15 @@ export default function CertificatesSettingsPage() {
             </p>
           </div>
 
-          <div className="row">
-            <div className="field">
+          <div className="row" style={{ alignItems: "flex-end" }}>
+            <div className="field" style={{ flex: "0 0 7rem", minWidth: "7rem" }}>
               <label>Color</label>
               <input
                 value={panel.color}
                 onChange={(e) => updatePanel({ color: e.target.value })}
               />
             </div>
-            <div className="field">
+            <div className="field" style={{ flex: 1, minWidth: 0 }}>
               <label>Footer</label>
               <input
                 value={panel.footer}
@@ -241,7 +260,7 @@ export default function CertificatesSettingsPage() {
           </div>
         </div>
 
-        <div className="card stack">
+        <div className="card stack" style={{ gap: "0.65rem" }}>
           <div className="row" style={{ justifyContent: "space-between" }}>
             <div>
               <h3 style={{ margin: 0, fontSize: "1rem" }}>Apply buttons</h3>
@@ -279,92 +298,90 @@ export default function CertificatesSettingsPage() {
           </div>
 
           {panel.buttons.length === 0 ? (
-            <p className="muted">No apply buttons configured.</p>
-          ) : null}
-
-          {panel.buttons.map((button, i) => (
-            <div className="card stack" key={`button-${i}`}>
-              <div className="row">
-                <div className="field">
-                  <label>Label</label>
-                  <input
-                    value={button.label}
-                    onChange={(e) =>
-                      updateButton(i, { label: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="field">
-                  <label
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.35rem",
-                    }}
+            <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
+              No apply buttons configured.
+            </p>
+          ) : (
+            <div className="stack" style={{ gap: "0.5rem" }}>
+              {panel.buttons.map((button, i) => (
+                <div
+                  className="row"
+                  key={`button-${i}`}
+                  style={{ alignItems: "flex-end", margin: 0 }}
+                >
+                  <div className="field" style={{ flex: 2, minWidth: "10rem" }}>
+                    <label>Label</label>
+                    <input
+                      value={button.label}
+                      onChange={(e) =>
+                        updateButton(i, { label: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="field" style={{ flex: 1.2, minWidth: "8rem" }}>
+                    <label
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                      }}
+                    >
+                      Certificate type
+                      <InfoHelpIcon content={CERT_TYPE_HELP} />
+                    </label>
+                    <input
+                      className="mono"
+                      value={button.certTypeId}
+                      onChange={(e) =>
+                        updateButton(i, { certTypeId: e.target.value })
+                      }
+                      placeholder="helper"
+                    />
+                  </div>
+                  <div
+                    className="row"
+                    style={{ flex: "0 0 auto", gap: "0.35rem", margin: 0 }}
                   >
-                    Certificate type
-                    <InfoHelpIcon content={CERT_TYPE_HELP} />
-                  </label>
-                  <input
-                    className="mono"
-                    value={button.certTypeId}
-                    onChange={(e) =>
-                      updateButton(i, { certTypeId: e.target.value })
-                    }
-                    placeholder="helper"
-                  />
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ padding: "0.45rem 0.55rem" }}
+                      disabled={i === 0}
+                      aria-label="Move button up"
+                      onClick={() => moveButton(i, -1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ padding: "0.45rem 0.55rem" }}
+                      disabled={i === panel.buttons.length - 1}
+                      aria-label="Move button down"
+                      onClick={() => moveButton(i, 1)}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ padding: "0.45rem 0.55rem" }}
+                      aria-label="Remove button"
+                      onClick={() =>
+                        updatePanel({
+                          buttons: panel.buttons.filter(
+                            (_, index) => index !== i,
+                          ),
+                        })
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="row">
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={i === 0}
-                  onClick={() => moveButton(i, -1)}
-                >
-                  Move up
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={i === panel.buttons.length - 1}
-                  onClick={() => moveButton(i, 1)}
-                >
-                  Move down
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() =>
-                    updatePanel({
-                      buttons: panel.buttons.filter((_, index) => index !== i),
-                    })
-                  }
-                >
-                  Remove
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-
-        <div className="card stack">
-          <h3 style={{ margin: 0, fontSize: "1rem" }}>Staff permissions</h3>
-          <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-            Members with these roles can approve or reject applications from the
-            review channel and use mod certificate commands such as{" "}
-            <code>/approve-certificate</code>, <code>/reject-certificate</code>,{" "}
-            <code>/submit-cert-details</code>, <code>/mark-cert-delivered</code>,
-            and <code>/certificate-status-mod</code>.
-          </p>
-          <div className="field">
-            <label>Mod roles</label>
-            <RolePicker
-              roles={roles}
-              selectedKeys={certs.modRoleKeys}
-              onChange={(modRoleKeys) => updateCerts({ modRoleKeys })}
-            />
-          </div>
+          )}
         </div>
 
         <div className="row">
