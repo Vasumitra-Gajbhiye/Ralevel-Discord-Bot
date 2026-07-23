@@ -1,6 +1,7 @@
 /**
  * Normalizes reputation IdLabel arrays from legacy string[] or partial objects.
  */
+const { buildDefaultCertPanel } = require("./defaultGuildConfig");
 function normalizeIdLabels(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -168,6 +169,15 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     $set.ranks = { ...raw.ranks, ladder: migrated.ladder };
   }
 
+  if (!raw.certificates?.panel) {
+    const applicationChannel =
+      Array.isArray(raw.channels) &&
+      raw.channels.find((c) => c?.key === "application")?.channelId;
+    $set["certificates.panel"] = buildDefaultCertPanel(
+      applicationChannel || process.env.APPLICATION_CHANNEL || "",
+    );
+  }
+
   if (!Object.keys($set).length && !Object.keys($unset).length) {
     return false;
   }
@@ -226,6 +236,18 @@ function migrateGuildConfigInPlace(doc) {
     doc.ranks = { ...doc.ranks, ladder: migrated.ladder };
     doc.markModified("roles");
     doc.markModified("ranks");
+    changed = true;
+  }
+
+  if (!doc.certificates?.panel) {
+    const applicationChannel =
+      Array.isArray(doc.channels) &&
+      doc.channels.find((c) => c?.key === "application")?.channelId;
+    doc.certificates = doc.certificates || {};
+    doc.certificates.panel = buildDefaultCertPanel(
+      applicationChannel || process.env.APPLICATION_CHANNEL || "",
+    );
+    doc.markModified("certificates");
     changed = true;
   }
 

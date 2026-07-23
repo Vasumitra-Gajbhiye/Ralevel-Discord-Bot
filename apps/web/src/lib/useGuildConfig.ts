@@ -41,6 +41,20 @@ export type GuildConfigData = {
     }[];
     modRoleKeys: string[];
     extraModRoleIds: string[];
+    panel: {
+      channelId: string;
+      panelMessageId: string | null;
+      title: string;
+      description: string;
+      color: string;
+      footer: string;
+      showTimestamp: boolean;
+      buttons: {
+        certTypeId: string;
+        label: string;
+        style: "Primary" | "Secondary" | "Success" | "Danger";
+      }[];
+    };
   };
   confessions: {
     modChannelKey: string;

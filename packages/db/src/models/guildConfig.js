@@ -64,6 +64,36 @@ const CertTypeSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const CertPanelButtonSchema = new mongoose.Schema(
+  {
+    certTypeId: { type: String, required: true },
+    label: { type: String, required: true },
+    style: {
+      type: String,
+      enum: ["Primary", "Secondary", "Success", "Danger"],
+      default: "Primary",
+    },
+  },
+  { _id: false },
+);
+
+const CertPanelSchema = new mongoose.Schema(
+  {
+    channelId: { type: String, default: "" },
+    panelMessageId: { type: String, default: null },
+    title: { type: String, default: "📄 Certificate Application" },
+    description: { type: String, default: "" },
+    color: { type: String, default: "#2CDAF2" },
+    footer: {
+      type: String,
+      default: "Only one pending application per certificate is permitted.",
+    },
+    showTimestamp: { type: Boolean, default: true },
+    buttons: { type: [CertPanelButtonSchema], default: [] },
+  },
+  { _id: false },
+);
+
 const TaskTeamSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
@@ -127,6 +157,7 @@ const GuildConfigSchema = new mongoose.Schema(
       modRoleKeys: { type: [String], default: ["admin"] },
       /** Extra Discord role IDs (legacy MOD_ROLES) beyond named keys */
       extraModRoleIds: { type: [String], default: [] },
+      panel: { type: CertPanelSchema, default: () => ({}) },
     },
     confessions: {
       modChannelKey: { type: String, default: "modAction" },

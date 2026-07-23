@@ -112,9 +112,11 @@ Three layers apply before a command executes:
 | | |
 |---|---|
 | **File** | `commands/certificates/send-cert-msg.js` |
-| **Description** | Send the certificate application panel |
+| **Description** | Resync the certificate application panel in the channel configured under Settings → Certificates |
 | **Discord permissions** | `ManageGuild` |
 | **Role access** | admin |
+
+Deletes any existing bot panel messages in that channel and posts a fresh embed + apply buttons from guild config. The same sync also runs automatically when the bot starts.
 
 ### `/submit-cert-details`
 

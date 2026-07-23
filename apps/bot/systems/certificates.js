@@ -22,6 +22,11 @@ const {
   resolveRoleKeys,
   tryGetGuildConfig,
 } = require("../utils/guildConfigStore");
+const {
+  getCertTypeLabel,
+  getCertTypeIdFromCustomId,
+  syncCertPanel,
+} = require("../utils/certPanel");
 
 function memberHasCertModRole(member) {
   const cfg = getGuildConfig();
@@ -33,6 +38,12 @@ function memberHasCertModRole(member) {
 }
 
 module.exports = function certificateSystem(client) {
+  client.once("ready", () => {
+    syncCertPanel(client).catch((err) => {
+      console.error("[CertPanel] Failed to sync panel on ready:", err);
+    });
+  });
+
   // Utility: get rep count
   async function getRepCount(userId) {
     try {
@@ -202,49 +213,47 @@ module.exports = function certificateSystem(client) {
       // ---------------------------
       // APPLY buttons
       // ---------------------------
-      if (
-        customId === "apply_helper" ||
-        customId === "apply_writer" ||
-        customId === "apply_resource" ||
-        customId === "apply_graphic"
-      ) {
-        // We will defer reply (ephemeral) because we do DB work
+      const certTypeId = getCertTypeIdFromCustomId(customId);
+      if (certTypeId) {
+        const cfg = getGuildConfig();
+        const panelButtons = cfg.certificates?.panel?.buttons || [];
+        const panelButton = panelButtons.find(
+          (button) => button.certTypeId === certTypeId,
+        );
+        const typeCfg = (cfg.certificates?.types || []).find(
+          (entry) => entry.id === certTypeId,
+        );
+
+        if (!panelButton || !typeCfg || typeCfg.enabled === false) {
+          return interaction.reply({
+            ephemeral: true,
+            content: "❌ This certificate application is not available.",
+          });
+        }
+
         await interaction.deferReply({ ephemeral: true });
 
-        // Type map
-        const type =
-          customId === "apply_helper"
-            ? "Helper"
-            : customId === "apply_writer"
-              ? "Writer"
-              : customId === "apply_graphic"
-                ? "Graphic Designer"
-                : "Resource Contributor";
+        const type = getCertTypeLabel(certTypeId, cfg);
 
         // If in guild, fetch member for role checks
         let member = null;
         if (guild)
           member = await guild.members.fetch(user.id).catch(() => null);
 
-        // Eligibility: Helper requires configured roles
-        if (type === "Helper") {
-          const helperCfg = (getGuildConfig().certificates?.types || []).find(
-            (t) => t.id === "helper",
-          );
-          const requiredRoleIds = resolveRoleKeys(
-            helperCfg?.requiredRoleKeys || [],
-          );
-          if (
-            !member ||
-            !requiredRoleIds.some((rid) => member.roles.cache.has(rid))
-          ) {
-            return interaction.editReply({
-              content:
-                "❌ You are not eligible for the Helper Certificate. Only Senior Helpers may apply.\n" +
-                "You need 100 Reputation points and 1 month of activity to become Senior Helper\n" +
-                "If you think this is an error, contact staff by opening a ticket.",
-            });
-          }
+        // Eligibility: types with requiredRoleKeys
+        const requiredRoleIds = resolveRoleKeys(
+          typeCfg.requiredRoleKeys || [],
+        );
+        if (
+          requiredRoleIds.length > 0 &&
+          (!member ||
+            !requiredRoleIds.some((rid) => member.roles.cache.has(rid)))
+        ) {
+          return interaction.editReply({
+            content:
+              `❌ You are not eligible for the ${type} Certificate.\n` +
+              "If you think this is an error, contact staff by opening a ticket.",
+          });
         }
 
         // Disallow duplicate pending application of same type

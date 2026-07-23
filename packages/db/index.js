@@ -23,6 +23,7 @@ const GuildConfig = require("./src/models/guildConfig");
 const DashboardAccess = require("./src/models/dashboardAccess");
 const {
   buildDefaultGuildConfig,
+  buildDefaultCertPanel,
   DEFAULT_COMMAND_PERMISSIONS,
 } = require("./src/defaultGuildConfig");
 const {
@@ -58,6 +59,7 @@ module.exports = {
   GuildConfig,
   DashboardAccess,
   buildDefaultGuildConfig,
+  buildDefaultCertPanel,
   DEFAULT_COMMAND_PERMISSIONS,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,

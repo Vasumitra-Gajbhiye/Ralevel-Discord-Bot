@@ -21,6 +21,7 @@
     "verify:qotd": "node scripts/verify-qotd-scheduler.js",
     "verify:welcome": "node scripts/verify-welcome.js",
     "verify:task-display": "node scripts/verify-task-display.js",
+    "verify:cert-panel": "node scripts/verify-cert-panel.js",
     "seed:guild-config": "node scripts/seed-guild-config.js"
   },
   "keywords": [],

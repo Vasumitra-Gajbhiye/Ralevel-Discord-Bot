@@ -272,6 +272,41 @@ function env(name, fallback = "") {
   return process.env[name] || fallback;
 }
 
+const DEFAULT_CERT_PANEL_DESCRIPTION =
+  "**__How to Apply:__**\n" +
+  "Click on the relevant application button below.\n\n" +
+  "**__Eligibility & Availability:__**\n" +
+  "**Helper Certification**\n" +
+  "• Maintain your Helper position for a minimum of 1 month, reach 100 Reputation, and achieve the rank of Senior Helper.\n\n" +
+  "**Writer Certification**\n" +
+  "• Submit a minimum of 5 extensive and helpful blogs/pieces-of-writing to our website.\n\n" +
+  "**Resource Contributor Certification**\n" +
+  "• Submit a minimum of 5 informative documents or notes relevant to a subject(s).\n\n" +
+  "**Graphic Designer Certification**\n" +
+  "• Submit a minimum of 5 pieces of graphic design (must have been utilized).\n\n" +
+  "**Moderator Certification**\n" +
+  "• Eligible Moderators can directly ping admins to apply.\n\n" +
+  "Please ensure you meet the requirements before applying.\n" +
+  "If your DMs are closed, you'll receive updates in the certificate updates channel.";
+
+function buildDefaultCertPanel(channelId = "") {
+  return {
+    channelId: channelId || env("APPLICATION_CHANNEL") || "",
+    panelMessageId: null,
+    title: "📄 Certificate Application",
+    description: DEFAULT_CERT_PANEL_DESCRIPTION,
+    color: "#2CDAF2",
+    footer: "Only one pending application per certificate is permitted.",
+    showTimestamp: true,
+    buttons: [
+      { certTypeId: "helper", label: "Apply — Helper", style: "Primary" },
+      { certTypeId: "writer", label: "Apply — Writer", style: "Primary" },
+      { certTypeId: "resource", label: "Apply — Resource", style: "Primary" },
+      { certTypeId: "graphic", label: "Apply — Graphic", style: "Primary" },
+    ],
+  };
+}
+
 function buildDefaultGuildConfig(guildId) {
   const roles = ROLE_DEFS.map(({ key, label, env: envName, fallbackEnv }) => ({
     key,
@@ -392,6 +427,7 @@ function buildDefaultGuildConfig(guildId) {
       ],
       modRoleKeys: ["admin"],
       extraModRoleIds,
+      panel: buildDefaultCertPanel(),
     },
     confessions: {
       modChannelKey: "modAction",
@@ -436,6 +472,7 @@ function buildDefaultGuildConfig(guildId) {
 
 module.exports = {
   buildDefaultGuildConfig,
+  buildDefaultCertPanel,
   DEFAULT_COMMAND_PERMISSIONS,
   DEFAULT_THANK_WORDS,
   DEFAULT_WELCOME_WORDS,

@@ -1,104 +1,40 @@
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
 } = require("discord.js");
+const { syncCertPanel } = require("../../utils/certPanel");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("send-cert-msg")
-    .setDescription("Send the certificate application panel")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .addChannelOption((opt) =>
-      opt
-        .setName("channel")
-        .setDescription("Channel where the application panel will be sent")
-        .setRequired(true),
-    ),
+    .setDescription("Resync the certificate application panel now")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
-    const channel = interaction.options.getChannel("channel");
+    await interaction.deferReply({ ephemeral: true });
 
-    if (!channel.isTextBased()) {
-      return interaction.reply({
-        content: "❌ The panel can only be sent to a text channel.",
-        ephemeral: true,
-      });
-    }
+    const result = await syncCertPanel(interaction.client);
 
-    const perms = channel.permissionsFor(interaction.client.user);
-    if (
-      !perms?.has([
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.EmbedLinks,
-      ])
-    ) {
-      return interaction.reply({
+    if (!result.ok) {
+      const messages = {
+        feature_disabled: "❌ Certificates are disabled in guild config.",
+        no_channel:
+          "❌ No certificate panel channel configured. Set it in the web dashboard under Settings → Certificates.",
+        invalid_channel:
+          "❌ The configured certificate panel channel was not found or is not a text channel.",
+        missing_permissions:
+          "❌ I need View Channel, Send Messages, and Embed Links in the configured panel channel.",
+      };
+
+      return interaction.editReply({
         content:
-          "❌ I need View Channel, Send Messages, and Embed Links permissions in that channel.",
-        ephemeral: true,
+          messages[result.reason] ||
+          "❌ Failed to sync the certificate application panel.",
       });
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle("🧾 Certificate Application")
-      .setDescription(
-        "**__How to Apply:__**\n" +
-          "Click on the relevant application button below.\n\n" +
-          "**__Eligibility & Availability:__**\n" +
-          "**Helper Certification**\n" +
-          "• Achieve the rank of <@&1437727634711777450> by reaching 100 reputation points.\nMaintain this position for a minimum of 1 month.\n\n" +
-          // "**Writer Certification**\n" +
-          // "• Submit a minimum of 5 extensive and helpful blogs/pieces-of-writing to our website.\n\n" +
-          "**Resource Contributor Certification**\n" +
-          "• Based on the work put in to the resources.\n• Final decision is made by the Administrative team after resource submission\n\n" +
-          "**Graphic Designer Certification**\n" +
-          "• Submit a minimum of 5 pieces of graphic design (must have been utilized) as a <@&1431092954100928583>.\n\n" +
-          "**Moderator Certification**\n" +
-          "• Eligable moderators will be notified by admins\n\n" +
-          "Please ensure you meet the requirements before applying.\n" +
-          "Please ensure your DM's are open so that we can send updates",
-      )
-      .setColor("#2CDAF2")
-      .setFooter({
-        text: "Only one pending application per certificate is permitted.",
-      })
-      .setTimestamp();
-
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("apply_helper")
-        .setLabel("Apply — Helper")
-        .setStyle(ButtonStyle.Primary),
-
-      // new ButtonBuilder()
-      //   .setCustomId("apply_writer")
-      //   .setLabel("Apply — Writer")
-      //   .setStyle(ButtonStyle.Primary),
-
-      new ButtonBuilder()
-        .setCustomId("apply_resource")
-        .setLabel("Apply — Resource")
-        .setStyle(ButtonStyle.Primary),
-
-      new ButtonBuilder()
-        .setCustomId("apply_graphic")
-        .setLabel("Apply — Graphic")
-        .setStyle(ButtonStyle.Primary),
-    );
-
-    await channel.send({
-      embeds: [embed],
-      components: [row],
-    });
-
-    await interaction.reply({
-      content: `✅ Certificate application panel sent to ${channel}.`,
-      ephemeral: true,
+    return interaction.editReply({
+      content: `✅ Certificate application panel synced in <#${result.channelId}> (message \`${result.messageId}\`).`,
     });
   },
 };
