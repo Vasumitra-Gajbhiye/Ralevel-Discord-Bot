@@ -17,7 +17,7 @@ export type GuildConfigData = {
     disabledCategories: { id: string; label: string }[];
   };
   ranks: {
-    ladder: { roleId: string; xp: number; name: string }[];
+    ladder: { roleKey: string; xp: number; name: string }[];
     levelUpChannelKey: string;
     boosterRoleKey: string;
     boosterMultiplier: number;

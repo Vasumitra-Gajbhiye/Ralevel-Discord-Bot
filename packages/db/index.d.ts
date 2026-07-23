@@ -31,6 +31,20 @@ export declare function normalizeIdLabels(
 export declare function normalizeReputationIdLabels(
   reputation: Record<string, unknown> | null | undefined,
 ): Record<string, unknown>;
+export declare function migrateRankLadder(
+  roles: { key: string; label: string; roleId: string }[] | null | undefined,
+  ladder: unknown,
+): {
+  roles: { key: string; label: string; roleId: string }[];
+  ladder: { roleKey: string; xp: number; name: string }[];
+};
+export declare function normalizeRanksConfig(
+  roles: { key: string; label: string; roleId: string }[] | null | undefined,
+  ranks: Record<string, unknown> | null | undefined,
+): {
+  roles: { key: string; label: string; roleId: string }[];
+  ranks: Record<string, unknown>;
+};
 export declare function migrateGuildConfigDocument(
   GuildConfig: { collection: { findOne: (query: object) => Promise<Record<string, unknown> | null>; updateOne: (query: object, update: object) => Promise<unknown> } },
   guildId: string,

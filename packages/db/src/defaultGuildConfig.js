@@ -149,24 +149,32 @@ const DEFAULT_WELCOME_WORDS = [
   "nws",
 ];
 
-/** Production XP rank ladder (roleId + xp threshold + display name). */
-const DEFAULT_RANK_LADDER = [
-  { roleId: "1487405095627915315", xp: 0, name: "" },
-  { roleId: "1487405099440668782", xp: 20, name: "" },
-  { roleId: "1487405103244644404", xp: 100, name: "" },
-  { roleId: "1487405107929813052", xp: 250, name: "" },
-  { roleId: "1487405111935238266", xp: 500, name: "" },
-  { roleId: "1487405115735281744", xp: 1000, name: "" },
-  { roleId: "1487405119527059486", xp: 2500, name: "" },
-  { roleId: "1487405123058536642", xp: 5000, name: "" },
-  { roleId: "1487405128641282048", xp: 10000, name: "" },
-  { roleId: "1487405132911214614", xp: 15000, name: "" },
-  { roleId: "1487405136757395547", xp: 20000, name: "" },
-  { roleId: "1487405140897173536", xp: 30000, name: "" },
-  { roleId: "1487405144852140123", xp: 50000, name: "" },
-  { roleId: "1487405149184852068", xp: 75000, name: "" },
-  { roleId: "1487405153207189605", xp: 100000, name: "" },
+/** Production XP rank ladder (Discord role IDs + XP thresholds). */
+const DEFAULT_RANK_LADDER_ROLE_IDS = [
+  "1487405095627915315",
+  "1487405099440668782",
+  "1487405103244644404",
+  "1487405107929813052",
+  "1487405111935238266",
+  "1487405115735281744",
+  "1487405119527059486",
+  "1487405123058536642",
+  "1487405128641282048",
+  "1487405132911214614",
+  "1487405136757395547",
+  "1487405140897173536",
+  "1487405144852140123",
+  "1487405149184852068",
+  "1487405153207189605",
 ];
+
+const DEFAULT_RANK_LADDER_XP = [0, 20, 100, 250, 500, 1000, 2500, 5000, 10000, 15000, 20000, 30000, 50000, 75000, 100000];
+
+const DEFAULT_RANK_LADDER = DEFAULT_RANK_LADDER_XP.map((xp, index) => ({
+  roleKey: `rank${index + 1}`,
+  xp,
+  name: "",
+}));
 
 /**
  * Command name -> role keys. Fixed mismatches from legacy permissions.js:
@@ -271,6 +279,14 @@ function buildDefaultGuildConfig(guildId) {
     roleId: env(envName) || (fallbackEnv ? env(fallbackEnv) : "") || "",
   }));
 
+  DEFAULT_RANK_LADDER_ROLE_IDS.forEach((roleId, index) => {
+    roles.push({
+      key: `rank${index + 1}`,
+      label: `Rank ${index + 1}`,
+      roleId,
+    });
+  });
+
   const extraModRoleIds = String(env("MOD_ROLES"))
     .split(",")
     .map((s) => s.trim())
@@ -321,7 +337,11 @@ function buildDefaultGuildConfig(guildId) {
       disabledCategories: toIdLabels(parseJsonIdList(env("DISABLED_CATEGORIES"))),
     },
     ranks: {
-      ladder: DEFAULT_RANK_LADDER.map((r) => ({ ...r })),
+      ladder: DEFAULT_RANK_LADDER_XP.map((xp, index) => ({
+        roleKey: `rank${index + 1}`,
+        xp,
+        name: "",
+      })),
       levelUpChannelKey: "levelUp",
       boosterRoleKey: "booster",
       boosterMultiplier: 2,

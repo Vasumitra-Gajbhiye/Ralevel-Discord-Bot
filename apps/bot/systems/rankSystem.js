@@ -2,15 +2,18 @@
 const {
   getGuildConfig,
   getChannelId,
+  getRoleId,
 } = require("../utils/guildConfigStore");
 
 const RANK_UPDATE_CONCURRENCY = 5;
 
 function getRanks() {
   const ladder = getGuildConfig().ranks?.ladder || [];
-  return ladder.length
-    ? ladder
-    : [{ roleId: "", xp: 0 }];
+  return ladder.length ? ladder : [{ roleKey: "", xp: 0 }];
+}
+
+function resolveRankRoleId(rank) {
+  return getRoleId(rank?.roleKey || "");
 }
 
 function getRank(xp) {
@@ -33,7 +36,7 @@ function filterRankChanges(users) {
       newRank: getRank(xp),
       oldRank: getRank(previousXp),
     }))
-    .filter(({ oldRank, newRank }) => oldRank.roleId !== newRank.roleId);
+    .filter(({ oldRank, newRank }) => oldRank.roleKey !== newRank.roleKey);
 }
 
 async function handleRanks(client, guildId, users) {
@@ -52,7 +55,7 @@ async function handleRanks(client, guildId, users) {
       : null;
 
     const ALL_RANK_ROLE_IDS = getRanks()
-      .map((r) => r.roleId)
+      .map((rank) => resolveRankRoleId(rank))
       .filter(Boolean);
 
     async function processRankChange({ userId, newRank }) {
@@ -60,12 +63,13 @@ async function handleRanks(client, guildId, users) {
       if (!member) return;
 
       await member.roles.remove(ALL_RANK_ROLE_IDS).catch(() => {});
-      if (newRank.roleId) {
-        await member.roles.add(newRank.roleId).catch(() => {});
+      const newRoleId = resolveRankRoleId(newRank);
+      if (newRoleId) {
+        await member.roles.add(newRoleId).catch(() => {});
       }
 
       if (!channel) return;
-      const role = guild.roles.cache.get(newRank.roleId);
+      const role = guild.roles.cache.get(newRoleId);
       await channel
         .send(
           `🎉 <@${userId}> ranked up! You are now **${
@@ -84,4 +88,11 @@ async function handleRanks(client, guildId, users) {
   }
 }
 
-module.exports = { handleRanks, getRank, getRanks };
+module.exports = handleRanks;
+Object.assign(module.exports, {
+  handleRanks,
+  getRank,
+  getRanks,
+  filterRankChanges,
+  RANK_UPDATE_CONCURRENCY,
+});

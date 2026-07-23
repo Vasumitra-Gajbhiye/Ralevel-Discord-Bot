@@ -1,18 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RoleSelect } from "@/components/RoleSelect";
+import type { RoleOption } from "@/components/RoleSearchMenu";
 
-type RankDraft = { name: string; roleId: string; xp: number };
+type RankDraft = { name: string; roleKey: string; xp: number };
 
 type AddRankModalProps = {
   open: boolean;
+  roles: RoleOption[];
+  excludeKeys?: string[];
   onCancel: () => void;
   onAdd: (rank: RankDraft) => void;
 };
 
-const emptyForm: RankDraft = { name: "", roleId: "", xp: 0 };
+const emptyForm: RankDraft = { name: "", roleKey: "", xp: 0 };
 
-export function AddRankModal({ open, onCancel, onAdd }: AddRankModalProps) {
+export function AddRankModal({
+  open,
+  roles,
+  excludeKeys = [],
+  onCancel,
+  onAdd,
+}: AddRankModalProps) {
   const [form, setForm] = useState<RankDraft>(emptyForm);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,14 +54,14 @@ export function AddRankModal({ open, onCancel, onAdd }: AddRankModalProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const name = form.name.trim();
-    const roleId = form.roleId.trim();
+    const roleKey = form.roleKey.trim();
 
     if (!name) {
       setError("Name is required.");
       return;
     }
-    if (!roleId) {
-      setError("Role ID is required.");
+    if (!roleKey) {
+      setError("Role is required.");
       return;
     }
     if (form.xp < 0) {
@@ -59,7 +69,7 @@ export function AddRankModal({ open, onCancel, onAdd }: AddRankModalProps) {
       return;
     }
 
-    onAdd({ name, roleId, xp: form.xp });
+    onAdd({ name, roleKey, xp: form.xp });
   }
 
   if (!open) return null;
@@ -93,13 +103,12 @@ export function AddRankModal({ open, onCancel, onAdd }: AddRankModalProps) {
             />
           </div>
           <div className="field">
-            <label htmlFor="add-rank-role-id">Discord role ID</label>
-            <input
-              id="add-rank-role-id"
-              className="input mono"
-              value={form.roleId}
-              onChange={(e) => updateField("roleId", e.target.value)}
-              placeholder="Snowflake ID"
+            <label>Role</label>
+            <RoleSelect
+              roles={roles}
+              value={form.roleKey}
+              excludeKeys={excludeKeys}
+              onChange={(roleKey) => updateField("roleKey", roleKey)}
             />
           </div>
           <div className="field">

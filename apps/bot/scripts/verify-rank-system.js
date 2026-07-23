@@ -4,6 +4,17 @@ const {
   filterRankChanges,
   RANK_UPDATE_CONCURRENCY,
 } = require("../systems/rankSystem");
+const { buildDefaultGuildConfig } = require("@ralevel/db");
+const { setGuildConfig } = require("../utils/guildConfigStore");
+
+function setupTestGuildConfig() {
+  const config = buildDefaultGuildConfig("guild1");
+  const levelUp = config.channels.find((channel) => channel.key === "levelUp");
+  if (levelUp) {
+    levelUp.channelId = "level-up-channel";
+  }
+  setGuildConfig(config);
+}
 
 function assert(condition, message) {
   if (!condition) {
@@ -13,9 +24,15 @@ function assert(condition, message) {
 
 function testGetRankBoundaries() {
   assert(getRank(0).xp === 0, "0 XP should map to base rank");
-  assert(getRank(19).roleId === getRank(0).roleId, "19 XP should stay at base rank");
+  assert(
+    getRank(19).roleKey === getRank(0).roleKey,
+    "19 XP should stay at base rank",
+  );
   assert(getRank(20).xp === 20, "20 XP should reach second rank");
-  assert(getRank(99).roleId === getRank(20).roleId, "99 XP should stay at second rank");
+  assert(
+    getRank(99).roleKey === getRank(20).roleKey,
+    "99 XP should stay at second rank",
+  );
   assert(getRank(100).xp === 100, "100 XP should reach third rank");
   assert(getRank(100000).xp === 100000, "100000 XP should reach max rank");
 }
@@ -200,6 +217,7 @@ async function testHandleRanksNoOpWhenNoChanges() {
 }
 
 async function main() {
+  setupTestGuildConfig();
   testGetRankBoundaries();
   testFilterRankChanges();
   await testHandleRanksUsesBoundedConcurrency();

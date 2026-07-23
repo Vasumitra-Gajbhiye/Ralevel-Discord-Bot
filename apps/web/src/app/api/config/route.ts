@@ -4,7 +4,7 @@ import {
   guildConfigToJson,
 } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
-import { normalizeReputationIdLabels } from "@ralevel/db";
+import { normalizeReputationIdLabels, normalizeRanksConfig } from "@ralevel/db";
 
 export const dynamic = "force-dynamic";
 
@@ -66,14 +66,24 @@ export async function PUT(request: Request) {
 
     for (const key of PATCHABLE) {
       if (body[key] !== undefined) {
-        const value =
-          key === "reputation"
-            ? normalizeReputationIdLabels(body.reputation)
-            : body[key];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (doc as any)[key] = value;
-        if (key === "commandPermissions" || key === "reputation") {
+        if (key === "reputation") {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (doc as any)[key] = normalizeReputationIdLabels(body.reputation);
           doc.markModified(key);
+        } else if (key === "ranks") {
+          const normalized = normalizeRanksConfig(doc.roles, body.ranks);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (doc as any).roles = normalized.roles;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (doc as any).ranks = normalized.ranks;
+          doc.markModified("roles");
+          doc.markModified("ranks");
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (doc as any)[key] = body[key];
+          if (key === "commandPermissions") {
+            doc.markModified(key);
+          }
         }
       }
     }

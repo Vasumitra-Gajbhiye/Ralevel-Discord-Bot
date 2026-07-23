@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { AddRankModal } from "@/components/AddRankModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
+import { RoleSelect } from "@/components/RoleSelect";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
 
 export default function RanksPage() {
@@ -16,6 +17,7 @@ export default function RanksPage() {
 
   const savedRanks = useMemo(() => config?.ranks, [config?.ranks]);
   const ranks = draft ?? savedRanks;
+  const roles = config?.roles ?? [];
 
   const isDirty = useMemo(
     () =>
@@ -31,7 +33,7 @@ export default function RanksPage() {
 
   function updateLadder(
     index: number,
-    field: "name" | "roleId" | "xp",
+    field: "name" | "roleKey" | "xp",
     value: string,
   ) {
     if (!ranks) return;
@@ -46,7 +48,7 @@ export default function RanksPage() {
     setDraft({ ...ranks, ladder });
   }
 
-  function handleAddRank(rank: { name: string; roleId: string; xp: number }) {
+  function handleAddRank(rank: { name: string; roleKey: string; xp: number }) {
     if (!ranks) return;
     setDraft({
       ...ranks,
@@ -73,14 +75,16 @@ export default function RanksPage() {
   if (loading || !ranks) return <p className="muted">Loading…</p>;
 
   const removeMessage = pendingRank
-    ? `Remove rank "${pendingRank.name || pendingRank.roleId}" (${pendingRank.xp} XP)? Changes apply after you save.`
+    ? `Remove rank "${pendingRank.name || pendingRank.roleKey}" (${pendingRank.xp} XP)? Changes apply after you save.`
     : "";
+
+  const usedRoleKeys = ranks.ladder.map((row) => row.roleKey).filter(Boolean);
 
   return (
     <>
       <PageHeader
         title="XP / Ranks"
-        description="XP ladder role IDs, booster multiplier, and level-up channel key."
+        description="XP ladder roles, booster multiplier, and level-up channel key."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -152,7 +156,7 @@ export default function RanksPage() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Role ID</th>
+                <th>Role</th>
                 <th>XP threshold</th>
                 <th />
               </tr>
@@ -169,13 +173,16 @@ export default function RanksPage() {
                     />
                   </td>
                   <td>
-                    <input
-                      className="input mono"
-                      value={row.roleId}
-                      onChange={(e) =>
-                        updateLadder(i, "roleId", e.target.value)
+                    <RoleSelect
+                      roles={roles}
+                      value={row.roleKey}
+                      excludeKeys={ranks.ladder
+                        .filter((_, j) => j !== i)
+                        .map((entry) => entry.roleKey)
+                        .filter(Boolean)}
+                      onChange={(roleKey) =>
+                        updateLadder(i, "roleKey", roleKey)
                       }
-                      style={{ width: "100%" }}
                     />
                   </td>
                   <td>
@@ -204,6 +211,8 @@ export default function RanksPage() {
 
       <AddRankModal
         open={showAddModal}
+        roles={roles}
+        excludeKeys={usedRoleKeys}
         onCancel={() => setShowAddModal(false)}
         onAdd={handleAddRank}
       />

@@ -46,7 +46,7 @@ const IdLabelSchema = new mongoose.Schema(
 
 const RankEntrySchema = new mongoose.Schema(
   {
-    roleId: { type: String, required: true },
+    roleKey: { type: String, required: true },
     xp: { type: Number, required: true },
     name: { type: String, default: "" },
   },
@@ -154,4 +154,8 @@ const GuildConfigSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.models["GuildConfig"] || mongoose.model("GuildConfig", GuildConfigSchema);
+if (mongoose.models.GuildConfig) {
+  mongoose.deleteModel("GuildConfig");
+}
+
+module.exports = mongoose.model("GuildConfig", GuildConfigSchema);
