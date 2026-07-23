@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { ChannelIdPicker } from "@/components/ChannelIdPicker";
+import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
-import { RoleSelect } from "@/components/RoleSelect";
+import { RolePicker } from "@/components/RolePicker";
 import {
   useGuildConfig,
   type GuildConfigData,
@@ -10,14 +12,12 @@ import {
 
 type CertificatesConfig = GuildConfigData["certificates"];
 type PanelButton = CertificatesConfig["panel"]["buttons"][number];
-type ButtonStyle = PanelButton["style"];
 
-const BUTTON_STYLES: ButtonStyle[] = [
-  "Primary",
-  "Secondary",
-  "Success",
-  "Danger",
-];
+const CERT_TYPE_ID_PATTERN = /^[a-z0-9_-]+$/;
+const KNOWN_CERT_TYPE_IDS = ["helper", "writer", "resource", "graphic"] as const;
+
+const CERT_TYPE_HELP =
+  "Lowercase only. No spaces. Dashes and underscores are allowed (e.g. helper, resource).";
 
 function defaultPanel(): CertificatesConfig["panel"] {
   return {
@@ -46,17 +46,12 @@ function normalizeCertificates(
   };
 }
 
-function insertAtCursor(
-  value: string,
-  insertion: string,
-  selectionStart: number,
-  selectionEnd: number,
+function channelLabelForId(
+  channelId: string,
+  channels: GuildConfigData["channels"],
 ) {
-  return {
-    nextValue:
-      value.slice(0, selectionStart) + insertion + value.slice(selectionEnd),
-    nextCursor: selectionStart + insertion.length,
-  };
+  const match = channels.find((channel) => channel.channelId === channelId);
+  return match?.label || match?.key || channelId;
 }
 
 function validateCertificates(certs: CertificatesConfig): string | null {
@@ -77,7 +72,10 @@ function validateCertificates(certs: CertificatesConfig): string | null {
       return "Every apply button needs a label.";
     }
     if (!button.certTypeId) {
-      return "Every apply button must be linked to a certificate type.";
+      return "Every apply button must have a certificate type.";
+    }
+    if (!CERT_TYPE_ID_PATTERN.test(button.certTypeId)) {
+      return `Certificate type "${button.certTypeId}" is invalid. Use lowercase letters, numbers, dashes, and underscores only.`;
     }
     if (usedTypeIds.has(button.certTypeId)) {
       return "Each certificate type can only appear on one apply button.";
@@ -92,7 +90,6 @@ export default function CertificatesSettingsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<CertificatesConfig | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
-  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const savedCerts = useMemo(
     () => normalizeCertificates(config?.certificates),
@@ -100,8 +97,18 @@ export default function CertificatesSettingsPage() {
   );
   const certs = draft ?? savedCerts;
   const panel = certs?.panel;
-  const channels =
-    config?.channels.filter((channel) => channel.channelId.trim()) ?? [];
+  const channels = config?.channels ?? [];
+  const roles = config?.roles ?? [];
+
+  const panelChannelSelected = useMemo(() => {
+    if (!panel?.channelId) return [];
+    return [
+      {
+        id: panel.channelId,
+        label: channelLabelForId(panel.channelId, channels),
+      },
+    ];
+  }, [panel?.channelId, channels]);
 
   const isDirty = useMemo(
     () =>
@@ -141,27 +148,6 @@ export default function CertificatesSettingsPage() {
     updatePanel({ buttons });
   }
 
-  function insertMention(insertion: string) {
-    if (!panel) return;
-    const textarea = descriptionRef.current;
-    if (!textarea) {
-      updatePanel({ description: `${panel.description}${insertion}` });
-      return;
-    }
-
-    const { nextValue, nextCursor } = insertAtCursor(
-      panel.description,
-      insertion,
-      textarea.selectionStart,
-      textarea.selectionEnd,
-    );
-    updatePanel({ description: nextValue });
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(nextCursor, nextCursor);
-    });
-  }
-
   async function onSave() {
     if (!certs) return;
     const validationError = validateCertificates(certs);
@@ -181,7 +167,7 @@ export default function CertificatesSettingsPage() {
     <>
       <PageHeader
         title="Certificate settings"
-        description="Application panel message, apply buttons, certificate types, and staff mod roles."
+        description="Application panel message, apply buttons, and staff mod roles."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -199,20 +185,18 @@ export default function CertificatesSettingsPage() {
 
           <div className="field">
             <label>Panel channel</label>
-            <select
-              value={panel.channelId}
-              onChange={(e) => updatePanel({ channelId: e.target.value })}
-            >
-              <option value="">Select channel…</option>
-              {channels.map((channel) => (
-                <option key={channel.key} value={channel.channelId}>
-                  {channel.label || channel.key} ({channel.channelId})
-                </option>
-              ))}
-            </select>
-            <p className="muted" style={{ margin: "0.35rem 0 0", fontSize: "0.8rem" }}>
-              Configure channel IDs under Settings → Channels if the list is empty.
-            </p>
+            <ChannelIdPicker
+              channels={channels}
+              selected={panelChannelSelected}
+              maxItems={1}
+              emptyLinkLabel="Add channels"
+              removeConfirmMessage={(item) =>
+                `Remove "${item.label || item.id}" as the panel channel? Changes apply after you save.`
+              }
+              onChange={(selected) =>
+                updatePanel({ channelId: selected[0]?.id ?? "" })
+              }
+            />
           </div>
 
           <div className="field">
@@ -226,7 +210,6 @@ export default function CertificatesSettingsPage() {
           <div className="field">
             <label>Description</label>
             <textarea
-              ref={descriptionRef}
               className="mono"
               rows={14}
               value={panel.description}
@@ -238,48 +221,6 @@ export default function CertificatesSettingsPage() {
               <code>&lt;#CHANNEL_ID&gt;</code> for channels, and{" "}
               <code>&lt;@USER_ID&gt;</code> for users.
             </p>
-            <div className="row" style={{ marginTop: "0.5rem", flexWrap: "wrap" }}>
-              <div className="field" style={{ minWidth: "12rem" }}>
-                <label>Insert role mention</label>
-                <select
-                  defaultValue=""
-                  onChange={(e) => {
-                    const roleId = e.target.value;
-                    if (!roleId) return;
-                    insertMention(`<@&${roleId}>`);
-                    e.target.value = "";
-                  }}
-                >
-                  <option value="">Select role…</option>
-                  {config?.roles
-                    .filter((role) => role.roleId)
-                    .map((role) => (
-                      <option key={role.key} value={role.roleId}>
-                        {role.label || role.key}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div className="field" style={{ minWidth: "12rem" }}>
-                <label>Insert channel mention</label>
-                <select
-                  defaultValue=""
-                  onChange={(e) => {
-                    const channelId = e.target.value;
-                    if (!channelId) return;
-                    insertMention(`<#${channelId}>`);
-                    e.target.value = "";
-                  }}
-                >
-                  <option value="">Select channel…</option>
-                  {channels.map((channel) => (
-                    <option key={channel.key} value={channel.channelId}>
-                      {channel.label || channel.key}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
           </div>
 
           <div className="row">
@@ -297,29 +238,25 @@ export default function CertificatesSettingsPage() {
                 onChange={(e) => updatePanel({ footer: e.target.value })}
               />
             </div>
-            <label
-              style={{
-                display: "flex",
-                gap: "0.4rem",
-                alignItems: "center",
-                alignSelf: "end",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={panel.showTimestamp}
-                onChange={(e) =>
-                  updatePanel({ showTimestamp: e.target.checked })
-                }
-              />
-              Show timestamp
-            </label>
           </div>
         </div>
 
         <div className="card stack">
           <div className="row" style={{ justifyContent: "space-between" }}>
-            <h3 style={{ margin: 0, fontSize: "1rem" }}>Apply buttons</h3>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "1rem" }}>Apply buttons</h3>
+              <p
+                className="muted"
+                style={{ fontSize: "0.85rem", margin: "0.35rem 0 0" }}
+              >
+                Known certificate types (use these exact IDs):{" "}
+                {KNOWN_CERT_TYPE_IDS.map((id) => (
+                  <code key={id} style={{ marginRight: "0.25rem" }}>
+                    {id}
+                  </code>
+                ))}
+              </p>
+            </div>
             <button
               type="button"
               className="btn"
@@ -329,7 +266,7 @@ export default function CertificatesSettingsPage() {
                   buttons: [
                     ...panel.buttons,
                     {
-                      certTypeId: certs.types[0]?.id || "",
+                      certTypeId: "",
                       label: "Apply",
                       style: "Primary",
                     },
@@ -346,7 +283,7 @@ export default function CertificatesSettingsPage() {
           ) : null}
 
           {panel.buttons.map((button, i) => (
-            <div className="card stack" key={`${button.certTypeId}-${i}`}>
+            <div className="card stack" key={`button-${i}`}>
               <div className="row">
                 <div className="field">
                   <label>Label</label>
@@ -358,37 +295,24 @@ export default function CertificatesSettingsPage() {
                   />
                 </div>
                 <div className="field">
-                  <label>Certificate type</label>
-                  <select
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                    }}
+                  >
+                    Certificate type
+                    <InfoHelpIcon content={CERT_TYPE_HELP} />
+                  </label>
+                  <input
+                    className="mono"
                     value={button.certTypeId}
                     onChange={(e) =>
                       updateButton(i, { certTypeId: e.target.value })
                     }
-                  >
-                    <option value="">Select type…</option>
-                    {certs.types.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.label} ({type.id})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Style</label>
-                  <select
-                    value={button.style}
-                    onChange={(e) =>
-                      updateButton(i, {
-                        style: e.target.value as ButtonStyle,
-                      })
-                    }
-                  >
-                    {BUTTON_STYLES.map((style) => (
-                      <option key={style} value={style}>
-                        {style}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="helper"
+                  />
                 </div>
               </div>
               <div className="row">
@@ -425,112 +349,20 @@ export default function CertificatesSettingsPage() {
         </div>
 
         <div className="card stack">
-          <h3 style={{ margin: 0, fontSize: "1rem" }}>Certificate types</h3>
-          {certs.types.map((type, i) => (
-            <div className="card stack" key={type.id}>
-              <div className="row">
-                <div className="field">
-                  <label>ID</label>
-                  <input
-                    value={type.id}
-                    onChange={(e) => {
-                      const types = [...certs.types];
-                      types[i] = { ...type, id: e.target.value };
-                      updateCerts({ types });
-                    }}
-                  />
-                </div>
-                <div className="field">
-                  <label>Label</label>
-                  <input
-                    value={type.label}
-                    onChange={(e) => {
-                      const types = [...certs.types];
-                      types[i] = { ...type, label: e.target.value };
-                      updateCerts({ types });
-                    }}
-                  />
-                </div>
-                <label
-                  style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={type.enabled}
-                    onChange={(e) => {
-                      const types = [...certs.types];
-                      types[i] = { ...type, enabled: e.target.checked };
-                      updateCerts({ types });
-                    }}
-                  />
-                  Enabled
-                </label>
-              </div>
-              <div className="field">
-                <label>Required role keys (comma-separated)</label>
-                <input
-                  value={type.requiredRoleKeys.join(", ")}
-                  onChange={(e) => {
-                    const types = [...certs.types];
-                    types[i] = {
-                      ...type,
-                      requiredRoleKeys: e.target.value
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    };
-                    updateCerts({ types });
-                  }}
-                />
-              </div>
-              <div className="field">
-                <label>Reward role key</label>
-                <RoleSelect
-                  roles={config?.roles ?? []}
-                  value={type.rewardRoleKey || ""}
-                  onChange={(rewardRoleKey) => {
-                    const types = [...certs.types];
-                    types[i] = {
-                      ...type,
-                      rewardRoleKey: rewardRoleKey || null,
-                    };
-                    updateCerts({ types });
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="card stack">
           <h3 style={{ margin: 0, fontSize: "1rem" }}>Staff permissions</h3>
+          <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
+            Members with these roles can approve or reject applications from the
+            review channel and use mod certificate commands such as{" "}
+            <code>/approve-certificate</code>, <code>/reject-certificate</code>,{" "}
+            <code>/submit-cert-details</code>, <code>/mark-cert-delivered</code>,
+            and <code>/certificate-status-mod</code>.
+          </p>
           <div className="field">
-            <label>Mod role keys (comma-separated)</label>
-            <input
-              value={certs.modRoleKeys.join(", ")}
-              onChange={(e) =>
-                updateCerts({
-                  modRoleKeys: e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </div>
-          <div className="field">
-            <label>Extra mod role IDs (legacy MOD_ROLES)</label>
-            <input
-              className="mono"
-              value={(certs.extraModRoleIds || []).join(", ")}
-              onChange={(e) =>
-                updateCerts({
-                  extraModRoleIds: e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
+            <label>Mod roles</label>
+            <RolePicker
+              roles={roles}
+              selectedKeys={certs.modRoleKeys}
+              onChange={(modRoleKeys) => updateCerts({ modRoleKeys })}
             />
           </div>
         </div>

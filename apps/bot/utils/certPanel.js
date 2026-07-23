@@ -10,27 +10,21 @@ const {
   getGuildConfig,
   tryGetGuildConfig,
   setGuildConfig,
-  toPlainConfig,
 } = require("./guildConfigStore");
 
-const BUTTON_STYLE_MAP = {
-  Primary: ButtonStyle.Primary,
-  Secondary: ButtonStyle.Secondary,
-  Success: ButtonStyle.Success,
-  Danger: ButtonStyle.Danger,
-};
-
 const SEND_OPTIONS = { allowedMentions: { parse: [] } };
+const CERT_TYPE_ID_PATTERN = /^[a-z0-9_-]+$/;
 
 function getCertPanelConfig(config = tryGetGuildConfig()) {
   return config?.certificates?.panel || {};
 }
 
-function getCertTypeLabel(certTypeId, config = tryGetGuildConfig()) {
-  const type = (config?.certificates?.types || []).find(
-    (entry) => entry.id === certTypeId,
-  );
-  return type?.label || certTypeId;
+function isValidCertTypeId(certTypeId) {
+  return CERT_TYPE_ID_PATTERN.test(certTypeId || "");
+}
+
+function getCertTypeLabel(certTypeId) {
+  return certTypeId;
 }
 
 function getCertTypeIdFromCustomId(customId) {
@@ -68,9 +62,7 @@ function buildCertPanelPayload(config = getGuildConfig()) {
     embed.setFooter({ text: panel.footer });
   }
 
-  if (panel.showTimestamp !== false) {
-    embed.setTimestamp();
-  }
+  embed.setTimestamp();
 
   const rows = [];
   for (let i = 0; i < buttons.length; i += 5) {
@@ -84,7 +76,7 @@ function buildCertPanelPayload(config = getGuildConfig()) {
         new ButtonBuilder()
           .setCustomId(`apply_${button.certTypeId}`)
           .setLabel(button.label)
-          .setStyle(BUTTON_STYLE_MAP[button.style] || ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Primary),
       );
     }
 
@@ -202,11 +194,12 @@ async function syncCertPanel(client) {
 }
 
 module.exports = {
-  BUTTON_STYLE_MAP,
+  CERT_TYPE_ID_PATTERN,
   SEND_OPTIONS,
   buildCertPanelPayload,
   getCertTypeLabel,
   getCertTypeIdFromCustomId,
+  isValidCertTypeId,
   isCertPanelMessage,
   syncCertPanel,
   deleteCertPanelMessages,

@@ -15,6 +15,8 @@ type ChannelIdPickerProps = {
   onChange: (selected: IdLabel[]) => void;
   emptyLinkHref?: string;
   emptyLinkLabel?: string;
+  maxItems?: number;
+  removeConfirmMessage?: (item: IdLabel) => string;
 };
 
 export function ChannelIdPicker({
@@ -23,6 +25,8 @@ export function ChannelIdPicker({
   onChange,
   emptyLinkHref = "/settings/channels",
   emptyLinkLabel = "Add channels",
+  maxItems,
+  removeConfirmMessage,
 }: ChannelIdPickerProps) {
   const [open, setOpen] = useState(false);
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
@@ -63,10 +67,13 @@ export function ChannelIdPicker({
   }, [open]);
 
   function addChannel(channel: ChannelOption) {
-    onChange([
-      ...selected,
-      { id: channel.channelId, label: channel.label || channel.key },
-    ]);
+    const next = { id: channel.channelId, label: channel.label || channel.key };
+    if (maxItems === 1) {
+      onChange([next]);
+      setOpen(false);
+      return;
+    }
+    onChange([...selected, next]);
   }
 
   function confirmRemove() {
@@ -78,6 +85,8 @@ export function ChannelIdPicker({
   function toggleOpen() {
     setOpen((prev) => !prev);
   }
+
+  const atMax = maxItems !== undefined && selected.length >= maxItems;
 
   if (channels.length === 0) {
     return (
@@ -123,6 +132,7 @@ export function ChannelIdPicker({
               </span>
             );
           })}
+          {!atMax ? (
           <button
             type="button"
             className="role-picker-add"
@@ -145,6 +155,7 @@ export function ChannelIdPicker({
               />
             </svg>
           </button>
+          ) : null}
         </div>
 
         {open ? (
@@ -162,7 +173,8 @@ export function ChannelIdPicker({
         title="Remove channel"
         message={
           pendingItem
-            ? `Remove "${pendingItem.label || pendingItem.id}" from disabled channels? Changes apply after you save.`
+            ? removeConfirmMessage?.(pendingItem) ??
+              `Remove "${pendingItem.label || pendingItem.id}" from disabled channels? Changes apply after you save.`
             : "Remove this channel from disabled channels?"
         }
         confirmLabel="Remove"

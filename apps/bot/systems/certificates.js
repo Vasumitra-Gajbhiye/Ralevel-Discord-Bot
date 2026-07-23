@@ -25,6 +25,7 @@ const {
 const {
   getCertTypeLabel,
   getCertTypeIdFromCustomId,
+  isValidCertTypeId,
   syncCertPanel,
 } = require("../utils/certPanel");
 
@@ -220,11 +221,8 @@ module.exports = function certificateSystem(client) {
         const panelButton = panelButtons.find(
           (button) => button.certTypeId === certTypeId,
         );
-        const typeCfg = (cfg.certificates?.types || []).find(
-          (entry) => entry.id === certTypeId,
-        );
 
-        if (!panelButton || !typeCfg || typeCfg.enabled === false) {
+        if (!panelButton || !isValidCertTypeId(certTypeId)) {
           return interaction.reply({
             ephemeral: true,
             content: "❌ This certificate application is not available.",
@@ -233,27 +231,26 @@ module.exports = function certificateSystem(client) {
 
         await interaction.deferReply({ ephemeral: true });
 
-        const type = getCertTypeLabel(certTypeId, cfg);
+        const type = getCertTypeLabel(certTypeId);
 
         // If in guild, fetch member for role checks
         let member = null;
         if (guild)
           member = await guild.members.fetch(user.id).catch(() => null);
 
-        // Eligibility: types with requiredRoleKeys
-        const requiredRoleIds = resolveRoleKeys(
-          typeCfg.requiredRoleKeys || [],
-        );
-        if (
-          requiredRoleIds.length > 0 &&
-          (!member ||
-            !requiredRoleIds.some((rid) => member.roles.cache.has(rid)))
-        ) {
-          return interaction.editReply({
-            content:
-              `❌ You are not eligible for the ${type} Certificate.\n` +
-              "If you think this is an error, contact staff by opening a ticket.",
-          });
+        // Eligibility: helper requires Senior Helper role
+        if (certTypeId === "helper") {
+          const requiredRoleIds = resolveRoleKeys(["srHelper"]);
+          if (
+            !member ||
+            !requiredRoleIds.some((rid) => member.roles.cache.has(rid))
+          ) {
+            return interaction.editReply({
+              content:
+                `❌ You are not eligible for the ${type} certificate.\n` +
+                "If you think this is an error, contact staff by opening a ticket.",
+            });
+          }
         }
 
         // Disallow duplicate pending application of same type
@@ -465,18 +462,10 @@ module.exports = function certificateSystem(client) {
           app.resolvedAt = new Date();
           await app.save();
 
-          // If resource contributor type, try to give role in guild (best-effort)
+          // If resource type, grant resource contributor role (best-effort)
           try {
-            if (
-              interaction.guild &&
-              app.type.toLowerCase().includes("resource")
-            ) {
-              const resourceCfg = (
-                getGuildConfig().certificates?.types || []
-              ).find((t) => t.id === "resource");
-              const rewardRoleId = resourceCfg?.rewardRoleKey
-                ? getRoleId(resourceCfg.rewardRoleKey)
-                : "";
+            if (interaction.guild && app.type === "resource") {
+              const rewardRoleId = getRoleId("resourceContributor");
               const guildMember = await interaction.guild.members
                 .fetch(app.userId)
                 .catch(() => null);

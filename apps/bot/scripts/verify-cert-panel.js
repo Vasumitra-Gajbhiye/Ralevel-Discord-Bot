@@ -3,6 +3,7 @@ const {
   getCertTypeIdFromCustomId,
   getCertTypeLabel,
   isCertPanelMessage,
+  isValidCertTypeId,
   SEND_OPTIONS,
 } = require("../utils/certPanel");
 const { setGuildConfig } = require("../utils/guildConfigStore");
@@ -17,15 +18,6 @@ function mockConfig() {
   return {
     guildId: "guild-1",
     certificates: {
-      types: [
-        { id: "helper", label: "Helper", enabled: true, requiredRoleKeys: [] },
-        {
-          id: "resource",
-          label: "Resource Contributor",
-          enabled: true,
-          requiredRoleKeys: [],
-        },
-      ],
       panel: {
         channelId: "123",
         panelMessageId: "old-message",
@@ -62,6 +54,14 @@ function testCustomIdHelpers() {
   );
 }
 
+function testCertTypeIdValidation() {
+  assert(isValidCertTypeId("helper"), "helper should be valid");
+  assert(isValidCertTypeId("resource_contributor"), "underscores should be valid");
+  assert(isValidCertTypeId("trial-mod"), "dashes should be valid");
+  assert(!isValidCertTypeId("Helper"), "uppercase should be invalid");
+  assert(!isValidCertTypeId("has space"), "spaces should be invalid");
+}
+
 function testBuildPayload() {
   const config = mockConfig();
   setGuildConfig(config);
@@ -76,6 +76,10 @@ function testBuildPayload() {
     payload.embeds[0].data.description === "Apply below for <@&999>",
     "embed description should come from config",
   );
+  assert(
+    payload.embeds[0].data.timestamp,
+    "embed should always include a timestamp",
+  );
   assert(payload.components.length === 1, "two buttons should fit in one row");
   assert(
     payload.components[0].components[0].data.custom_id === "apply_helper",
@@ -84,6 +88,10 @@ function testBuildPayload() {
   assert(
     payload.components[0].components[1].data.label === "Apply — Resource",
     "button label should come from config",
+  );
+  assert(
+    payload.components[0].components[0].data.style === 1,
+    "buttons should always use Primary style",
   );
   assert(
     payload.allowedMentions?.parse?.length === 0,
@@ -96,12 +104,10 @@ function testBuildPayload() {
 }
 
 function testTypeLabelResolution() {
-  const config = mockConfig();
-  setGuildConfig(config);
-  assert(getCertTypeLabel("helper") === "Helper", "helper label should resolve");
+  assert(getCertTypeLabel("helper") === "helper", "type label should be the id");
   assert(
-    getCertTypeLabel("resource") === "Resource Contributor",
-    "resource label should resolve",
+    getCertTypeLabel("resource") === "resource",
+    "type label should remain the id",
   );
 }
 
@@ -150,6 +156,7 @@ function testPanelMessageDetection() {
 
 function main() {
   testCustomIdHelpers();
+  testCertTypeIdValidation();
   testBuildPayload();
   testTypeLabelResolution();
   testPanelMessageDetection();
