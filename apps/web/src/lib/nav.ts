@@ -1,15 +1,3 @@
-export const FEATURE_KEYS = [
-  { key: "reputation", label: "Reputation" },
-  { key: "sticky", label: "Sticky messages" },
-  { key: "certificates", label: "Certificates" },
-  { key: "confessions", label: "Confessions" },
-  { key: "tasks", label: "Tasks" },
-  { key: "polls", label: "Polls" },
-  { key: "welcome", label: "Welcome" },
-  { key: "qotd", label: "QOTD" },
-  { key: "xpRanks", label: "XP ranks" },
-] as const;
-
 export const NAV = [
   { href: "/", label: "Overview" },
   {
@@ -23,7 +11,6 @@ export const NAV = [
       { href: "/settings/reputation", label: "Reputation" },
       { href: "/settings/ranks", label: "XP / Ranks" },
       { href: "/settings/welcome", label: "Welcome" },
-      { href: "/settings/features", label: "Features" },
       { href: "/settings/schedules", label: "Schedules" },
       { href: "/settings/certificates", label: "Certificates" },
       { href: "/settings/confessions", label: "Confessions" },

@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
 
 export default function WelcomeSettingsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<GuildConfigData["welcome"] | null>(null);
-  const welcome = draft ?? config?.welcome;
+  const savedWelcome = useMemo(() => config?.welcome, [config?.welcome]);
+  const welcome = draft ?? savedWelcome;
+
+  const isDirty = useMemo(
+    () =>
+      draft !== null && JSON.stringify(draft) !== JSON.stringify(savedWelcome),
+    [draft, savedWelcome],
+  );
 
   if (loading || !welcome) return <p className="muted">Loading…</p>;
 
@@ -79,17 +86,24 @@ export default function WelcomeSettingsPage() {
             />
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={async () => {
-            await save({ welcome });
-            setDraft(null);
-          }}
-        >
-          {saving ? "Saving…" : "Save welcome"}
-        </button>
+        <div className="row">
+          {isDirty ? (
+            <span className="muted" style={{ fontSize: "0.8rem" }}>
+              Unsaved changes
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={!isDirty || saving}
+            onClick={async () => {
+              await save({ welcome });
+              setDraft(null);
+            }}
+          >
+            {saving ? "Saving…" : "Save welcome"}
+          </button>
+        </div>
       </div>
     </>
   );

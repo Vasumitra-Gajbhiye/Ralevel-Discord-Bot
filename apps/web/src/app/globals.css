@@ -127,6 +127,16 @@ button {
   min-height: 100vh;
 }
 
+@media (min-width: 901px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    align-self: start;
+  }
+}
+
 .sidebar-footer {
   margin-top: auto;
   padding: 0.65rem;

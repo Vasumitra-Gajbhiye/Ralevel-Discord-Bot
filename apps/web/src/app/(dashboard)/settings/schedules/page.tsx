@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { InfoHelpIcon } from "@/components/InfoHelpIcon";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { useGuildConfig, type GuildConfigData } from "@/lib/useGuildConfig";
+
+const FINALIZE_HOUR_HELP =
+  "The hour (IST, 24-hour clock) when daily XP is finalized and level-up messages are sent.";
+const QOTD_HOUR_HELP =
+  "The hour (IST, 24-hour clock) when the Question of the Day reminder is sent.";
 
 export default function SchedulesPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
@@ -23,7 +29,10 @@ export default function SchedulesPage() {
       <div className="card stack">
         <div className="row">
           <div className="field">
-            <label>XP finalize hour (IST)</label>
+            <label className="label-with-help">
+              XP finalize hour (IST)
+              <InfoHelpIcon content={FINALIZE_HOUR_HELP} />
+            </label>
             <input
               type="number"
               min={0}
@@ -38,7 +47,10 @@ export default function SchedulesPage() {
             />
           </div>
           <div className="field">
-            <label>QOTD reminder hour (IST)</label>
+            <label className="label-with-help">
+              QOTD reminder hour (IST)
+              <InfoHelpIcon content={QOTD_HOUR_HELP} />
+            </label>
             <input
               type="number"
               min={0}
