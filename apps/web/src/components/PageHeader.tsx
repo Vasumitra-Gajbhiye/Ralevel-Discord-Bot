@@ -3,9 +3,9 @@ import type { ReactNode } from "react";
 export function RestartBanner() {
   return (
     <div className="restart-banner">
-      Settings changes are saved to MongoDB immediately, but the bot only loads
-      them on startup. Restart the bot process for settings to take effect.
-      Operational data edits apply without a restart.
+      Settings changes are saved to MongoDB immediately. The bot picks them up
+      automatically within about 15 seconds — no redeploy or restart needed.
+      Operational data edits apply right away.
     </div>
   );
 }

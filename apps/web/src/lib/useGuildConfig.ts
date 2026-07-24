@@ -118,7 +118,7 @@ export function useGuildConfig() {
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setConfig(data);
-      setStatus("Saved. Restart the bot for settings to apply.");
+      setStatus("Saved. The bot will apply settings within about 15 seconds.");
       return data as GuildConfigData;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Save failed";

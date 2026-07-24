@@ -1,7 +1,10 @@
 require("./loadEnv");
 const { connectDB } = require("@ralevel/db");
 const { Client, GatewayIntentBits } = require("discord.js");
-const loadGuildConfig = require("./utils/loadGuildConfig");
+const {
+  loadGuildConfig,
+  startGuildConfigWatcher,
+} = require("./utils/loadGuildConfig");
 const loadCommands = require("./systems/commands.js");
 const reputationSystem = require("./systems/reputation.js");
 const certificateSystem = require("./systems/certificates.js");
@@ -26,6 +29,7 @@ const client = new Client({
 async function start() {
   await connectDB();
   await loadGuildConfig(client);
+  startGuildConfigWatcher(client);
 
   loadCommands(client);
   const handleReputation = reputationSystem(client);

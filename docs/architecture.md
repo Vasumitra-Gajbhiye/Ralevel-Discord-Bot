@@ -22,7 +22,7 @@ The bot is a **single-process Node.js application**. There is no microservice sp
 | Config | MongoDB `GuildConfig` (+ root `.env` secrets/seed) | Live bot settings |
 | Infrastructure | `packages/db`, `apps/bot/redis.js` | DB / Redis connections |
 
-**GuildConfig:** Single document per `GUILD_ID` storing roles, command permission matrix, channels, feature flags, reputation/XP settings, schedules, welcome copy, certificates/confessions/tasks/polls/sticky/helper settings. The web dashboard edits this document; the bot loads it once at startup (restart required for settings). Operational collections (warnings, stickies, etc.) are edited live from the dashboard without a restart.
+**GuildConfig:** Single document per `GUILD_ID` storing roles, command permission matrix, channels, feature flags, reputation/XP settings, schedules, welcome copy, certificates/confessions/tasks/polls/sticky/helper settings. The web dashboard edits this document; the bot loads it at startup and hot-reloads from Mongo when `updatedAt` changes (about every 15s). Operational collections (warnings, stickies, etc.) are edited live from the dashboard without a reload wait.
 
 **External services at runtime:** Discord Gateway + REST API only. No OpenAI, Stripe, or other third-party APIs in the main bot process.
 

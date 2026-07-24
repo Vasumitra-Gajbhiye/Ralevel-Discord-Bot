@@ -18,7 +18,7 @@ Every environment variable used by the r/alevel monorepo. Copy `.env.example` to
 
 - Bot: `require("./loadEnv")` in `apps/bot/index.js` and scripts (loads repo-root `.env`)
 - On startup the bot loads `GuildConfig` for `GUILD_ID` (creates from env defaults if missing) via `utils/loadGuildConfig.js`
-- Runtime permissions/channels/roles come from that in-memory config — **restart the bot** after dashboard settings changes
+- Runtime permissions/channels/roles come from that in-memory config; the bot polls Mongo and hot-reloads within ~15s after dashboard settings changes (no restart needed)
 - Seed/overwrite manually: `pnpm --filter @ralevel/bot seed:guild-config` (add `--force` to overwrite)
 - `@ralevel/shared` permissions remain a historical/default reference; live ACL is `GuildConfig.commandPermissions`
 - `redis.js` throws immediately if `REDIS_URL` is missing (before the bot can start)

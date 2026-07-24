@@ -142,7 +142,7 @@ setnickname: [admin, dcHead, srMods, ialAgent],
 sethelper: [admin, hlpHead, dcHead],
 ```
 
-Then restart the bot (no redeploy needed for permission config changes).
+Then wait ~15 seconds for the bot to hot-reload GuildConfig (or restart if you changed code, not dashboard settings).
 
 ---
 
@@ -376,7 +376,7 @@ Restart the bot.
 | Run verify scripts | After changing core systems: `npm run verify:*` |
 | Check Coolify logs | Production issues — filter for `ERROR`, `FINALIZE`, `QOTD`, `Redis` |
 | VPN blocks Atlas | Disable VPN when MongoDB won't connect locally |
-| Permission config changes | No redeploy needed — just restart the bot process |
+| Permission / GuildConfig changes | No restart needed — bot hot-reloads within ~15s |
 | Command changes | Always run `node scripts/deploy-commands.js` after adding/editing commands |
 
 ---

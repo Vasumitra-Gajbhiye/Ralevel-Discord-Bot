@@ -1,5 +1,6 @@
 /**
- * Process-wide GuildConfig cache. Loaded once at bot startup; restart to refresh.
+ * Process-wide GuildConfig cache.
+ * Loaded at bot startup and refreshed by the GuildConfig watcher when Mongo updates.
  */
 
 let guildConfig = null;

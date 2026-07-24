@@ -7,7 +7,7 @@ Next.js control dashboard for the r/alevel Discord bot.
 - **Settings** — roles, command permission matrix, channels, feature flags, reputation, XP ranks, schedules, welcome, certificates, confessions, tasks, polls/sticky/helper, access control
 - **Operations** — warnings, notes, mod logs, certificates queue, tasks, stickies, confessions, reputation, helpers, QOTD, users, polls
 
-Settings are stored in MongoDB `GuildConfig`. The bot loads them at startup — **restart the bot** after changing settings. Operational edits apply immediately.
+Settings are stored in MongoDB `GuildConfig`. The bot hot-reloads them within about 15 seconds of a dashboard save — no restart needed. Operational edits apply immediately.
 
 ## Auth
 
