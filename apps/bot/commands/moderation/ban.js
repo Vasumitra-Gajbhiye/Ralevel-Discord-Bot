@@ -1,4 +1,5 @@
-const { ModLog } = require("@ralevel/db");
+const { DEFAULT_BAN_MESSAGES } = require("@ralevel/db");
+const { renderMessageTemplate } = require("@ralevel/shared");
 const {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -6,6 +7,7 @@ const {
 } = require("discord.js");
 const generateActionId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
+const { getGuildConfig } = require("../../utils/guildConfigStore");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -70,14 +72,23 @@ module.exports = {
 
     // DM user
     try {
-      const appealText = appealable
-        ? "You may appeal this ban using the appeal form: https://formcord.app/alevel/ralevel-Appeals-Form"
-        : "This ban is **not appealable**.";
+      const banMessages = {
+        ...DEFAULT_BAN_MESSAGES,
+        ...getGuildConfig().moderation?.banMessages,
+      };
+      const template = appealable
+        ? banMessages.banAppealable
+        : banMessages.banNotAppealable;
 
-      await member.send(
-        `🚫 You have been **banned** from **r/Alevel** Discord server.\n` +
-          `Reason: ${reason}\n\n${appealText}`,
-      );
+      const message = renderMessageTemplate(template, {
+        reason,
+        serverName: interaction.guild.name,
+        userTag: member.user.tag,
+        userId: member.user.id,
+        appealUrl: banMessages.appealUrl,
+      });
+
+      await member.send(message);
     } catch {}
 
     // Ban the user

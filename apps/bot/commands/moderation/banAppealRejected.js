@@ -1,3 +1,5 @@
+const { DEFAULT_BAN_MESSAGES } = require("@ralevel/db");
+const { renderMessageTemplate } = require("@ralevel/shared");
 const {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -5,6 +7,7 @@ const {
 } = require("discord.js");
 const generateActionId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
+const { getGuildConfig } = require("../../utils/guildConfigStore");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -41,11 +44,18 @@ module.exports = {
 
     // 1. Attempt to DM the user
     try {
-      await user.send(
-        `❌ **Your ban appeal for the r/Alevel Discord server has been REJECTED.**\n\n` +
-          `Your ban will remain in place. \n` +
-          `**Reason:** ${reason}`,
-      );
+      const banMessages = {
+        ...DEFAULT_BAN_MESSAGES,
+        ...getGuildConfig().moderation?.banMessages,
+      };
+      const message = renderMessageTemplate(banMessages.appealRejected, {
+        reason,
+        serverName: interaction.guild.name,
+        userTag: user.tag,
+        userId: user.id,
+      });
+
+      await user.send(message);
     } catch {
       dmSuccess = false;
     }

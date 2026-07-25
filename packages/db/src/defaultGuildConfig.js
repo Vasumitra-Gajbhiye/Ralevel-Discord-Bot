@@ -149,6 +149,18 @@ const DEFAULT_WELCOME_WORDS = [
   "nws",
 ];
 
+const DEFAULT_BAN_MESSAGES = {
+  appealUrl: "https://formcord.app/alevel/ralevel-Appeals-Form",
+  banAppealable:
+    "🚫 You have been **banned** from **{serverName}** Discord server.\nReason: {reason}\n\nYou may appeal this ban using the appeal form: {appealUrl}",
+  banNotAppealable:
+    "🚫 You have been **banned** from **{serverName}** Discord server.\nReason: {reason}\n\nThis ban is **not appealable**.",
+  appealApproved:
+    "✅ **Your ban appeal for the {serverName} Discord server has been APPROVED.**\n\nYou have been unbanned and may now rejoin the server.\n**Moderator Note:** {note}",
+  appealRejected:
+    "❌ **Your ban appeal for the {serverName} Discord server has been REJECTED.**\n\nYour ban will remain in place.\n**Reason:** {reason}",
+};
+
 /** Production XP rank ladder (Discord role IDs + XP thresholds). */
 const DEFAULT_RANK_LADDER_ROLE_IDS = [
   "1487405095627915315",
@@ -467,6 +479,9 @@ function buildDefaultGuildConfig(guildId) {
     helper: {
       pingDelayMs: 10000,
     },
+    moderation: {
+      banMessages: { ...DEFAULT_BAN_MESSAGES },
+    },
   };
 }
 
@@ -476,6 +491,7 @@ module.exports = {
   DEFAULT_COMMAND_PERMISSIONS,
   DEFAULT_THANK_WORDS,
   DEFAULT_WELCOME_WORDS,
+  DEFAULT_BAN_MESSAGES,
   DEFAULT_RANK_LADDER,
   ROLE_DEFS,
   CHANNEL_DEFS,

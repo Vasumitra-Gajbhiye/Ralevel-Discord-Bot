@@ -1,7 +1,7 @@
 /**
  * Normalizes reputation IdLabel arrays from legacy string[] or partial objects.
  */
-const { buildDefaultCertPanel } = require("./defaultGuildConfig");
+const { buildDefaultCertPanel, DEFAULT_BAN_MESSAGES } = require("./defaultGuildConfig");
 function normalizeIdLabels(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -176,6 +176,10 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     $set["certificates.panel"] = buildDefaultCertPanel(
       applicationChannel || process.env.APPLICATION_CHANNEL || "",
     );
+  }
+
+  if (!raw.moderation?.banMessages) {
+    $set["moderation.banMessages"] = { ...DEFAULT_BAN_MESSAGES };
   }
 
   if (!Object.keys($set).length && !Object.keys($unset).length) {

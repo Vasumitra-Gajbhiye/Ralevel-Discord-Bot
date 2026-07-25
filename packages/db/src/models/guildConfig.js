@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { DEFAULT_BAN_MESSAGES } = require("../defaultGuildConfig");
 
 const RoleEntrySchema = new mongoose.Schema(
   {
@@ -180,6 +181,27 @@ const GuildConfigSchema = new mongoose.Schema(
     },
     helper: {
       pingDelayMs: { type: Number, default: 10000 },
+    },
+    moderation: {
+      banMessages: {
+        appealUrl: { type: String, default: DEFAULT_BAN_MESSAGES.appealUrl },
+        banAppealable: {
+          type: String,
+          default: DEFAULT_BAN_MESSAGES.banAppealable,
+        },
+        banNotAppealable: {
+          type: String,
+          default: DEFAULT_BAN_MESSAGES.banNotAppealable,
+        },
+        appealApproved: {
+          type: String,
+          default: DEFAULT_BAN_MESSAGES.appealApproved,
+        },
+        appealRejected: {
+          type: String,
+          default: DEFAULT_BAN_MESSAGES.appealRejected,
+        },
+      },
     },
   },
   { timestamps: true },

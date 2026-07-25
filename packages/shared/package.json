@@ -17,6 +17,10 @@
     "./constants": {
       "types": "./src/constants.d.ts",
       "default": "./src/constants.js"
+    },
+    "./renderMessageTemplate": {
+      "types": "./src/renderMessageTemplate.d.ts",
+      "default": "./src/renderMessageTemplate.js"
     }
   }
 }

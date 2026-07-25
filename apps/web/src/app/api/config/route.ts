@@ -47,6 +47,7 @@ const PATCHABLE = [
   "polls",
   "sticky",
   "helper",
+  "moderation",
 ] as const;
 
 export async function PUT(request: Request) {

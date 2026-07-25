@@ -21,3 +21,9 @@ export declare const permissions: PermissionsConfig;
 export declare const constants: LegacyConstants;
 export declare const groups: RoleGroups;
 export declare const commands: Record<string, Array<string | undefined>>;
+
+export {
+  renderMessageTemplate,
+  BAN_MESSAGE_PLACEHOLDERS,
+  type BanMessagePlaceholder,
+} from "./src/renderMessageTemplate";

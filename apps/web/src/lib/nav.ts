@@ -24,6 +24,7 @@ export const NAV = [
       { href: "/moderation/warnings", label: "Warnings" },
       { href: "/moderation/notes", label: "Notes" },
       { href: "/moderation/logs", label: "Mod logs" },
+      { href: "/moderation/ban-messages", label: "Ban messages" },
     ],
   },
   {

@@ -76,6 +76,15 @@ export type GuildConfigData = {
   };
   sticky: { defaultLineThreshold: number };
   helper: { pingDelayMs: number };
+  moderation: {
+    banMessages: {
+      appealUrl: string;
+      banAppealable: string;
+      banNotAppealable: string;
+      appealApproved: string;
+      appealRejected: string;
+    };
+  };
   updatedAt?: string;
 };
 
