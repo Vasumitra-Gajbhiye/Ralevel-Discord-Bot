@@ -10,8 +10,8 @@ Commands are loaded at runtime from `commands/` and registered to Discord via `s
 
 Three layers apply before a command executes:
 
-1. **Discord `setDefaultMemberPermissions`** — hides commands from users lacking Discord permission bits (e.g. `BanMembers`). Not all commands use this.
-2. **Custom role gate** (`permissions.config.js`) — user must have at least one listed role ID. Commands **not listed** are public (any member can use).
+1. **Discord `setDefaultMemberPermissions`** — hides commands from users lacking Discord permission bits (e.g. `BanMembers`). Configurable per command in the dashboard under **Settings → Command visibility**; apply changes with **Sync to Discord**.
+2. **Custom role gate** (`GuildConfig.commandPermissions`) — user must have at least one listed role ID. Edited under **Settings → Commands**. Commands **not listed** are public (any member can use).
 3. **Role hierarchy** (`systems/commands.js`) — moderation commands cannot target users with equal or higher roles.
 
 ### Role group abbreviations

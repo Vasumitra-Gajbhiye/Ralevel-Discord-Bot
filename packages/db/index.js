@@ -25,6 +25,7 @@ const {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
   DEFAULT_COMMAND_PERMISSIONS,
+  DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_BAN_MESSAGES,
 } = require("./src/defaultGuildConfig");
 const {
@@ -62,6 +63,7 @@ module.exports = {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
   DEFAULT_COMMAND_PERMISSIONS,
+  DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_BAN_MESSAGES,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,

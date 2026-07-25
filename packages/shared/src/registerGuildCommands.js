@@ -1,0 +1,121 @@
+const fs = require("node:fs");
+const path = require("node:path");
+const { REST, Routes } = require("discord.js");
+const { DEFAULT_COMMAND_DISCORD_PERMISSIONS } = require("@ralevel/db");
+const {
+  permissionNameFromBitfield,
+  applyDiscordPermissionOverride,
+  normalizeOverrides,
+} = require("./commandPermissions");
+
+function resolveCommandsRoot(explicitRoot) {
+  if (explicitRoot) return path.resolve(explicitRoot);
+
+  const candidates = [
+    path.resolve(process.cwd(), "apps/bot/commands"),
+    path.resolve(process.cwd(), "../bot/commands"),
+    path.resolve(__dirname, "../../../apps/bot/commands"),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  throw new Error("Could not find bot commands directory");
+}
+
+function loadCommandModules(commandsRoot) {
+  const root = resolveCommandsRoot(commandsRoot);
+  const modules = [];
+
+  const folders = fs
+    .readdirSync(root)
+    .filter((entry) => fs.statSync(path.join(root, entry)).isDirectory());
+
+  for (const folder of folders) {
+    const folderPath = path.join(root, folder);
+    const files = fs
+      .readdirSync(folderPath)
+      .filter((file) => file.endsWith(".js"));
+
+    for (const file of files) {
+      const filePath = path.resolve(folderPath, file);
+      // eslint-disable-next-line import/no-dynamic-require, global-require
+      const command = require(filePath);
+      if (!command?.data || !command?.execute) continue;
+      modules.push({ folder, command });
+    }
+  }
+
+  return modules;
+}
+
+function loadCommandPayloads(commandsRoot, overrides = {}) {
+  const normalizedOverrides = normalizeOverrides(overrides);
+  const modules = loadCommandModules(commandsRoot);
+
+  return modules
+    .map(({ folder, command }) => {
+      const payload = command.data.toJSON();
+      const fileDefault = permissionNameFromBitfield(
+        payload.default_member_permissions,
+      );
+      const overrideValue = Object.prototype.hasOwnProperty.call(
+        normalizedOverrides,
+        payload.name,
+      )
+        ? normalizedOverrides[payload.name]
+        : undefined;
+
+      const effectivePermission =
+        overrideValue !== undefined ? overrideValue || null : fileDefault;
+
+      return {
+        category: folder,
+        name: payload.name,
+        fileDefault,
+        saved:
+          overrideValue !== undefined ? overrideValue || null : undefined,
+        effective: effectivePermission,
+        payload: applyDiscordPermissionOverride(payload, overrideValue),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function registerGuildCommands({
+  token,
+  clientId,
+  guildId,
+  commandsRoot,
+  overrides = {},
+}) {
+  if (!token) throw new Error("TOKEN is required to register guild commands");
+  if (!clientId) {
+    throw new Error("CLIENT_ID is required to register guild commands");
+  }
+  if (!guildId) {
+    throw new Error("GUILD_ID is required to register guild commands");
+  }
+
+  const entries = loadCommandPayloads(commandsRoot, overrides);
+  const body = entries.map((entry) => entry.payload);
+  const rest = new REST().setToken(token);
+
+  const data = await rest.put(
+    Routes.applicationGuildCommands(clientId, guildId),
+    { body },
+  );
+
+  return {
+    commandCount: Array.isArray(data) ? data.length : body.length,
+    commands: entries,
+  };
+}
+
+module.exports = {
+  DEFAULT_COMMAND_DISCORD_PERMISSIONS,
+  resolveCommandsRoot,
+  loadCommandPayloads,
+  registerGuildCommands,
+};

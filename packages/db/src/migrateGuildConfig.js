@@ -1,7 +1,7 @@
 /**
  * Normalizes reputation IdLabel arrays from legacy string[] or partial objects.
  */
-const { buildDefaultCertPanel, DEFAULT_BAN_MESSAGES } = require("./defaultGuildConfig");
+const { buildDefaultCertPanel, DEFAULT_BAN_MESSAGES, DEFAULT_COMMAND_DISCORD_PERMISSIONS } = require("./defaultGuildConfig");
 function normalizeIdLabels(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -180,6 +180,17 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
 
   if (!raw.moderation?.banMessages) {
     $set["moderation.banMessages"] = { ...DEFAULT_BAN_MESSAGES };
+  }
+
+  if (
+    !raw.commandDiscordPermissions ||
+    (raw.commandDiscordPermissions instanceof Map &&
+      raw.commandDiscordPermissions.size === 0) ||
+    (typeof raw.commandDiscordPermissions === "object" &&
+      !Array.isArray(raw.commandDiscordPermissions) &&
+      Object.keys(raw.commandDiscordPermissions).length === 0)
+  ) {
+    $set.commandDiscordPermissions = { ...DEFAULT_COMMAND_DISCORD_PERMISSIONS };
   }
 
   if (!Object.keys($set).length && !Object.keys($unset).length) {

@@ -6,6 +6,7 @@ export const NAV = [
       { href: "/settings/roles", label: "Roles" },
       { href: "/settings/access", label: "Access" },
       { href: "/settings/commands", label: "Commands" },
+      { href: "/settings/command-visibility", label: "Command visibility" },
       { href: "/settings/channels", label: "Channels" },
       { href: "/settings/category", label: "Categories" },
       { href: "/settings/reputation", label: "Reputation" },

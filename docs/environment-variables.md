@@ -7,7 +7,8 @@ Every environment variable used by the r/alevel monorepo. Copy `.env.example` to
 - `apps/web` loads root `.env` via `next.config.ts` (`dotenv`); optional overrides in `apps/web/.env.local`
 - Shared between bot and web: `MONGO_URI`, `GUILD_ID`
 - Web-only (Clerk auth): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and Clerk URL redirects (see [Clerk variables](#clerk-web-dashboard-auth))
-- Bot-only secrets: Discord `TOKEN`, `CLIENT_ID`, `REDIS_URL`
+- Web + bot (command visibility sync): Discord `TOKEN`, `CLIENT_ID` — required for **Settings → Command visibility → Sync to Discord** and for `scripts/deploy-commands.js`
+- Bot-only secrets: `REDIS_URL`
 - **Guild settings** (channels, roles, command permissions, feature toggles, etc.) live in MongoDB `GuildConfig`, edited via the web dashboard. Env channel/role IDs are seed/fallback only.
 
 **Security:** Never commit `.env` to git. It is excluded by `.gitignore` and `.dockerignore`. Rotate credentials if they are ever exposed. The web dashboard requires Clerk sign-in; only allowlisted emails can register (managed under **Settings → Access**).
@@ -37,7 +38,7 @@ Every environment variable used by the r/alevel monorepo. Copy `.env.example` to
 | **Required**   | Yes                                                    |
 | **If missing** | `client.login()` fails; bot never connects             |
 
-Used in: `index.js`, `scripts/deploy-commands.js`, `scripts/migrateWarnings.js`
+Used in: `index.js`, `scripts/deploy-commands.js`, `scripts/migrateWarnings.js`, web dashboard **Sync to Discord** (`/api/commands/sync`)
 
 ---
 
@@ -87,8 +88,8 @@ Used in: `scripts/deploy-commands.js`, `systems/dailyFinalizeSystem.js`, `utils/
 | -------------- | ----------------------------------------------------- |
 | **Purpose**    | Discord application ID for slash command registration |
 | **Example**    | `1127197280651464714`                                 |
-| **Required**   | Deploy-only (not needed for `node index.js`)          |
-| **If missing** | `scripts/deploy-commands.js` fails                    |
+| **Required**   | Deploy and dashboard command-visibility sync |
+| **If missing** | `scripts/deploy-commands.js` and dashboard **Sync to Discord** fail |
 
 ---
 

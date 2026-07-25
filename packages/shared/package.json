@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "Shared constants, permissions, utilities, and types for r/alevel",
+  "dependencies": {
+    "@ralevel/db": "workspace:*",
+    "discord.js": "^14.11.0"
+  },
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
@@ -21,6 +25,17 @@
     "./renderMessageTemplate": {
       "types": "./src/renderMessageTemplate.d.ts",
       "default": "./src/renderMessageTemplate.js"
+    },
+    "./registerGuildCommands": {
+      "types": "./src/registerGuildCommands.d.ts",
+      "default": "./src/registerGuildCommands.js"
+    },
+    "./commandPermissions": {
+      "types": "./src/commandPermissions.d.ts",
+      "default": "./src/commandPermissions.js"
+    },
+    "./commandCatalog": {
+      "default": "./src/commandCatalog.js"
     }
   }
 }

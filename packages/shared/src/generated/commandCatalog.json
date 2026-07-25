@@ -1,0 +1,1863 @@
+{
+  "generatedAt": "2026-07-25T11:26:49.218Z",
+  "commands": [
+    {
+      "category": "reputation",
+      "name": "add-rep",
+      "fileDefault": "ManageRoles",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to add reputation to.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 4,
+            "name": "amount",
+            "description": "Amount to add.",
+            "required": true
+          }
+        ],
+        "name": "add-rep",
+        "description": "Add reputation to a user.",
+        "default_member_permissions": "268435456",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "add-role",
+      "fileDefault": "ChangeNickname",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to give the role to.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "name": "role",
+            "description": "Role you want to add.",
+            "required": true,
+            "type": 8
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for adding the role.",
+            "required": true
+          }
+        ],
+        "name": "add-role",
+        "description": "Add a role to a user.",
+        "default_member_permissions": "67108864",
+        "type": 1
+      }
+    },
+    {
+      "category": "sticky",
+      "name": "add-sticky",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "message",
+            "description": "Sticky message (Markdown supported)",
+            "required": true
+          },
+          {
+            "name": "channel",
+            "description": "Channel (defaults to current)",
+            "required": false,
+            "type": 7
+          },
+          {
+            "max_value": 1000,
+            "min_value": 1,
+            "type": 4,
+            "name": "line-threshold",
+            "description": "Number of message lines before the sticky is reposted",
+            "required": false
+          }
+        ],
+        "name": "add-sticky",
+        "description": "Add or replace a sticky message in a channel",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "add-task",
+      "fileDefault": "PinMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "title",
+            "description": "Title of the task",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "description",
+            "description": "Describe the task",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "resolution",
+            "description": "Resolution (graphics only)",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "fileformat",
+            "description": "File format (graphics only)",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "notes",
+            "description": "Extra notes (graphics only)",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "deadline",
+            "description": "Deadline for this task",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "word_limit",
+            "description": "Word Limit for this task",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "file_name_format",
+            "description": "How should designers name their final file? (graphics only)",
+            "required": false
+          }
+        ],
+        "name": "add-task",
+        "description": "Create a new task",
+        "default_member_permissions": "2251799813685248",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "announce",
+      "fileDefault": "SendMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel where the announcement will be posted.",
+            "required": true,
+            "type": 7
+          },
+          {
+            "type": 3,
+            "name": "title",
+            "description": "Title of the announcement.",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "description",
+            "description": "Main announcement message.",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for announcing this.",
+            "required": true
+          },
+          {
+            "name": "ping",
+            "description": "Ping a specific role.",
+            "required": false,
+            "type": 8
+          },
+          {
+            "name": "ping-everyone",
+            "description": "Ping @everyone?",
+            "required": false,
+            "type": 5
+          },
+          {
+            "name": "ping-here",
+            "description": "Ping @here?",
+            "required": false,
+            "type": 5
+          },
+          {
+            "type": 3,
+            "name": "color",
+            "description": "Hex color (default cyan). Example: #00ffff",
+            "required": false
+          },
+          {
+            "name": "image",
+            "description": "Optional image for the embed.",
+            "required": false,
+            "type": 11
+          },
+          {
+            "name": "thumbnail",
+            "description": "Thumbnail for the embed.",
+            "required": false,
+            "type": 11
+          },
+          {
+            "type": 3,
+            "name": "button-label",
+            "description": "Button text (optional).",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "button-url",
+            "description": "URL the button will link to.",
+            "required": false
+          }
+        ],
+        "name": "announce",
+        "description": "Send a professional announcement embed to any channel.",
+        "default_member_permissions": "2048",
+        "type": 1
+      }
+    },
+    {
+      "category": "applications",
+      "name": "apply",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "apply",
+        "description": "Get the r/alevel application form",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "approve-certificate",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "applicationid",
+            "description": "The application ID to approve",
+            "required": true
+          }
+        ],
+        "name": "approve-certificate",
+        "description": "Approve a certificate application (admin only)",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "audit",
+      "fileDefault": "SendMessages",
+      "payload": {
+        "options": [],
+        "name": "audit",
+        "description": "View server-wide moderation audit logs (paginated).",
+        "default_member_permissions": "2048",
+        "type": 1
+      }
+    },
+    {
+      "category": "utility",
+      "name": "avatar",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "target",
+            "description": "The user's avatar to show",
+            "required": false,
+            "type": 6
+          }
+        ],
+        "name": "avatar",
+        "description": "Get the avatar URL of the selected user, or your own avatar.",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "ban",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to ban",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for ban",
+            "required": true
+          },
+          {
+            "name": "appealable",
+            "description": "Is this ban appealable?",
+            "required": true,
+            "type": 5
+          },
+          {
+            "type": 3,
+            "choices": [
+              {
+                "name": "Past 1 minute",
+                "value": "1m"
+              },
+              {
+                "name": "Past 1 hour",
+                "value": "1h"
+              },
+              {
+                "name": "Past 1 day",
+                "value": "1d"
+              },
+              {
+                "name": "Past 7 days",
+                "value": "7d"
+              },
+              {
+                "name": "Past 1 month",
+                "value": "30d"
+              },
+              {
+                "name": "All messages",
+                "value": "all"
+              }
+            ],
+            "name": "deletemsgs",
+            "description": "Delete past messages from user",
+            "required": true
+          }
+        ],
+        "name": "ban",
+        "description": "Ban a user from the server",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "ban-appeal-approved",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User whose appeal was approved",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "note",
+            "description": "Optional note to include in the DM to the user",
+            "required": false
+          }
+        ],
+        "name": "ban-appeal-approved",
+        "description": "Approve a user's ban appeal, notify them, and unban them",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "ban-appeal-rejected",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User whose appeal was rejected",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for rejection to send to the user",
+            "required": true
+          }
+        ],
+        "name": "ban-appeal-rejected",
+        "description": "Reject a user's ban appeal and notify them",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "certificate-status",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "application_id",
+            "description": "Application ID to search",
+            "required": true
+          }
+        ],
+        "name": "certificate-status",
+        "description": "View certificate application status",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "certificate-status-mod",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to check (mods only)",
+            "required": false,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "application_id",
+            "description": "Application ID to search",
+            "required": false
+          }
+        ],
+        "name": "certificate-status-mod",
+        "description": "View certificate application status",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "claim",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "taskid",
+            "description": "Task ID to claim",
+            "required": true
+          }
+        ],
+        "name": "claim",
+        "description": "Claim a task",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "clear-warnings",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User whose warnings should be cleared",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for warning",
+            "required": true
+          }
+        ],
+        "name": "clear-warnings",
+        "description": "Clear all warnings for a user",
+        "type": 1
+      }
+    },
+    {
+      "category": "confessions",
+      "name": "confess",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "confession",
+            "description": "Your confession",
+            "required": true,
+            "max_length": 2000
+          },
+          {
+            "name": "attachment",
+            "description": "Optional attachment",
+            "required": false,
+            "type": 11
+          },
+          {
+            "name": "allow_reply",
+            "description": "Allow others to reply",
+            "required": false,
+            "type": 5
+          }
+        ],
+        "name": "confess",
+        "description": "Submit an anonymous confession",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "delete-warning",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "actionid",
+            "description": "Action ID of the warning",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for warning",
+            "required": true
+          }
+        ],
+        "name": "delete-warning",
+        "description": "Delete a specific warning by its action ID",
+        "type": 1
+      }
+    },
+    {
+      "category": "sticky",
+      "name": "edit-sticky",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "message",
+            "description": "New sticky message (Markdown supported)",
+            "required": true
+          },
+          {
+            "name": "channel",
+            "description": "Channel (defaults to current)",
+            "required": false,
+            "type": 7
+          },
+          {
+            "max_value": 1000,
+            "min_value": 1,
+            "type": 4,
+            "name": "line-threshold",
+            "description": "Number of message lines before the sticky is reposted",
+            "required": false
+          }
+        ],
+        "name": "edit-sticky",
+        "description": "Edit the sticky message in a channel",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "edit-task",
+      "fileDefault": "PinMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "taskid",
+            "description": "Task ID to edit",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "title",
+            "description": "New task title",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "description",
+            "description": "New task description",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "deadline",
+            "description": "New deadline",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "resolution",
+            "description": "Resolution (graphics only)",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "fileformat",
+            "description": "File format (graphics only)",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "filenameformat",
+            "description": "Required file naming format (graphics only)",
+            "required": false
+          },
+          {
+            "type": 3,
+            "name": "notes",
+            "description": "Extra notes (graphics only)",
+            "required": false
+          },
+          {
+            "type": 3,
+            "choices": [
+              {
+                "name": "Open",
+                "value": "open"
+              },
+              {
+                "name": "Claimed",
+                "value": "claimed"
+              },
+              {
+                "name": "Completed",
+                "value": "completed"
+              }
+            ],
+            "name": "status",
+            "description": "Task status",
+            "required": false
+          },
+          {
+            "name": "selected",
+            "description": "Selected designer (graphic tasks)",
+            "required": false,
+            "type": 6
+          }
+        ],
+        "name": "edit-task",
+        "description": "Edit an existing task (mods only)",
+        "default_member_permissions": "2251799813685248",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "finished-tsk",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "taskid",
+            "description": "Task ID",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "link",
+            "description": "Link to your finished work (graphics and writers only)",
+            "required": false
+          }
+        ],
+        "name": "finished-tsk",
+        "description": "Mark your claimed task as finished",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "get-notes",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to view notes for",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "get-notes",
+        "description": "View staff notes for a user.",
+        "type": 1
+      }
+    },
+    {
+      "category": "helper",
+      "name": "helper",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "helper",
+        "description": "Request help from the assigned subject helper in this channel.",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "kick",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to kick",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for kick",
+            "required": true
+          }
+        ],
+        "name": "kick",
+        "description": "Kick a member from the server",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "leaderboard",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "leaderboard",
+        "description": "View the top reputation holders.",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "list-rep-ban",
+      "fileDefault": "ManageGuild",
+      "payload": {
+        "options": [],
+        "name": "list-rep-ban",
+        "description": "List all users who are banned from receiving reputation.",
+        "default_member_permissions": "32",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "lock",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel to lock",
+            "required": true,
+            "type": 7
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for locking the channel.",
+            "required": true
+          }
+        ],
+        "name": "lock",
+        "description": "Lock a channel to prevent members from sending messages.",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "lock-status",
+      "fileDefault": "ManageChannels",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "choices": [
+              {
+                "name": "Temporary Locks",
+                "value": "temporary"
+              },
+              {
+                "name": "Permanent Locks",
+                "value": "permanent"
+              }
+            ],
+            "name": "type",
+            "description": "Which locks to view",
+            "required": true
+          }
+        ],
+        "name": "lock-status",
+        "description": "Check locked channels",
+        "default_member_permissions": "16",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "mark-cert-delivered",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "applicationid",
+            "description": "Application ID to mark delivered",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "certificate_link",
+            "description": "Link to applicant's certificate",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "certificate_id",
+            "description": "Applicant's certificate ID",
+            "required": true
+          },
+          {
+            "name": "pdf",
+            "description": "Attach the final certificate PDF",
+            "required": true,
+            "type": 11
+          }
+        ],
+        "name": "mark-cert-delivered",
+        "description": "Mark a certificate as delivered (Mods/Admin only)",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "mark-tsk-done",
+      "fileDefault": "PinMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "taskid",
+            "description": "Task ID to complete",
+            "required": true
+          },
+          {
+            "name": "selected",
+            "description": "Select the designer whose work is chosen (for graphic tasks)",
+            "required": false,
+            "type": 6
+          }
+        ],
+        "name": "mark-tsk-done",
+        "description": "Mark a task as completed and select the final designer’s work (mods only)",
+        "default_member_permissions": "2251799813685248",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "moderation-logs",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "Target user",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "moderation-logs",
+        "description": "View moderation logs for a user",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "moderator-logs",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "Moderator",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "moderator-logs",
+        "description": "View all moderation actions taken by a specific moderator",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "my-progress",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "my-progress",
+        "description": "View your task progress and certificate eligibility",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "my-rank",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "my-rank",
+        "description": "Check your reputation rank and progress.",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "my-reputation",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "my-reputation",
+        "description": "Display your current reputation publicly.",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "my-warnings",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "my-warnings",
+        "description": "View your active warnings",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "mytasks",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "mytasks",
+        "description": "View your claimed, finished, and unclaimed tasks",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "note",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to note",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "note",
+            "description": "Note content",
+            "required": true,
+            "max_length": 1000
+          }
+        ],
+        "name": "note",
+        "description": "Add a staff note about a user.",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "pin",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "message-id",
+            "description": "The ID of the message to pin.",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for pinning the message.",
+            "required": true
+          }
+        ],
+        "name": "pin",
+        "description": "Pin a message using its message ID.",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "fun",
+      "name": "ping",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "ping",
+        "description": "Replies with Pong!",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "poll",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 1,
+            "name": "create",
+            "description": "Create a new poll",
+            "options": [
+              {
+                "type": 3,
+                "name": "question",
+                "description": "Poll question",
+                "required": true
+              },
+              {
+                "type": 3,
+                "name": "options",
+                "description": "Comma-separated options (2–24)",
+                "required": true
+              },
+              {
+                "type": 3,
+                "name": "voter_roles",
+                "description": "Role mentions/IDs allowed to vote (space-separated)",
+                "required": true
+              },
+              {
+                "type": 3,
+                "choices": [
+                  {
+                    "name": "Single choice",
+                    "value": "single"
+                  },
+                  {
+                    "name": "Multiple choice",
+                    "value": "multiple"
+                  }
+                ],
+                "name": "choice_type",
+                "description": "Single or multiple choice",
+                "required": true
+              },
+              {
+                "type": 3,
+                "name": "deadline",
+                "description": "Optional deadline (e.g. \"2h\", \"1d\", or ISO datetime)",
+                "required": false
+              },
+              {
+                "name": "channel",
+                "description": "Channel to post the poll in (defaults to current)",
+                "required": false,
+                "type": 7
+              }
+            ]
+          },
+          {
+            "type": 1,
+            "name": "breakdown",
+            "description": "View who voted for what (staff only)",
+            "options": [
+              {
+                "type": 4,
+                "name": "poll_id",
+                "description": "Poll ID shown in the poll footer",
+                "required": true
+              }
+            ]
+          }
+        ],
+        "name": "poll",
+        "description": "Create and manage server polls",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "purge",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel to purge messages in.",
+            "required": true,
+            "type": 7
+          },
+          {
+            "type": 4,
+            "name": "amount",
+            "description": "Number of recent messages to check (max 100).",
+            "required": true
+          },
+          {
+            "type": 3,
+            "choices": [
+              {
+                "name": "Everyone (no filter)",
+                "value": "everyone"
+              },
+              {
+                "name": "Specific user",
+                "value": "user"
+              },
+              {
+                "name": "Attachments only",
+                "value": "attachments"
+              },
+              {
+                "name": "Embeds only",
+                "value": "embeds"
+              },
+              {
+                "name": "Bots only",
+                "value": "bots"
+              },
+              {
+                "name": "Non-bots only",
+                "value": "nobots"
+              },
+              {
+                "name": "Messages with links",
+                "value": "links"
+              },
+              {
+                "name": "Messages with images",
+                "value": "images"
+              },
+              {
+                "name": "Keyword match",
+                "value": "keyword"
+              },
+              {
+                "name": "Last X hours",
+                "value": "hours"
+              }
+            ],
+            "name": "filter",
+            "description": "Filter to apply.",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for purge.",
+            "required": true
+          },
+          {
+            "name": "target",
+            "description": "User to filter for (used with 'specific user').",
+            "required": false,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "keyword",
+            "description": "Keyword to filter with.",
+            "required": false
+          },
+          {
+            "type": 4,
+            "name": "hours",
+            "description": "Delete messages from last X hours.",
+            "required": false
+          }
+        ],
+        "name": "purge",
+        "description": "Delete messages with multiple advanced filters.",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "qotd-status",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [],
+        "name": "qotd-status",
+        "description": "Check QOTD rotation and scheduler status",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "reject-certificate",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "applicationid",
+            "description": "The application ID to reject",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for rejection",
+            "required": true
+          }
+        ],
+        "name": "reject-certificate",
+        "description": "Reject a certificate application (admin only)",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "remove-role",
+      "fileDefault": "ChangeNickname",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to remove the role from.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "name": "role",
+            "description": "Role you want to remove.",
+            "required": true,
+            "type": 8
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for removing the role.",
+            "required": true
+          }
+        ],
+        "name": "remove-role",
+        "description": "Remove a role from a user.",
+        "default_member_permissions": "67108864",
+        "type": 1
+      }
+    },
+    {
+      "category": "sticky",
+      "name": "remove-sticky",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel (defaults to current)",
+            "required": false,
+            "type": 7
+          }
+        ],
+        "name": "remove-sticky",
+        "description": "Remove the sticky message from a channel",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "rep",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user whose reputation you want to check.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "rep",
+        "description": "Check the reputation of another user.",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "rep-ban",
+      "fileDefault": "ManageRoles",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to rep-ban.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "rep-ban",
+        "description": "Prevent a user from receiving reputation.",
+        "default_member_permissions": "268435456",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "rep-unban",
+      "fileDefault": "ManageRoles",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to unban.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "rep-unban",
+        "description": "Allow a user to receive reputation again.",
+        "default_member_permissions": "268435456",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "say",
+      "fileDefault": "SendMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel where the bot will send the message.",
+            "required": true,
+            "type": 7
+          },
+          {
+            "type": 3,
+            "name": "message",
+            "description": "Message you want the bot to say.",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for sending this announcement.",
+            "required": true
+          },
+          {
+            "name": "embed",
+            "description": "Send the message as an embed?",
+            "required": false,
+            "type": 5
+          }
+        ],
+        "name": "say",
+        "description": "Make the bot send a message as an announcement.",
+        "default_member_permissions": "2048",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "send-cert-msg",
+      "fileDefault": "ManageGuild",
+      "payload": {
+        "options": [],
+        "name": "send-cert-msg",
+        "description": "Resync the certificate application panel now",
+        "default_member_permissions": "32",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "set-rep",
+      "fileDefault": "ManageRoles",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 4,
+            "name": "amount",
+            "description": "The reputation value to set.",
+            "required": true
+          }
+        ],
+        "name": "set-rep",
+        "description": "Set a user's reputation to a specific value.",
+        "default_member_permissions": "268435456",
+        "type": 1
+      }
+    },
+    {
+      "category": "sethelper",
+      "name": "sethelper",
+      "fileDefault": "ManageChannels",
+      "payload": {
+        "options": [
+          {
+            "name": "role",
+            "description": "Helper role",
+            "required": true,
+            "type": 8
+          }
+        ],
+        "name": "sethelper",
+        "description": "Assign a helper role to this channel.",
+        "default_member_permissions": "16",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "setnickname",
+      "fileDefault": "ManageNicknames",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User whose nickname you want to change.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "nickname",
+            "description": "The new nickname you want to give.",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for changing the nickname.",
+            "required": true
+          }
+        ],
+        "name": "setnickname",
+        "description": "Set or change a user's nickname.",
+        "default_member_permissions": "134217728",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "slowmode",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel to modify",
+            "required": true,
+            "type": 7
+          },
+          {
+            "type": 4,
+            "name": "seconds",
+            "description": "Slowmode duration in seconds (0 = off)",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for slowmode change",
+            "required": true
+          }
+        ],
+        "name": "slowmode",
+        "description": "Set slowmode in a channel",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "softban",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to softban",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for softban",
+            "required": true
+          }
+        ],
+        "name": "softban",
+        "description": "Softban a user (ban + unban to delete messages from last 24 hours)",
+        "type": 1
+      }
+    },
+    {
+      "category": "sticky",
+      "name": "sticky-list",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [],
+        "name": "sticky-list",
+        "description": "List all sticky messages in this server",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "sticky",
+      "name": "sticky-log",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [],
+        "name": "sticky-log",
+        "description": "View recent sticky moderation actions",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "sticky",
+      "name": "sticky-resend",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel (defaults to current)",
+            "required": false,
+            "type": 7
+          }
+        ],
+        "name": "sticky-resend",
+        "description": "Force resend the sticky message",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "reputation",
+      "name": "sub-rep",
+      "fileDefault": "ManageRoles",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to remove reputation from.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 4,
+            "name": "amount",
+            "description": "Amount to subtract.",
+            "required": true
+          }
+        ],
+        "name": "sub-rep",
+        "description": "Subtract reputation from a user.",
+        "default_member_permissions": "268435456",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "submit-cert-details",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "applicationid",
+            "description": "Approved Application ID",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "name",
+            "description": "Legal full name for certificate",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "email",
+            "description": "Email for certificate delivery",
+            "required": true
+          }
+        ],
+        "name": "submit-cert-details",
+        "description": "Record legal name + email for an approved certificate application",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "secondweb",
+      "name": "subreddit",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "subreddit",
+        "description": "Get the Link to the r/Alevel subreddit!",
+        "type": 1
+      }
+    },
+    {
+      "category": "task",
+      "name": "tasks",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "taskid",
+            "description": "Optional task ID to view details",
+            "required": false
+          }
+        ],
+        "name": "tasks",
+        "description": "View available tasks or see details for a specific task",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "timeout",
+      "fileDefault": "ModerateMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to timeout.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "duration",
+            "description": "Duration (e.g., 30m, 2h, 1d)",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for timeout.",
+            "required": true
+          }
+        ],
+        "name": "timeout",
+        "description": "Timeout a user for a specific duration.",
+        "default_member_permissions": "1099511627776",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "timeout-status",
+      "fileDefault": "ModerateMembers",
+      "payload": {
+        "options": [],
+        "name": "timeout-status",
+        "description": "Shows all currently timed out users with details.",
+        "default_member_permissions": "1099511627776",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "unban",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "userid",
+            "description": "User ID to unban",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for unbanning",
+            "required": true
+          }
+        ],
+        "name": "unban",
+        "description": "Unban a user by ID",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "unlock",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "channel",
+            "description": "Channel to unlock",
+            "required": true,
+            "type": 7
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for unlocking the channel.",
+            "required": true
+          }
+        ],
+        "name": "unlock",
+        "description": "Unlock a channel so members can send messages again.",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "unpin",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "message-id",
+            "description": "The ID of the message to unpin.",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for unpinning the message.",
+            "required": true
+          }
+        ],
+        "name": "unpin",
+        "description": "Unpin a message using its message ID.",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "untimeout",
+      "fileDefault": "ModerateMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to remove timeout from.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for removing timeout.",
+            "required": true
+          }
+        ],
+        "name": "untimeout",
+        "description": "Remove timeout from a user.",
+        "default_member_permissions": "1099511627776",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "warn",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to warn",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for warning",
+            "required": true
+          }
+        ],
+        "name": "warn",
+        "description": "Warn a user.",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "warnings",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to check warnings for",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "warnings",
+        "description": "View all warnings of a user",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "web",
+      "name": "website",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "website",
+        "description": "Get the Link to the r/Alevel website!",
+        "type": 1
+      }
+    }
+  ]
+}

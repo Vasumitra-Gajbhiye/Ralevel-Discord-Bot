@@ -34,6 +34,7 @@ export async function GET() {
 const PATCHABLE = [
   "roles",
   "commandPermissions",
+  "commandDiscordPermissions",
   "channels",
   "categories",
   "features",
@@ -82,7 +83,7 @@ export async function PUT(request: Request) {
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (doc as any)[key] = body[key];
-          if (key === "commandPermissions") {
+          if (key === "commandPermissions" || key === "commandDiscordPermissions") {
             doc.markModified(key);
           }
         }

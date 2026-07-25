@@ -74,6 +74,11 @@ function toPlainConfig(doc) {
   if (obj.commandPermissions instanceof Map) {
     obj.commandPermissions = Object.fromEntries(obj.commandPermissions);
   }
+  if (obj.commandDiscordPermissions instanceof Map) {
+    obj.commandDiscordPermissions = Object.fromEntries(
+      obj.commandDiscordPermissions,
+    );
+  }
   return obj;
 }
 

@@ -18,7 +18,7 @@ module.exports = {
 Commands are:
 
 1. **Loaded at runtime** by `systems/commands.js` (scans `commands/` on startup)
-2. **Registered with Discord** via `scripts/deploy-commands.js` (run manually after changes)
+2. **Registered with Discord** via `scripts/deploy-commands.js` (run manually after changes) or **Settings → Command visibility → Sync to Discord** in the web dashboard
 
 There are no prefix commands. All user commands are slash commands.
 
@@ -202,6 +202,14 @@ Restart the bot (or let nodemon restart), then register the command with Discord
 node scripts/deploy-commands.js
 ```
 
+Or use **Settings → Command visibility → Sync to Discord** in the web dashboard after saving visibility settings.
+
+After adding or changing a command definition, regenerate the dashboard catalog:
+
+```bash
+pnpm export-command-catalog
+```
+
 Requires `TOKEN`, `CLIENT_ID`, and `GUILD_ID` in `.env`.
 
 Expected output:
@@ -301,7 +309,8 @@ Before opening a PR with a new command:
 - [ ] Role restrictions added to `permissions.config.js` (if restricted)
 - [ ] Hierarchy mapping added to `systems/commands.js` (if moderation)
 - [ ] Discord permission bits set (if should be hidden from non-mods)
-- [ ] Ran `node scripts/deploy-commands.js`
+- [ ] Ran `pnpm export-command-catalog` if command metadata changed
+- [ ] Ran `node scripts/deploy-commands.js` or synced from **Settings → Command visibility**
 - [ ] Tested in dev guild with allowed and denied roles
 - [ ] Error handling for missing DB records, invalid input, etc.
 

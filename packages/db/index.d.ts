@@ -25,6 +25,7 @@ export declare const GuildConfig: Model<any>;
 export declare const DashboardAccess: Model<any>;
 export declare function buildDefaultGuildConfig(guildId: string): Record<string, unknown>;
 export declare const DEFAULT_COMMAND_PERMISSIONS: Record<string, string[]>;
+export declare const DEFAULT_COMMAND_DISCORD_PERMISSIONS: Record<string, string>;
 export declare function normalizeIdLabels(
   raw: unknown,
 ): { id: string; label: string }[];

@@ -189,6 +189,57 @@ const DEFAULT_RANK_LADDER = DEFAULT_RANK_LADDER_XP.map((xp, index) => ({
 }));
 
 /**
+ * Command name -> Discord PermissionFlagsBits name.
+ * Omitted commands are visible to everyone in Discord's slash picker.
+ */
+const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
+  ban: "BanMembers",
+  lock: "BanMembers",
+  unlock: "BanMembers",
+  "ban-appeal-approved": "BanMembers",
+  "ban-appeal-rejected": "BanMembers",
+  "approve-certificate": "BanMembers",
+  "reject-certificate": "BanMembers",
+  "mark-cert-delivered": "BanMembers",
+  "submit-cert-details": "BanMembers",
+  "certificate-status-mod": "BanMembers",
+  purge: "ManageMessages",
+  pin: "ManageMessages",
+  unpin: "ManageMessages",
+  warnings: "ManageMessages",
+  "moderation-logs": "ManageMessages",
+  poll: "ManageMessages",
+  "qotd-status": "ManageMessages",
+  "add-sticky": "ManageMessages",
+  "edit-sticky": "ManageMessages",
+  "remove-sticky": "ManageMessages",
+  "sticky-list": "ManageMessages",
+  "sticky-log": "ManageMessages",
+  "sticky-resend": "ManageMessages",
+  timeout: "ModerateMembers",
+  untimeout: "ModerateMembers",
+  "timeout-status": "ModerateMembers",
+  "add-rep": "ManageRoles",
+  "sub-rep": "ManageRoles",
+  "set-rep": "ManageRoles",
+  "rep-ban": "ManageRoles",
+  "rep-unban": "ManageRoles",
+  say: "SendMessages",
+  announce: "SendMessages",
+  audit: "SendMessages",
+  "add-role": "ChangeNickname",
+  "remove-role": "ChangeNickname",
+  setnickname: "ManageNicknames",
+  sethelper: "ManageChannels",
+  "lock-status": "ManageChannels",
+  "send-cert-msg": "ManageGuild",
+  "list-rep-ban": "ManageGuild",
+  "add-task": "PinMessages",
+  "mark-tsk-done": "PinMessages",
+  "edit-task": "PinMessages",
+};
+
+/**
  * Command name -> role keys. Fixed mismatches from legacy permissions.js:
  * setnickname (was set-nickname), sethelper (was set-helper), softban added.
  */
@@ -343,6 +394,7 @@ function buildDefaultGuildConfig(guildId) {
     guildId: String(guildId),
     roles,
     commandPermissions: { ...DEFAULT_COMMAND_PERMISSIONS },
+    commandDiscordPermissions: { ...DEFAULT_COMMAND_DISCORD_PERMISSIONS },
     channels: CHANNEL_DEFS.map(({ key, label, env: envName }) => ({
       key,
       label,
@@ -489,6 +541,7 @@ module.exports = {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
   DEFAULT_COMMAND_PERMISSIONS,
+  DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_THANK_WORDS,
   DEFAULT_WELCOME_WORDS,
   DEFAULT_BAN_MESSAGES,

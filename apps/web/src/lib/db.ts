@@ -85,6 +85,7 @@ export async function getOrCreateGuildConfig() {
 export function guildConfigToJson(doc: {
   toObject?: () => Record<string, unknown>;
   commandPermissions?: Map<string, string[]> | Record<string, string[]>;
+  commandDiscordPermissions?: Map<string, string> | Record<string, string>;
   [key: string]: unknown;
 }) {
   const obj =
@@ -93,6 +94,9 @@ export function guildConfigToJson(doc: {
       : ({ ...doc } as Record<string, unknown>);
   if (obj.commandPermissions instanceof Map) {
     obj.commandPermissions = Object.fromEntries(obj.commandPermissions);
+  }
+  if (obj.commandDiscordPermissions instanceof Map) {
+    obj.commandDiscordPermissions = Object.fromEntries(obj.commandDiscordPermissions);
   }
   return obj;
 }
