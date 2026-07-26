@@ -1,154 +1,112 @@
-// const { SlashCommandBuilder } = require("discord.js");
-const { Task } = require("@ralevel/db");
-
-// module.exports = {
-//   data: new SlashCommandBuilder()
-//     .setName("mark-tsk-done")
-//     .setDescription(
-//       "Mark a task as completed and select the final designer’s work (mods only)"
-//     )
-//     .addStringOption((o) =>
-//       o
-//         .setName("taskid")
-//         .setDescription("Task ID to complete")
-//         .setRequired(true)
-//     )
-//     .addUserOption((o) =>
-//       o
-//         .setName("selected")
-//         .setDescription(
-//           "Select the designer whose work is chosen (for graphic tasks)"
-//         )
-//         .setRequired(false)
-//     ),
-
-//   async execute(interaction) {
-//     await interaction.deferReply({ ephemeral: true });
-//     const allowedRoles = [process.env.GFX_HEAD_ID, process.env.ADMIN_ROLE_ID];
-//     const hasPermission = interaction.member.roles.cache.some((role) =>
-//       allowedRoles.includes(role.id)
-//     );
-
-//     if (!hasPermission) {
-//       return interaction.reply({
-//         content: "❌ You are not allowed to use this command.",
-//         ephemeral: true,
-//       });
-//     }
-//     const taskId = interaction.options.getString("taskid");
-//     const selectedUser = interaction.options.getUser("selected"); // ⭐ user object
-
-//     const task = await Task.findOne({ taskId });
-
-//     if (!task) return interaction.editReply("❌ Task not found.");
-
-//     // TEAM DETECTION
-//     let team = null;
-//     if (interaction.channelId === process.env.GRAPHIC_CHANNEL) team = "graphic";
-//     else if (interaction.channelId === process.env.DEV_CHANNEL) team = "dev";
-//     else if (interaction.channelId === process.env.WRITER_CHANNEL)
-//       team = "writer";
-//     else
-//       return interaction.editReply("❌ Use this inside a team task channel.");
-
-//     // SET TASK AS COMPLETED
-//     task.status = "completed";
-
-//     // SAVE SELECTED USER BY ID (GRAPHIC ONLY)
-//     if (team === "graphic" && selectedUser) {
-//       task.selected = selectedUser.id; // ⭐ store USER ID
-//     }
-
-//     if (team === "writer" && selectedUser) {
-//       task.selected = selectedUser.id; // ⭐ store USER ID
-//     }
-
-//     await task.save();
-
-//     if (team === "graphic" && selectedUser)
-//       return interaction.editReply(
-//         `✅ **${taskId}** marked as fully completed.\n${
-//           selectedUser ? `⭐ Selected designer: <@${selectedUser.id}>` : ""
-//         }`
-//       );
-
-//     if (team === "writer" && selectedUser)
-//       return interaction.editReply(
-//         `✅ **${taskId}** marked as fully completed.\n${
-//           selectedUser ? `⭐ Selected Writer: <@${selectedUser.id}>` : ""
-//         }`
-//       );
-//   },
-// };
-
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { Task } = require("@ralevel/db");
 const { getTaskTeamFromChannel } = require("../../utils/getTaskTeam");
 
-module.exports = {
-  data: new SlashCommandBuilder()
+const WINNER_OPTION_NAMES = [
+  "selected",
+  "selected2",
+  "selected3",
+  "selected4",
+  "selected5",
+];
+
+function collectWinnerIds(interaction) {
+  const ids = [];
+  for (const name of WINNER_OPTION_NAMES) {
+    const user = interaction.options.getUser(name);
+    if (user && !ids.includes(user.id)) {
+      ids.push(user.id);
+    }
+  }
+  return ids;
+}
+
+function buildCommand() {
+  const builder = new SlashCommandBuilder()
     .setName("mark-tsk-done")
     .setDescription(
-      "Mark a task as completed and select the final designer’s work (mods only)",
+      "Mark a task as completed and select winning submissions (mods only)",
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.PinMessages) // <-- Secures the command!
+    .setDefaultMemberPermissions(PermissionFlagsBits.PinMessages)
     .addStringOption((o) =>
       o
         .setName("taskid")
         .setDescription("Task ID to complete")
         .setRequired(true),
-    )
-    .addUserOption((o) =>
+    );
+
+  const descriptions = [
+    "First winning submission (graphic/writer tasks)",
+    "Second winning submission (graphic/writer tasks)",
+    "Third winning submission (graphic/writer tasks)",
+    "Fourth winning submission (graphic/writer tasks)",
+    "Fifth winning submission (graphic/writer tasks)",
+  ];
+
+  for (let i = 0; i < WINNER_OPTION_NAMES.length; i++) {
+    builder.addUserOption((o) =>
       o
-        .setName("selected")
-        .setDescription(
-          "Select the designer whose work is chosen (for graphic tasks)",
-        )
+        .setName(WINNER_OPTION_NAMES[i])
+        .setDescription(descriptions[i])
         .setRequired(false),
-    ),
+    );
+  }
+
+  return builder;
+}
+
+module.exports = {
+  data: buildCommand(),
 
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
     const taskId = interaction.options.getString("taskid");
-    const selectedUser = interaction.options.getUser("selected"); // ⭐ user object
+    const winnerIds = collectWinnerIds(interaction);
 
     const task = await Task.findOne({ taskId });
 
     if (!task) return interaction.editReply("❌ Task not found.");
 
-    // TEAM DETECTION
     const team = getTaskTeamFromChannel(interaction.channelId);
     if (!team)
       return interaction.editReply("❌ Use this inside a team task channel.");
 
-    // SET TASK AS COMPLETED
-    task.status = "completed";
-
-    // SAVE SELECTED USER BY ID (GRAPHIC ONLY)
-    if (team === "graphic" && selectedUser) {
-      task.selected = selectedUser.id; // ⭐ store USER ID
+    if (team === "graphic" || team === "writer") {
+      const notFinished = winnerIds.filter(
+        (id) => !task.finishedBy.includes(id),
+      );
+      if (notFinished.length) {
+        return interaction.editReply(
+          `❌ These winners have not submitted finished work for **${taskId}**: ${notFinished.map((id) => `<@${id}>`).join(", ")}`,
+        );
+      }
     }
 
-    if (team === "writer" && selectedUser) {
-      task.selected = selectedUser.id; // ⭐ store USER ID
+    task.status = "completed";
+
+    if ((team === "graphic" || team === "writer") && winnerIds.length) {
+      task.selected = winnerIds;
     }
 
     await task.save();
 
-    // DYNAMIC REPLIES
-    if (team === "graphic" && selectedUser) {
+    if (team === "graphic" && winnerIds.length) {
+      const label =
+        winnerIds.length === 1 ? "Selected designer" : "Selected designers";
       return interaction.editReply(
-        `✅ **${taskId}** marked as fully completed.\n⭐ Selected designer: <@${selectedUser.id}>`,
+        `✅ **${taskId}** marked as fully completed.\n⭐ ${label}: ${winnerIds.map((id) => `<@${id}>`).join(", ")}`,
       );
     }
 
-    if (team === "writer" && selectedUser) {
+    if (team === "writer" && winnerIds.length) {
+      const label =
+        winnerIds.length === 1 ? "Selected writer" : "Selected writers";
       return interaction.editReply(
-        `✅ **${taskId}** marked as fully completed.\n⭐ Selected Writer: <@${selectedUser.id}>`,
+        `✅ **${taskId}** marked as fully completed.\n⭐ ${label}: ${winnerIds.map((id) => `<@${id}>`).join(", ")}`,
       );
     }
 
-    // Fallback reply for dev tasks, or tasks where no specific user was selected
     return interaction.editReply(`✅ **${taskId}** marked as fully completed.`);
   },
 };

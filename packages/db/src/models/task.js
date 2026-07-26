@@ -23,7 +23,7 @@ const taskSchema = new mongoose.Schema({
     // FINISHED LINKS (array matching finishedBy)
     finishedLinks: { type: [String], default: [] },
 
-    selected: { type: String, default: null }, // graphic and writer only
+    selected: { type: [String], default: [] }, // graphic and writer only — multiple winners allowed
 
     status: {
         type: String,

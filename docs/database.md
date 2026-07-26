@@ -365,7 +365,7 @@ Staff notes on users (separate from warnings).
 | `assignedTo` | Array | User IDs who claimed |
 | `finishedBy` | Array | User IDs who finished |
 | `finishedLinks` | Array | Submission links |
-| `selected` | String | Selected designer (graphic/writer) |
+| `selected` | Array | Selected winners (graphic/writer) |
 | `status` | String | `open`, `claimed`, or `completed` |
 | `resolution` | String | Graphic: resolution requirement |
 | `fileFormat` | String | Graphic: file format |

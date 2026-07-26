@@ -20,7 +20,7 @@ function baseTask(overrides) {
     createdBy: "verify-script",
     assignedTo: [],
     finishedBy: [],
-    selected: null,
+    selected: [],
     ...overrides,
   };
 }
@@ -36,13 +36,20 @@ const FIXTURES = [
     team: "graphic",
     assignedTo: [TEST_USER_ID],
     finishedBy: [TEST_USER_ID],
-    selected: TEST_USER_ID,
+    selected: [TEST_USER_ID],
   }),
   baseTask({
     taskId: `${TASK_ID_PREFIX}graphic-3`,
     team: "graphic",
     assignedTo: [OTHER_USER_ID],
-    selected: OTHER_USER_ID,
+    selected: [OTHER_USER_ID],
+  }),
+  baseTask({
+    taskId: `${TASK_ID_PREFIX}graphic-4`,
+    team: "graphic",
+    finishedBy: [TEST_USER_ID, OTHER_USER_ID],
+    selected: [TEST_USER_ID, OTHER_USER_ID],
+    status: "completed",
   }),
   baseTask({
     taskId: `${TASK_ID_PREFIX}dev-1`,
@@ -63,7 +70,7 @@ const FIXTURES = [
     taskId: `${TASK_ID_PREFIX}writer-1`,
     team: "writer",
     assignedTo: [TEST_USER_ID],
-    selected: TEST_USER_ID,
+    selected: [TEST_USER_ID],
   }),
   baseTask({
     taskId: `${TASK_ID_PREFIX}writer-2`,
@@ -81,7 +88,14 @@ async function legacyCounts(team, userId) {
     finished: tasks.filter((t) => t.finishedBy.includes(userId)).length,
     utilised:
       team === "graphic" || team === "writer"
-        ? tasks.filter((t) => t.selected === userId).length
+        ? tasks.filter((t) => {
+            const selected = Array.isArray(t.selected)
+              ? t.selected
+              : t.selected
+                ? [t.selected]
+                : [];
+            return selected.includes(userId);
+          }).length
         : 0,
   };
 }

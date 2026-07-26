@@ -126,6 +126,34 @@ async function verifyIndexesExist() {
   );
 }
 
+async function verifyMultiWinnerSelectedQuery() {
+  const TASK_ID = "VERIFY-INDEX-MULTI-WINNER";
+  const userA = "verify-index-user-a";
+  const userB = "verify-index-user-b";
+
+  await Task.deleteOne({ taskId: TASK_ID });
+  await Task.create({
+    taskId: TASK_ID,
+    title: "Multi-winner verify",
+    description: "test",
+    team: "graphic",
+    createdBy: "verify-script",
+    finishedBy: [userA, userB],
+    selected: [userA, userB],
+    status: "completed",
+  });
+
+  const [countA, countB] = await Promise.all([
+    Task.countDocuments({ team: "graphic", taskId: TASK_ID, selected: userA }),
+    Task.countDocuments({ team: "graphic", taskId: TASK_ID, selected: userB }),
+  ]);
+
+  assert(countA === 1, "multi-winner selected query should match userA");
+  assert(countB === 1, "multi-winner selected query should match userB");
+
+  await Task.deleteOne({ taskId: TASK_ID });
+}
+
 async function verifyQueryPlans() {
   const testUserId = "test-user";
 
@@ -196,6 +224,7 @@ async function main() {
 
     await verifyIndexesExist();
     await verifyQueryPlans();
+    await verifyMultiWinnerSelectedQuery();
 
     console.log("✅ database index verification passed");
   } finally {

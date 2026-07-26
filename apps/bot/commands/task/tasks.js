@@ -206,10 +206,16 @@ module.exports = {
         },
       ];
 
-      if (task.selected) {
+      const selectedIds = Array.isArray(task.selected)
+        ? task.selected
+        : task.selected
+          ? [task.selected]
+          : [];
+
+      if (selectedIds.length) {
         fields.push({
           name: "Selected",
-          value: `<@${task.selected}>`,
+          value: selectedIds.map((userId) => `<@${userId}>`).join(", "),
         });
       }
 
