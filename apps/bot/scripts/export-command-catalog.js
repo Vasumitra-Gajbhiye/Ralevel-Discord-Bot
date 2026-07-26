@@ -3,13 +3,19 @@ const path = require("node:path");
 const { PermissionFlagsBits } = require("discord.js");
 
 const commandsRoot = path.resolve(__dirname, "..", "commands");
-const outputPath = path.resolve(
+const generatedDir = path.resolve(
   __dirname,
-  "../../../packages/shared/src/generated/commandCatalog.json",
+  "../../../packages/shared/src/generated",
 );
+const outputPath = path.join(generatedDir, "commandCatalog.json");
+const bitfieldsPath = path.join(generatedDir, "permissionBitfields.json");
 
 const bitToName = Object.fromEntries(
   Object.entries(PermissionFlagsBits).map(([name, bit]) => [String(bit), name]),
+);
+
+const permissionBitfields = Object.fromEntries(
+  Object.entries(PermissionFlagsBits).map(([name, bit]) => [name, String(bit)]),
 );
 
 const commands = [];
@@ -45,10 +51,15 @@ for (const folder of folders) {
 
 commands.sort((a, b) => a.name.localeCompare(b.name));
 
-fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.mkdirSync(generatedDir, { recursive: true });
 fs.writeFileSync(
   outputPath,
   `${JSON.stringify({ generatedAt: new Date().toISOString(), commands }, null, 2)}\n`,
 );
+fs.writeFileSync(
+  bitfieldsPath,
+  `${JSON.stringify({ generatedAt: new Date().toISOString(), bitfields: permissionBitfields }, null, 2)}\n`,
+);
 
 console.log(`Exported ${commands.length} commands to ${outputPath}`);
+console.log(`Exported ${Object.keys(permissionBitfields).length} permission bitfields to ${bitfieldsPath}`);

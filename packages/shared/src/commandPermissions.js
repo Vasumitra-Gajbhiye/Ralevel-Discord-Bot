@@ -1,32 +1,55 @@
 const { DEFAULT_COMMAND_DISCORD_PERMISSIONS } = require("@ralevel/db");
+const { bitfields: GENERATED_PERMISSION_BITFIELDS } = require("./generated/permissionBitfields.json");
+const { commands: CATALOG_COMMANDS } = require("./generated/commandCatalog.json");
 
-const DISCORD_PERMISSION_OPTIONS = [
-  { value: "", label: "Everyone" },
-  { value: "BanMembers", label: "Ban Members" },
-  { value: "ManageMessages", label: "Manage Messages" },
-  { value: "ModerateMembers", label: "Moderate Members" },
-  { value: "ManageRoles", label: "Manage Roles" },
-  { value: "SendMessages", label: "Send Messages" },
-  { value: "ChangeNickname", label: "Change Nickname" },
-  { value: "ManageNicknames", label: "Manage Nicknames" },
-  { value: "ManageChannels", label: "Manage Channels" },
-  { value: "ManageGuild", label: "Manage Server" },
-  { value: "PinMessages", label: "Pin Messages" },
+const PERMISSION_LABELS = {
+  Administrator: "Administrator",
+  BanMembers: "Ban Members",
+  ManageMessages: "Manage Messages",
+  ModerateMembers: "Moderate Members",
+  ManageRoles: "Manage Roles",
+  SendMessages: "Send Messages",
+  ChangeNickname: "Change Nickname",
+  ManageNicknames: "Manage Nicknames",
+  ManageChannels: "Manage Channels",
+  ManageGuild: "Manage Server",
+  PinMessages: "Pin Messages",
+};
+
+const CURATED_PERMISSION_ORDER = [
+  "",
+  "Administrator",
+  "BanMembers",
+  "ManageMessages",
+  "ModerateMembers",
+  "ManageRoles",
+  "SendMessages",
+  "ChangeNickname",
+  "ManageNicknames",
+  "ManageChannels",
+  "ManageGuild",
+  "PinMessages",
 ];
 
-/** Discord PermissionFlagsBits values used by this bot (string for REST API). */
-const PERMISSION_BITFIELDS = {
-  BanMembers: "4",
-  ManageChannels: "16",
-  ManageGuild: "32",
-  SendMessages: "2048",
-  ManageMessages: "8192",
-  ChangeNickname: "67108864",
-  ManageNicknames: "134217728",
-  ManageRoles: "268435456",
-  PinMessages: "1125899906842624",
-  ModerateMembers: "1099511627776",
-};
+function buildPermissionOptions() {
+  const usedInCatalog = new Set(
+    CATALOG_COMMANDS.map((command) => command.fileDefault).filter(Boolean),
+  );
+  const optionValues = new Set([
+    ...CURATED_PERMISSION_ORDER,
+    ...usedInCatalog,
+  ]);
+
+  return [...optionValues].map((value) => ({
+    value,
+    label: value ? PERMISSION_LABELS[value] || value : "Everyone",
+  }));
+}
+
+const DISCORD_PERMISSION_OPTIONS = buildPermissionOptions();
+
+/** Discord PermissionFlagsBits values (string for REST API). */
+const PERMISSION_BITFIELDS = GENERATED_PERMISSION_BITFIELDS;
 
 const BITFIELD_TO_NAME = Object.fromEntries(
   Object.entries(PERMISSION_BITFIELDS).map(([name, bit]) => [bit, name]),
