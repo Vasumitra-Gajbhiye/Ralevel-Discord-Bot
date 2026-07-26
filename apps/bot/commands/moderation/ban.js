@@ -9,6 +9,13 @@ const generateActionId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
 const { getGuildConfig } = require("../../utils/guildConfigStore");
 
+const DELETE_MESSAGE_SECONDS = {
+  "1m": 60,
+  "1h": 3600,
+  "1d": 86400,
+  "7d": 604800,
+};
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ban")
@@ -39,8 +46,6 @@ module.exports = {
           { name: "Past 1 hour", value: "1h" },
           { name: "Past 1 day", value: "1d" },
           { name: "Past 7 days", value: "7d" },
-          { name: "Past 1 month", value: "30d" },
-          { name: "All messages", value: "all" },
         )
         .setRequired(true),
     )
@@ -60,15 +65,7 @@ module.exports = {
         ephemeral: true,
       });
 
-    // Convert delete window → seconds (Discord ban option)
-    const deleteSeconds = {
-      "1m": 60,
-      "1h": 3600,
-      "1d": 86400,
-      "7d": 604800,
-      "30d": 2592000,
-      all: 0,
-    }[deleteMsgs];
+    const deleteSeconds = DELETE_MESSAGE_SECONDS[deleteMsgs];
 
     // DM user
     try {
@@ -95,7 +92,7 @@ module.exports = {
     try {
       await member.ban({
         reason,
-        deleteMessageSeconds: deleteSeconds > 604800 ? 604800 : deleteSeconds, // Discord max 7 days
+        deleteMessageSeconds: deleteSeconds,
       });
     } catch {
       return interaction.editReply({

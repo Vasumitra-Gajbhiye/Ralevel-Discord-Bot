@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T10:13:27.192Z",
+  "generatedAt": "2026-07-26T10:21:06.294Z",
   "commands": [
     {
       "category": "reputation",
@@ -364,14 +364,6 @@
               {
                 "name": "Past 7 days",
                 "value": "7d"
-              },
-              {
-                "name": "Past 1 month",
-                "value": "30d"
-              },
-              {
-                "name": "All messages",
-                "value": "all"
               }
             ],
             "name": "deletemsgs",
