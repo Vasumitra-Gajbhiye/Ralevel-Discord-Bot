@@ -1,5 +1,5 @@
 const { XpBan } = require("@ralevel/db");
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const {
   buildXpProfileEmbed,
   getOrCreateUser,
@@ -8,27 +8,33 @@ const {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("my-xp")
-    .setDescription("Check your XP, rank, and progress."),
+    .setName("xp")
+    .setDescription("Check a member's XP, rank, and progress.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .addUserOption((option) =>
+      option
+        .setName("user")
+        .setDescription("The member whose XP you want to check.")
+        .setRequired(true),
+    ),
 
   async execute(interaction) {
-    const userId = interaction.user.id;
+    const target = interaction.options.getUser("user");
     const guildId = interaction.guild.id;
 
-    const user = await getOrCreateUser(guildId, userId);
+    const user = await getOrCreateUser(guildId, target.id);
     const xp = user.xp ?? 0;
     const totalMessages = user.total_messages ?? 0;
     const serverRank = await getServerRank(guildId, xp);
-    const isBanned = Boolean(await XpBan.exists({ userId }));
+    const isBanned = Boolean(await XpBan.exists({ userId: target.id }));
 
     const embed = buildXpProfileEmbed({
       guild: interaction.guild,
-      targetUser: interaction.user,
+      targetUser: target,
       xp,
       totalMessages,
       serverRank,
       isBanned,
-      selfView: true,
     });
 
     return interaction.reply({ embeds: [embed] });

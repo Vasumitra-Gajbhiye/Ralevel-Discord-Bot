@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T10:26:49.989Z",
+  "generatedAt": "2026-07-26T10:42:12.741Z",
   "commands": [
     {
       "category": "reputation",
@@ -1991,6 +1991,25 @@
     },
     {
       "category": "xp",
+      "name": "xp",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The member whose XP you want to check.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "xp",
+        "description": "Check a member's XP, rank, and progress.",
+        "default_member_permissions": "8192",
+        "type": 1
+      }
+    },
+    {
+      "category": "xp",
       "name": "xp-ban",
       "fileDefault": "Administrator",
       "payload": {
@@ -2011,6 +2030,18 @@
         "name": "xp-ban",
         "description": "Prevent a user from earning XP.",
         "default_member_permissions": "8",
+        "type": 1
+      }
+    },
+    {
+      "category": "xp",
+      "name": "xp-ban-list",
+      "fileDefault": "ManageGuild",
+      "payload": {
+        "options": [],
+        "name": "xp-ban-list",
+        "description": "List all users banned from earning XP.",
+        "default_member_permissions": "32",
         "type": 1
       }
     },

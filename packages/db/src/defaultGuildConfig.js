@@ -242,6 +242,8 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   "set-xp": "Administrator",
   "xp-ban": "Administrator",
   "xp-unban": "Administrator",
+  "xp-ban-list": "ManageGuild",
+  xp: "ManageMessages",
   "my-xp": "",
 };
 
@@ -322,6 +324,8 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   "set-xp": ["admin"],
   "xp-ban": ["admin"],
   "xp-unban": ["admin"],
+  "xp-ban-list": ["admin", "dcHead", "hlpHead", "srHelper", "jrMods"],
+  xp: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   "my-xp": [],
 };
 

@@ -1,4 +1,5 @@
 const { User } = require("@ralevel/db");
+const { EmbedBuilder } = require("discord.js");
 const { getRank, getRanks, handleRanks } = require("../systems/rankSystem");
 const { getRoleId } = require("./guildConfigStore");
 
@@ -74,6 +75,51 @@ async function getServerRank(guildId, xp) {
   return higherCount + 1;
 }
 
+function buildXpProfileEmbed({
+  guild,
+  targetUser,
+  xp,
+  totalMessages,
+  serverRank,
+  isBanned,
+  selfView = false,
+}) {
+  const progress = getRankProgress(xp);
+  const rankName = resolveRankDisplayName(progress.currentRank, guild);
+
+  const embed = new EmbedBuilder()
+    .setTitle(`${targetUser.username}'s XP`)
+    .setThumbnail(targetUser.displayAvatarURL({ size: 128 }))
+    .addFields(
+      { name: "Rank", value: `**${rankName}**`, inline: true },
+      { name: "Total XP", value: xp.toLocaleString(), inline: true },
+      {
+        name: "Messages",
+        value: totalMessages.toLocaleString(),
+        inline: true,
+      },
+      { name: "Server Rank", value: `#${serverRank}`, inline: true },
+      {
+        name: "Progress",
+        value: progress.nextRank
+          ? `${progress.progressBar} ${progress.progressPct}%\n${progress.progressLabel}\n**${progress.xpToNext.toLocaleString()}** XP to next rank`
+          : `🏆 ${progress.progressLabel}`,
+      },
+    )
+    .setColor("#00AEEF")
+    .setTimestamp();
+
+  if (isBanned) {
+    embed.setFooter({
+      text: selfView
+        ? "You are banned from earning XP"
+        : "Banned from earning XP",
+    });
+  }
+
+  return embed;
+}
+
 async function applyXpChange(client, { guildId, userId, newXp }) {
   const user = await getOrCreateUser(guildId, userId);
   const previousXp = user.xp ?? 0;
@@ -94,6 +140,7 @@ async function applyXpChange(client, { guildId, userId, newXp }) {
 
 module.exports = {
   buildProgressBar,
+  buildXpProfileEmbed,
   getNextRank,
   getRankProgress,
   resolveRankDisplayName,

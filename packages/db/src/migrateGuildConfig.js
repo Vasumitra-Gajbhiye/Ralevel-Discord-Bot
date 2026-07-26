@@ -5,6 +5,7 @@ const {
   buildDefaultCertPanel,
   DEFAULT_BAN_MESSAGES,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
+  DEFAULT_COMMAND_PERMISSIONS,
 } = require("./defaultGuildConfig");
 
 const DEFAULT_BAN_APPEAL_APPROVER_ROLE_KEYS = ["admin", "dcHead"];
@@ -37,6 +38,22 @@ function renameCommandPermissionKeys(map) {
   }
 
   return { map: next, changed };
+}
+
+function mergeMissingCommandDefaults(existing, defaults) {
+  const base =
+    existing instanceof Map
+      ? Object.fromEntries(existing.entries())
+      : { ...(existing || {}) };
+  let changed = false;
+
+  for (const [command, value] of Object.entries(defaults)) {
+    if (command in base) continue;
+    base[command] = value;
+    changed = true;
+  }
+
+  return { map: base, changed };
 }
 
 function resolveBanAppealApproverRoleKeys(raw) {
@@ -250,14 +267,32 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     const renamedDiscordPerms = renameCommandPermissionKeys(
       raw.commandDiscordPermissions,
     );
-    if (renamedDiscordPerms.changed) {
-      $set.commandDiscordPermissions = renamedDiscordPerms.map;
+    const discordPerms = renamedDiscordPerms.changed
+      ? renamedDiscordPerms.map
+      : raw.commandDiscordPermissions instanceof Map
+        ? Object.fromEntries(raw.commandDiscordPermissions.entries())
+        : { ...raw.commandDiscordPermissions };
+    const mergedDiscordPerms = mergeMissingCommandDefaults(
+      discordPerms,
+      DEFAULT_COMMAND_DISCORD_PERMISSIONS,
+    );
+    if (renamedDiscordPerms.changed || mergedDiscordPerms.changed) {
+      $set.commandDiscordPermissions = mergedDiscordPerms.map;
     }
   }
 
   const renamedCommandPerms = renameCommandPermissionKeys(raw.commandPermissions);
-  if (renamedCommandPerms.changed) {
-    $set.commandPermissions = renamedCommandPerms.map;
+  const commandPerms = renamedCommandPerms.changed
+    ? renamedCommandPerms.map
+    : raw.commandPermissions instanceof Map
+      ? Object.fromEntries(raw.commandPermissions.entries())
+      : { ...(raw.commandPermissions || {}) };
+  const mergedCommandPerms = mergeMissingCommandDefaults(
+    commandPerms,
+    DEFAULT_COMMAND_PERMISSIONS,
+  );
+  if (renamedCommandPerms.changed || mergedCommandPerms.changed) {
+    $set.commandPermissions = mergedCommandPerms.map;
   }
 
   if (!Object.keys($set).length && !Object.keys($unset).length) {
@@ -341,10 +376,19 @@ function migrateGuildConfigInPlace(doc) {
     changed = true;
   }
 
-  for (const field of ["commandPermissions", "commandDiscordPermissions"]) {
+  for (const [field, defaults] of [
+    ["commandPermissions", DEFAULT_COMMAND_PERMISSIONS],
+    ["commandDiscordPermissions", DEFAULT_COMMAND_DISCORD_PERMISSIONS],
+  ]) {
     const renamed = renameCommandPermissionKeys(doc[field]);
-    if (renamed.changed) {
-      doc[field] = renamed.map;
+    const current = renamed.changed
+      ? renamed.map
+      : doc[field] instanceof Map
+        ? Object.fromEntries(doc[field].entries())
+        : { ...(doc[field] || {}) };
+    const merged = mergeMissingCommandDefaults(current, defaults);
+    if (renamed.changed || merged.changed) {
+      doc[field] = merged.map;
       doc.markModified(field);
       changed = true;
     }
