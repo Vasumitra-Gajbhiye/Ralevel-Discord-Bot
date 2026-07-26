@@ -1,4 +1,5 @@
 const redis = require("../redis");
+const { XpBan } = require("@ralevel/db");
 const { getRoleId, tryGetGuildConfig } = require("../utils/guildConfigStore");
 
 const MESSAGE_KEY_TTL_SEC = 60 * 60 * 72;
@@ -23,6 +24,8 @@ function buildMessageTrackerPipeline(
 async function handleMessageTracker(message) {
   try {
     const userId = message.author.id;
+    if (await XpBan.exists({ userId })) return;
+
     const guildId = message.guild.id;
     const date = getTodayDate();
 

@@ -39,7 +39,8 @@ function filterRankChanges(users) {
     .filter(({ oldRank, newRank }) => oldRank.roleKey !== newRank.roleKey);
 }
 
-async function handleRanks(client, guildId, users) {
+async function handleRanks(client, guildId, users, options = {}) {
+  const { announce = true } = options;
   try {
     const cfg = getGuildConfig();
     if (cfg.features && cfg.features.xpRanks === false) return;
@@ -50,9 +51,10 @@ async function handleRanks(client, guildId, users) {
     const guild = await client.guilds.fetch(guildId);
     const channelKey = cfg.ranks?.levelUpChannelKey || "levelUp";
     const announceChannelId = getChannelId(channelKey);
-    const channel = announceChannelId
-      ? await guild.channels.fetch(announceChannelId).catch(() => null)
-      : null;
+    const channel =
+      announce && announceChannelId
+        ? await guild.channels.fetch(announceChannelId).catch(() => null)
+        : null;
 
     const ALL_RANK_ROLE_IDS = getRanks()
       .map((rank) => resolveRankRoleId(rank))

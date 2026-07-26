@@ -18,6 +18,7 @@ const MODEL_MAP: Record<string, keyof DbModels> = {
   confessionBans: "ConfessionBan",
   reputation: "Reputation",
   repBans: "RepBan",
+  xpBans: "XpBan",
   helpers: "HelperRole",
   qotd: "QotdRotation",
   users: "User",

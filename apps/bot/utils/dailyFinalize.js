@@ -1,5 +1,5 @@
 require("../loadEnv");
-const { connectDB, User } = require("@ralevel/db");
+const { connectDB, User, XpBan } = require("@ralevel/db");
 const redis = require("../redis");
 const handleRanks = require("../systems/rankSystem");
 const { tryGetGuildConfig } = require("./guildConfigStore");
@@ -36,11 +36,13 @@ async function fetchLegacyUserHashes(keys, chunkSize = 50) {
   return result;
 }
 
-function buildUserUpdates(userIds, counts, boosters, userMap, guildId) {
+function buildUserUpdates(userIds, counts, boosters, userMap, guildId, bannedUserIds = new Set()) {
   const operations = [];
   const usersForRanking = [];
 
   for (const userId of userIds) {
+    if (bannedUserIds.has(userId)) continue;
+
     const count = parseInt(counts[userId] || "0", 10);
     const isBooster =
       boosters[userId] === "true" || boosters[userId] === true;
@@ -148,12 +150,18 @@ async function finalize(client) {
       userMap[u._id] = u;
     }
 
+    const xpBans = await XpBan.find({ userId: { $in: userIds } }).select(
+      "userId",
+    );
+    const bannedUserIds = new Set(xpBans.map((ban) => ban.userId));
+
     const { operations, usersForRanking } = buildUserUpdates(
       userIds,
       counts,
       boosters,
       userMap,
-      guildId
+      guildId,
+      bannedUserIds,
     );
 
     if (operations.length > 0) {

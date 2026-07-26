@@ -18,6 +18,7 @@ type CollectionKey =
   | "confessionBans"
   | "reputation"
   | "repBans"
+  | "xpBans"
   | "helpers"
   | "qotd"
   | "users"
@@ -38,6 +39,7 @@ const MODEL_MAP: Record<
     | "ConfessionBan"
     | "Reputation"
     | "RepBan"
+    | "XpBan"
     | "HelperRole"
     | "QotdRotation"
     | "User"
@@ -55,6 +57,7 @@ const MODEL_MAP: Record<
   confessionBans: "ConfessionBan",
   reputation: "Reputation",
   repBans: "RepBan",
+  xpBans: "XpBan",
   helpers: "HelperRole",
   qotd: "QotdRotation",
   users: "User",

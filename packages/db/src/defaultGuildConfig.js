@@ -237,6 +237,12 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   "add-task": "PinMessages",
   "mark-tsk-done": "PinMessages",
   "edit-task": "PinMessages",
+  "add-xp": "Administrator",
+  "subtract-xp": "Administrator",
+  "set-xp": "Administrator",
+  "xp-ban": "Administrator",
+  "xp-unban": "Administrator",
+  "my-xp": "",
 };
 
 /**
@@ -311,6 +317,12 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   "my-progress": ["admin", "gfxHead", "designer", "trialDesigner"],
   mytasks: ["admin", "gfxHead", "designer", "trialDesigner"],
   tasks: ["admin", "gfxHead"],
+  "add-xp": ["admin"],
+  "subtract-xp": ["admin"],
+  "set-xp": ["admin"],
+  "xp-ban": ["admin"],
+  "xp-unban": ["admin"],
+  "my-xp": [],
 };
 
 function parseJsonIdList(raw) {

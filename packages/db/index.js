@@ -3,6 +3,7 @@ const connectDB = require("./src/database");
 const User = require("./src/models/User");
 const Reputation = require("./src/models/reputation");
 const RepBan = require("./src/models/repban");
+const XpBan = require("./src/models/xpban");
 const Sticky = require("./src/models/sticky");
 const StickyLog = require("./src/models/stickyLog");
 const Poll = require("./src/models/poll");
@@ -42,6 +43,7 @@ module.exports = {
   User,
   Reputation,
   RepBan,
+  XpBan,
   Sticky,
   StickyLog,
   Poll,

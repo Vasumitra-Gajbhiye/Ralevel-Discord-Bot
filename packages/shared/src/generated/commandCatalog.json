@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-25T11:26:49.218Z",
+  "generatedAt": "2026-07-26T05:13:48.698Z",
   "commands": [
     {
       "category": "reputation",
@@ -148,6 +148,32 @@
         "name": "add-task",
         "description": "Create a new task",
         "default_member_permissions": "2251799813685248",
+        "type": 1
+      }
+    },
+    {
+      "category": "xp",
+      "name": "add-xp",
+      "fileDefault": "Administrator",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to award XP to.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "min_value": 1,
+            "type": 4,
+            "name": "amount",
+            "description": "Amount of XP to add.",
+            "required": true
+          }
+        ],
+        "name": "add-xp",
+        "description": "Add XP to a user.",
+        "default_member_permissions": "8",
         "type": 1
       }
     },
@@ -967,6 +993,17 @@
       }
     },
     {
+      "category": "xp",
+      "name": "my-xp",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "my-xp",
+        "description": "Check your XP, rank, and progress.",
+        "type": 1
+      }
+    },
+    {
       "category": "task",
       "name": "mytasks",
       "fileDefault": null,
@@ -1432,6 +1469,32 @@
       }
     },
     {
+      "category": "xp",
+      "name": "set-xp",
+      "fileDefault": "Administrator",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to set XP for.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "min_value": 0,
+            "type": 4,
+            "name": "amount",
+            "description": "The new XP amount.",
+            "required": true
+          }
+        ],
+        "name": "set-xp",
+        "description": "Set a user's XP to an exact amount.",
+        "default_member_permissions": "8",
+        "type": 1
+      }
+    },
+    {
       "category": "sethelper",
       "name": "sethelper",
       "fileDefault": "ManageChannels",
@@ -1646,6 +1709,32 @@
       }
     },
     {
+      "category": "xp",
+      "name": "subtract-xp",
+      "fileDefault": "Administrator",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to remove XP from.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "min_value": 1,
+            "type": 4,
+            "name": "amount",
+            "description": "Amount of XP to subtract.",
+            "required": true
+          }
+        ],
+        "name": "subtract-xp",
+        "description": "Subtract XP from a user.",
+        "default_member_permissions": "8",
+        "type": 1
+      }
+    },
+    {
       "category": "task",
       "name": "tasks",
       "fileDefault": null,
@@ -1856,6 +1945,50 @@
         "options": [],
         "name": "website",
         "description": "Get the Link to the r/Alevel website!",
+        "type": 1
+      }
+    },
+    {
+      "category": "xp",
+      "name": "xp-ban",
+      "fileDefault": "Administrator",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to XP-ban.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Optional reason for the XP ban.",
+            "required": false
+          }
+        ],
+        "name": "xp-ban",
+        "description": "Prevent a user from earning XP.",
+        "default_member_permissions": "8",
+        "type": 1
+      }
+    },
+    {
+      "category": "xp",
+      "name": "xp-unban",
+      "fileDefault": "Administrator",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to unban.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "xp-unban",
+        "description": "Allow a user to earn XP again.",
+        "default_member_permissions": "8",
         "type": 1
       }
     }
