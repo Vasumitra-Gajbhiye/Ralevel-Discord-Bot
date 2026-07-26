@@ -1,7 +1,27 @@
 /**
  * Normalizes reputation IdLabel arrays from legacy string[] or partial objects.
  */
-const { buildDefaultCertPanel, DEFAULT_BAN_MESSAGES, DEFAULT_COMMAND_DISCORD_PERMISSIONS } = require("./defaultGuildConfig");
+const {
+  buildDefaultCertPanel,
+  DEFAULT_BAN_MESSAGES,
+  DEFAULT_COMMAND_DISCORD_PERMISSIONS,
+} = require("./defaultGuildConfig");
+
+const DEFAULT_BAN_APPEAL_APPROVER_ROLE_KEYS = ["admin", "dcHead"];
+
+function resolveBanAppealApproverRoleKeys(raw) {
+  const keys = raw?.moderation?.banAppealApproverRoleKeys;
+  if (Array.isArray(keys) && keys.length > 0) return keys;
+
+  const perms = raw?.commandPermissions;
+  const legacy =
+    perms instanceof Map
+      ? perms.get("ban-appeal-approved")
+      : perms?.["ban-appeal-approved"];
+  if (Array.isArray(legacy) && legacy.length > 0) return legacy;
+
+  return [...DEFAULT_BAN_APPEAL_APPROVER_ROLE_KEYS];
+}
 function normalizeIdLabels(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -182,6 +202,11 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     $set["moderation.banMessages"] = { ...DEFAULT_BAN_MESSAGES };
   }
 
+  if (!Array.isArray(raw.moderation?.banAppealApproverRoleKeys)) {
+    $set["moderation.banAppealApproverRoleKeys"] =
+      resolveBanAppealApproverRoleKeys(raw);
+  }
+
   if (
     !raw.commandDiscordPermissions ||
     (raw.commandDiscordPermissions instanceof Map &&
@@ -263,6 +288,14 @@ function migrateGuildConfigInPlace(doc) {
       applicationChannel || process.env.APPLICATION_CHANNEL || "",
     );
     doc.markModified("certificates");
+    changed = true;
+  }
+
+  if (!Array.isArray(doc.moderation?.banAppealApproverRoleKeys)) {
+    doc.moderation = doc.moderation || {};
+    doc.moderation.banAppealApproverRoleKeys =
+      resolveBanAppealApproverRoleKeys(doc);
+    doc.markModified("moderation");
     changed = true;
   }
 

@@ -544,6 +544,7 @@ function buildDefaultGuildConfig(guildId) {
       pingDelayMs: 10000,
     },
     moderation: {
+      banAppealApproverRoleKeys: ["admin", "dcHead"],
       banMessages: { ...DEFAULT_BAN_MESSAGES },
     },
   };

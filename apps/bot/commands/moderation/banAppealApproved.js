@@ -9,6 +9,8 @@ const generateActionId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
 const { getGuildConfig } = require("../../utils/guildConfigStore");
 
+const { memberHasBanAppealApproverRole } = require("../../utils/banAppeals");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ban-appeal-approved")
@@ -29,6 +31,13 @@ module.exports = {
 
   async execute(interaction) {
     await interaction.deferReply();
+
+    if (!memberHasBanAppealApproverRole(interaction.member)) {
+      return interaction.editReply({
+        content: "❌ You do not have permission to use this command.",
+        ephemeral: true,
+      });
+    }
 
     // Use getUser because banned users are not members of the guild
     const user = interaction.options.getUser("user");

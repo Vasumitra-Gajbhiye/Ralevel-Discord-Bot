@@ -185,6 +185,10 @@ const GuildConfigSchema = new mongoose.Schema(
       pingDelayMs: { type: Number, default: 10000 },
     },
     moderation: {
+      banAppealApproverRoleKeys: {
+        type: [String],
+        default: ["admin", "dcHead"],
+      },
       banMessages: {
         appealUrl: { type: String, default: DEFAULT_BAN_MESSAGES.appealUrl },
         banAppealable: {

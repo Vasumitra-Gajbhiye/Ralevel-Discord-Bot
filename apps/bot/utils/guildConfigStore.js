@@ -3,6 +3,8 @@
  * Loaded at bot startup and refreshed by the GuildConfig watcher when Mongo updates.
  */
 
+const { getBanAppealApproverRoleKeys } = require("./banAppeals");
+
 let guildConfig = null;
 
 function setGuildConfig(config) {
@@ -61,6 +63,15 @@ function resolveRoleKeys(keys = [], config = guildConfig) {
  * Allowed Discord role IDs for a slash command. Empty array / missing = public.
  */
 function getCommandAllowedRoleIds(commandName, config = guildConfig) {
+  if (
+    commandName === "ban-appeal-approved" ||
+    commandName === "ban-appeal-rejected"
+  ) {
+    const keys = getBanAppealApproverRoleKeys(config);
+    if (!keys || keys.length === 0) return null;
+    return resolveRoleKeys(keys, config);
+  }
+
   if (!config?.commandPermissions) return null;
   const perms = config.commandPermissions;
   const keys = perms instanceof Map ? perms.get(commandName) : perms[commandName];

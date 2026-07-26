@@ -1,11 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { RolePicker } from "@/components/RolePicker";
 import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
 import { isDraftDirty, useUnsavedChanges } from "@/lib/unsaved-changes";
+
+const BAN_APPEAL_COMMANDS = new Set([
+  "ban-appeal-approved",
+  "ban-appeal-rejected",
+]);
 
 export default function CommandsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
@@ -25,7 +31,9 @@ export default function CommandsPage() {
   const roles = config?.roles ?? [];
 
   const commandNames = useMemo(() => {
-    return Array.from(new Set(Object.keys(permissions))).sort();
+    return Array.from(new Set(Object.keys(permissions)))
+      .filter((cmd) => !BAN_APPEAL_COMMANDS.has(cmd))
+      .sort();
   }, [permissions]);
 
   function setCommandRoles(command: string, keys: string[]) {
@@ -61,6 +69,13 @@ export default function CommandsPage() {
       {status ? <p className="status ok">{status}</p> : null}
 
       <div className="card stack">
+        <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
+          Ban appeal approver roles are managed on{" "}
+          <Link href="/moderation/ban-messages" style={{ color: "var(--accent)" }}>
+            Moderation → Ban messages
+          </Link>
+          .
+        </p>
         <div className="table-wrap">
           <table className="data">
             <thead>
