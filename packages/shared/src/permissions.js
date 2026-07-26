@@ -148,6 +148,7 @@ const commands = {
   "add-task": [admin, gfxHead],
   claim: [admin, gfxHead, designer, trialDesigner],
   "edit-task": [admin, gfxHead],
+  "delete-task": [admin, gfxHead],
   "finished-tsk": [admin, gfxHead, designer, trialDesigner],
   "mark-tsk-done": [admin, gfxHead],
   "my-progress": [admin, gfxHead, designer, trialDesigner],

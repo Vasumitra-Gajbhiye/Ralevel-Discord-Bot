@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T06:12:29.592Z",
+  "generatedAt": "2026-07-26T10:13:27.192Z",
   "commands": [
     {
       "category": "reputation",
@@ -552,6 +552,25 @@
       }
     },
     {
+      "category": "task",
+      "name": "delete-task",
+      "fileDefault": "PinMessages",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "taskid",
+            "description": "Task ID to delete",
+            "required": true
+          }
+        ],
+        "name": "delete-task",
+        "description": "Delete an existing task (mods only)",
+        "default_member_permissions": "2251799813685248",
+        "type": 1
+      }
+    },
+    {
       "category": "moderation",
       "name": "delete-warning",
       "fileDefault": null,
@@ -684,7 +703,13 @@
           },
           {
             "name": "selected",
-            "description": "Selected designer (graphic tasks)",
+            "description": "Add a winning submission (graphic/writer tasks)",
+            "required": false,
+            "type": 6
+          },
+          {
+            "name": "remove_selected",
+            "description": "Remove a winning submission (graphic/writer tasks)",
             "required": false,
             "type": 6
           }
@@ -900,13 +925,37 @@
           },
           {
             "name": "selected",
-            "description": "Select the designer whose work is chosen (for graphic tasks)",
+            "description": "First winning submission (graphic/writer tasks)",
+            "required": false,
+            "type": 6
+          },
+          {
+            "name": "selected2",
+            "description": "Second winning submission (graphic/writer tasks)",
+            "required": false,
+            "type": 6
+          },
+          {
+            "name": "selected3",
+            "description": "Third winning submission (graphic/writer tasks)",
+            "required": false,
+            "type": 6
+          },
+          {
+            "name": "selected4",
+            "description": "Fourth winning submission (graphic/writer tasks)",
+            "required": false,
+            "type": 6
+          },
+          {
+            "name": "selected5",
+            "description": "Fifth winning submission (graphic/writer tasks)",
             "required": false,
             "type": 6
           }
         ],
         "name": "mark-tsk-done",
-        "description": "Mark a task as completed and select the final designer’s work (mods only)",
+        "description": "Mark a task as completed and select winning submissions (mods only)",
         "default_member_permissions": "2251799813685248",
         "type": 1
       }
