@@ -213,6 +213,7 @@ Moderator Reason: ${reason}
         },
 
         { name: "Moderator", value: interaction.user.tag, inline: true },
+        { name: "Reason", value: reason, inline: false },
         { name: "Log ID", value: `\`${actionId}\``, inline: true }
       )
       .setTimestamp();
