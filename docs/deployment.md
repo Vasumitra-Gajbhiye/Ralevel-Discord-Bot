@@ -179,6 +179,34 @@ Requires `TOKEN`, `CLIENT_ID`, `GUILD_ID`.
 
 This registers all commands to the guild specified by `GUILD_ID`. Commands appear immediately.
 
+You can also sync from **Settings → Command visibility → Sync to Discord** in the web dashboard.
+
+### Web dashboard command sync (production)
+
+If the web app is deployed separately from the bot, choose one:
+
+**Option A — copy Discord credentials to web**
+
+Add `TOKEN` and `CLIENT_ID` to the **web** Coolify app (same values as the bot).
+
+**Option B — proxy through bot (recommended)**
+
+On the **bot** app:
+
+```
+SYNC_HTTP_PORT=8787
+INTERNAL_SYNC_SECRET=<long-random-secret>
+```
+
+On the **web** app:
+
+```
+BOT_INTERNAL_SYNC_URL=http://<bot-internal-hostname>:8787
+INTERNAL_SYNC_SECRET=<same-secret>
+```
+
+Use the bot's internal Docker/Coolify service hostname (not a public URL). Do not expose port `8787` publicly.
+
 ---
 
 ## Redeployment process

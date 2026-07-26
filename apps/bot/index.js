@@ -16,6 +16,7 @@ const { handleMessageTracker } = require("./systems/messageTracker");
 const messageRouter = require("./systems/messageRouter");
 const dailyFinalizeSystem = require("./systems/dailyFinalizeSystem");
 const pollSystem = require("./systems/polls");
+const { startCommandSyncServer } = require("./systems/commandSyncServer");
 
 const client = new Client({
   intents: [
@@ -45,6 +46,7 @@ async function start() {
   });
   dailyFinalizeSystem(client);
   pollSystem(client);
+  startCommandSyncServer();
 
   await client.login(process.env.TOKEN);
 }

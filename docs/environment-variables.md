@@ -7,7 +7,9 @@ Every environment variable used by the r/alevel monorepo. Copy `.env.example` to
 - `apps/web` loads root `.env` via `next.config.ts` (`dotenv`); optional overrides in `apps/web/.env.local`
 - Shared between bot and web: `MONGO_URI`, `GUILD_ID`
 - Web-only (Clerk auth): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and Clerk URL redirects (see [Clerk variables](#clerk-web-dashboard-auth))
-- Web + bot (command visibility sync): Discord `TOKEN`, `CLIENT_ID` — required for **Settings → Command visibility → Sync to Discord** and for `scripts/deploy-commands.js`
+- Command visibility sync (**Settings → Command visibility → Sync to Discord**):
+  - **Option A:** set `TOKEN` and `CLIENT_ID` on the **web** deployment (same values as the bot)
+  - **Option B (recommended in production):** keep `TOKEN`/`CLIENT_ID` on the bot only and proxy sync via `BOT_INTERNAL_SYNC_URL` + `INTERNAL_SYNC_SECRET` (see [Command sync proxy](#command-sync-proxy))
 - Bot-only secrets: `REDIS_URL`
 - **Guild settings** (channels, roles, command permissions, feature toggles, etc.) live in MongoDB `GuildConfig`, edited via the web dashboard. Env channel/role IDs are seed/fallback only.
 
@@ -90,6 +92,34 @@ Used in: `scripts/deploy-commands.js`, `systems/dailyFinalizeSystem.js`, `utils/
 | **Example**    | `1127197280651464714`                                 |
 | **Required**   | Deploy and dashboard command-visibility sync |
 | **If missing** | `scripts/deploy-commands.js` and dashboard **Sync to Discord** fail |
+
+---
+
+## Command sync proxy
+
+Use this when the **web** and **bot** run as separate deployments (e.g. two Coolify apps) and you do not want to copy `TOKEN` onto the web server.
+
+| Variable | App | Purpose |
+| -------- | --- | ------- |
+| `SYNC_HTTP_PORT` | Bot | Enables internal HTTP sync server (e.g. `8787`) |
+| `INTERNAL_SYNC_SECRET` | Bot + Web | Shared secret; web sends `Authorization: Bearer <secret>` |
+| `BOT_INTERNAL_SYNC_URL` | Web | Internal URL to bot sync server (e.g. `http://ralevel-bot:8787`) |
+
+**Bot** (already has `TOKEN`, `CLIENT_ID`, `GUILD_ID`):
+
+```
+SYNC_HTTP_PORT=8787
+INTERNAL_SYNC_SECRET=your-long-random-secret
+```
+
+**Web** (does not need `TOKEN` or `CLIENT_ID` for sync):
+
+```
+BOT_INTERNAL_SYNC_URL=http://<bot-service-hostname>:8787
+INTERNAL_SYNC_SECRET=your-long-random-secret
+```
+
+The bot service hostname is the Coolify/Docker internal service name. Do not expose `SYNC_HTTP_PORT` publicly.
 
 ---
 

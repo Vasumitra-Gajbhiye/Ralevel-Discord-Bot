@@ -153,7 +153,9 @@ export default function CommandVisibilityPage() {
 
       <div className="restart-banner">
         Save stores settings in MongoDB. Click <strong>Sync to Discord</strong>{" "}
-        to apply visibility changes in Discord.
+        to apply visibility changes in Discord. In production, the web server
+        needs <code>TOKEN</code> and <code>CLIENT_ID</code>, or a bot sync proxy
+        configured — see <code>docs/environment-variables.md</code>.
       </div>
 
       {error ? <p className="status err">{error}</p> : null}

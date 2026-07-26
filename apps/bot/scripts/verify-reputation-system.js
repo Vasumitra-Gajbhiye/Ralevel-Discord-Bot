@@ -1,5 +1,14 @@
 const { PermissionsBitField } = require("discord.js");
+const { buildDefaultGuildConfig } = require("@ralevel/db");
 const { createBoundedSet } = require("../utils/boundedSet.js");
+const { setGuildConfig } = require("../utils/guildConfigStore");
+
+function setupTestGuildConfig() {
+  const config = buildDefaultGuildConfig("guild1");
+  const beginner = config.roles.find((role) => role.key === "beginner");
+  if (beginner) beginner.roleId = "role-beginner";
+  setGuildConfig(config);
+}
 
 function assert(condition, message) {
   if (!condition) {
@@ -310,7 +319,43 @@ function testBoundedSetEvictsOldest() {
   assert(cache.has("d"), "newest entry should remain");
 }
 
+async function testWelcomeReplyToSelfIsIgnored() {
+  const tracker = createQueryTracker();
+  const reputationSystem = loadReputationWithMocks(tracker);
+  const handleReputationMessage = reputationSystem({});
+
+  let sendCount = 0;
+  const channel = {
+    send: async () => {
+      sendCount += 1;
+    },
+  };
+  const author = createMockMember("user-1");
+
+  await handleReputationMessage({
+    id: "msg-self-np",
+    content: "np",
+    author: { id: "user-1" },
+    reference: { messageId: "prev-msg" },
+    guild: createMockGuild(author),
+    channel,
+    member: author,
+    mentions: { members: new Map() },
+    fetchReference: async () => ({
+      author: { id: "user-1" },
+      member: author,
+    }),
+  });
+
+  assert(sendCount === 0, `expected 0 channel messages, got ${sendCount}`);
+  assert(
+    tracker.counts.reputationFindOneAndUpdate === 0,
+    `expected 0 findOneAndUpdate calls, got ${tracker.counts.reputationFindOneAndUpdate}`
+  );
+}
+
 async function main() {
+  setupTestGuildConfig();
   await testIncrementReputationQueryCount();
   await testIncrementReputationSkipsBannedUser();
   await testIncrementReputationBatchQueryCount();
@@ -318,6 +363,7 @@ async function main() {
   await testEnsureTierRoleUsesPassedRepWithoutDb();
   await testMentionHandlerSendsOneMessage();
   await testDuplicateMessageIsIgnored();
+  await testWelcomeReplyToSelfIsIgnored();
   testBoundedSetEvictsOldest();
 
   console.log("verify-reputation-system: all checks passed");

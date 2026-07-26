@@ -215,6 +215,7 @@ function reputationSystem(client) {
       if (message.reference && hasWholeWord(content, welcomeWords)) {
         const replied = await message.fetchReference().catch(() => null);
         if (!replied) return;
+        if (replied.author.id === message.author.id) return;
 
         const newRep = await incrementReputation(message.author.id);
         if (newRep === null) return;

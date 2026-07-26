@@ -15,6 +15,8 @@ Sign-in is handled by [Clerk](https://clerk.com). Only allowlisted emails can si
 
 Required env vars (repo-root `.env`): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and the Clerk URL redirects — see `docs/environment-variables.md`.
 
+**Command visibility sync in production:** either add `TOKEN` and `CLIENT_ID` to the web deployment, or configure the bot sync proxy (`SYNC_HTTP_PORT`, `BOT_INTERNAL_SYNC_URL`, `INTERNAL_SYNC_SECRET`) — see `docs/environment-variables.md#command-sync-proxy`.
+
 ## Dev
 
 From repo root (with root `.env` containing `MONGO_URI`, `GUILD_ID`, and Clerk keys):
