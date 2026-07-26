@@ -39,8 +39,8 @@ function truncateReason(reason) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("moderation-logs")
-    .setDescription("View moderation logs for a user")
+    .setName("moderation-history")
+    .setDescription("View moderation history for a user")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addUserOption((option) =>
       option.setName("user").setDescription("Target user").setRequired(true),
@@ -91,7 +91,7 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle(`📚 Moderation Logs — ${user.tag}`)
+        .setTitle(`📚 Moderation History — ${user.tag}`)
         .setColor("Blue")
         .setFooter({
           text: `Page ${page + 1} / ${totalPages} • ${totalLogs} total logs`,
@@ -146,7 +146,7 @@ module.exports = {
     const row = new ActionRowBuilder().addComponents(prevBtn, nextBtn);
 
     const replyMsg = await interaction.editReply({
-      content: `Showing moderation logs for **${user.tag}** — page ${page + 1} of ${totalPages}.`,
+      content: `Showing moderation history for **${user.tag}** — page ${page + 1} of ${totalPages}.`,
       embeds: [embed],
       components: [row],
       fetchReply: true,
@@ -184,7 +184,7 @@ module.exports = {
       const newRow = new ActionRowBuilder().addComponents(prevBtn, nextBtn);
 
       await btnInt.update({
-        content: `Showing moderation logs for **${user.tag}** — page ${page + 1} of ${totalPages}.`,
+        content: `Showing moderation history for **${user.tag}** — page ${page + 1} of ${totalPages}.`,
         embeds: [newEmbed],
         components: [newRow],
       });

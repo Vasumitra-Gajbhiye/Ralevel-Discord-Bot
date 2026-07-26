@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T10:21:06.294Z",
+  "generatedAt": "2026-07-26T10:26:49.989Z",
   "commands": [
     {
       "category": "reputation",
@@ -954,7 +954,7 @@
     },
     {
       "category": "moderation",
-      "name": "moderation-logs",
+      "name": "moderation-history",
       "fileDefault": "ManageMessages",
       "payload": {
         "options": [
@@ -965,8 +965,8 @@
             "type": 6
           }
         ],
-        "name": "moderation-logs",
-        "description": "View moderation logs for a user",
+        "name": "moderation-history",
+        "description": "View moderation history for a user",
         "default_member_permissions": "8192",
         "type": 1
       }

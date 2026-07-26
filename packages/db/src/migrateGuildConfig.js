@@ -9,6 +9,36 @@ const {
 
 const DEFAULT_BAN_APPEAL_APPROVER_ROLE_KEYS = ["admin", "dcHead"];
 
+const RENAMED_COMMAND_PERMISSION_KEYS = {
+  "moderation-logs": "moderation-history",
+};
+
+function renameCommandPermissionKeys(map) {
+  if (!map || typeof map !== "object") return { map, changed: false };
+
+  let changed = false;
+  const next =
+    map instanceof Map ? new Map(map.entries()) : { ...map };
+
+  for (const [from, to] of Object.entries(RENAMED_COMMAND_PERMISSION_KEYS)) {
+    const hasFrom = map instanceof Map ? map.has(from) : from in map;
+    const hasTo = map instanceof Map ? map.has(to) : to in map;
+    if (!hasFrom || hasTo) continue;
+
+    const value = map instanceof Map ? map.get(from) : map[from];
+    if (map instanceof Map) {
+      next.set(to, value);
+      next.delete(from);
+    } else {
+      next[to] = value;
+      delete next[from];
+    }
+    changed = true;
+  }
+
+  return { map: next, changed };
+}
+
 function resolveBanAppealApproverRoleKeys(raw) {
   const keys = raw?.moderation?.banAppealApproverRoleKeys;
   if (Array.isArray(keys) && keys.length > 0) return keys;
@@ -216,6 +246,18 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
       Object.keys(raw.commandDiscordPermissions).length === 0)
   ) {
     $set.commandDiscordPermissions = { ...DEFAULT_COMMAND_DISCORD_PERMISSIONS };
+  } else {
+    const renamedDiscordPerms = renameCommandPermissionKeys(
+      raw.commandDiscordPermissions,
+    );
+    if (renamedDiscordPerms.changed) {
+      $set.commandDiscordPermissions = renamedDiscordPerms.map;
+    }
+  }
+
+  const renamedCommandPerms = renameCommandPermissionKeys(raw.commandPermissions);
+  if (renamedCommandPerms.changed) {
+    $set.commandPermissions = renamedCommandPerms.map;
   }
 
   if (!Object.keys($set).length && !Object.keys($unset).length) {
@@ -297,6 +339,15 @@ function migrateGuildConfigInPlace(doc) {
       resolveBanAppealApproverRoleKeys(doc);
     doc.markModified("moderation");
     changed = true;
+  }
+
+  for (const field of ["commandPermissions", "commandDiscordPermissions"]) {
+    const renamed = renameCommandPermissionKeys(doc[field]);
+    if (renamed.changed) {
+      doc[field] = renamed.map;
+      doc.markModified(field);
+      changed = true;
+    }
   }
 
   return changed;

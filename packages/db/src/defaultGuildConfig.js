@@ -207,7 +207,7 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   pin: "ManageMessages",
   unpin: "ManageMessages",
   warnings: "ManageMessages",
-  "moderation-logs": "ManageMessages",
+  "moderation-history": "ManageMessages",
   poll: "ManageMessages",
   "qotd-status": "ManageMessages",
   "add-sticky": "ManageMessages",
@@ -262,7 +262,7 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   "lock-status": ["admin", "dcHead", "srMods", "jrMods"],
   lock: ["admin", "dcHead", "srMods", "jrMods"],
   "moderator-logs": ["admin", "dcHead", "srMods", "ialAgent"],
-  "moderation-logs": [
+  "moderation-history": [
     "admin",
     "dcHead",
     "srMods",
