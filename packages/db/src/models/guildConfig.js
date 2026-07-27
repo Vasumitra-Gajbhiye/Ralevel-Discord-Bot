@@ -138,6 +138,8 @@ const GuildConfigSchema = new mongoose.Schema(
       levelUpChannelKey: { type: String, default: "levelUp" },
       boosterRoleKey: { type: String, default: "booster" },
       boosterMultiplier: { type: Number, default: 2 },
+      disabledChannels: { type: [IdLabelSchema], default: [] },
+      disabledCategories: { type: [IdLabelSchema], default: [] },
     },
     schedules: {
       finalizeHourIst: { type: Number, default: 6 },

@@ -22,6 +22,8 @@ export type GuildConfigData = {
     levelUpChannelKey: string;
     boosterRoleKey: string;
     boosterMultiplier: number;
+    disabledChannels: { id: string; label: string }[];
+    disabledCategories: { id: string; label: string }[];
   };
   schedules: { finalizeHourIst: number; qotdHourIst: number };
   welcome: {

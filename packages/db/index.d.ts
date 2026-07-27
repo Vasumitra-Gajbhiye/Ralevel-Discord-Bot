@@ -34,6 +34,9 @@ export declare function normalizeIdLabels(
 export declare function normalizeReputationIdLabels(
   reputation: Record<string, unknown> | null | undefined,
 ): Record<string, unknown>;
+export declare function normalizeRanksIdLabels(
+  ranks: Record<string, unknown> | null | undefined,
+): Record<string, unknown>;
 export declare function migrateRankLadder(
   roles: { key: string; label: string; roleId: string }[] | null | undefined,
   ladder: unknown,

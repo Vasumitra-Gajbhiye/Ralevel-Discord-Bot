@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { AddRankModal } from "@/components/AddRankModal";
+import { CategoryIdPicker } from "@/components/CategoryIdPicker";
+import { ChannelIdPicker } from "@/components/ChannelIdPicker";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
@@ -91,7 +93,7 @@ export default function RanksPage() {
     <>
       <PageHeader
         title="XP / Ranks"
-        description="XP ladder roles, booster multiplier, and level-up channel key."
+        description="XP ladder roles, booster multiplier, level-up channel key, and channel exclusions."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -206,6 +208,44 @@ export default function RanksPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="card stack">
+        <h3 style={{ margin: 0, fontSize: "1rem" }}>Channels & categories</h3>
+        <div className="stack" style={{ gap: "0.75rem" }}>
+          <div>
+            <h4 style={{ margin: 0, fontSize: "0.95rem" }}>Disabled channels</h4>
+            <p
+              className="muted"
+              style={{ fontSize: "0.85rem", margin: "0.25rem 0 0.5rem" }}
+            >
+              XP is not awarded in these channels.
+            </p>
+            <ChannelIdPicker
+              channels={config?.channels ?? []}
+              selected={ranks.disabledChannels ?? []}
+              onChange={(disabledChannels) =>
+                setDraft({ ...ranks, disabledChannels })
+              }
+            />
+          </div>
+          <div>
+            <h4 style={{ margin: 0, fontSize: "0.95rem" }}>Disabled categories</h4>
+            <p
+              className="muted"
+              style={{ fontSize: "0.85rem", margin: "0.25rem 0 0.5rem" }}
+            >
+              XP is not awarded in channels under these categories.
+            </p>
+            <CategoryIdPicker
+              categories={config?.categories ?? []}
+              selected={ranks.disabledCategories ?? []}
+              onChange={(disabledCategories) =>
+                setDraft({ ...ranks, disabledCategories })
+              }
+            />
+          </div>
         </div>
       </div>
 

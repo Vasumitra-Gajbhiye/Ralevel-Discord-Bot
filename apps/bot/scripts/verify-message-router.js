@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { Events } = require("discord.js");
 const messageRouter = require("../systems/messageRouter");
+const { setGuildConfig, tryGetGuildConfig } = require("../utils/guildConfigStore");
 
 function assert(condition, message) {
   if (!condition) {
@@ -236,6 +237,165 @@ function testIsReputationDisabledHelper() {
   }
 }
 
+async function withGuildConfig(config, fn) {
+  const original = tryGetGuildConfig();
+  setGuildConfig(config);
+  try {
+    await fn();
+  } finally {
+    setGuildConfig(original);
+  }
+}
+
+async function testXpSkippedInDisabledChannel() {
+  await withGuildConfig(
+    {
+      ranks: {
+        disabledChannels: [{ id: "xp-disabled-channel", label: "Staff" }],
+        disabledCategories: [],
+      },
+    },
+    async () => {
+      const client = createMockClient();
+      const calls = { tracker: 0, sticky: 0, reputation: 0 };
+
+      messageRouter(client, {
+        handleMessageTracker: async () => {
+          calls.tracker += 1;
+        },
+        handleSticky: async () => {
+          calls.sticky += 1;
+        },
+        handleReputation: async () => {
+          calls.reputation += 1;
+        },
+      });
+
+      await client.emitMessageCreate(
+        createGuildMessage({ channelId: "xp-disabled-channel" })
+      );
+
+      assert(calls.tracker === 0, "tracker should be skipped in XP disabled channel");
+      assert(calls.sticky === 1, "sticky should still run in XP disabled channel");
+      assert(
+        calls.reputation === 1,
+        "reputation should still run in XP disabled channel"
+      );
+    }
+  );
+}
+
+async function testXpSkippedInDisabledCategory() {
+  await withGuildConfig(
+    {
+      ranks: {
+        disabledChannels: [],
+        disabledCategories: [{ id: "xp-disabled-category", label: "Off-topic" }],
+      },
+    },
+    async () => {
+      const client = createMockClient();
+      const calls = { tracker: 0, sticky: 0, reputation: 0 };
+
+      messageRouter(client, {
+        handleMessageTracker: async () => {
+          calls.tracker += 1;
+        },
+        handleSticky: async () => {
+          calls.sticky += 1;
+        },
+        handleReputation: async () => {
+          calls.reputation += 1;
+        },
+      });
+
+      await client.emitMessageCreate(
+        createGuildMessage({
+          channelId: "ok-channel",
+          parentId: "xp-disabled-category",
+        })
+      );
+
+      assert(calls.tracker === 0, "tracker should be skipped in XP disabled category");
+      assert(calls.sticky === 1, "sticky should still run in XP disabled category");
+      assert(
+        calls.reputation === 1,
+        "reputation should still run in XP disabled category"
+      );
+    }
+  );
+}
+
+async function testXpStillRunsInNormalChannel() {
+  await withGuildConfig(
+    {
+      ranks: {
+        disabledChannels: [{ id: "xp-disabled-channel", label: "Staff" }],
+        disabledCategories: [{ id: "xp-disabled-category", label: "Off-topic" }],
+      },
+    },
+    async () => {
+      const client = createMockClient();
+      const calls = { tracker: 0, sticky: 0, reputation: 0 };
+
+      messageRouter(client, {
+        handleMessageTracker: async () => {
+          calls.tracker += 1;
+        },
+        handleSticky: async () => {
+          calls.sticky += 1;
+        },
+        handleReputation: async () => {
+          calls.reputation += 1;
+        },
+      });
+
+      await client.emitMessageCreate(
+        createGuildMessage({ channelId: "ok-channel", parentId: "ok-category" })
+      );
+
+      assert(calls.tracker === 1, "tracker should run in normal channel");
+      assert(calls.reputation === 1, "reputation should run in normal channel");
+    }
+  );
+}
+
+function testIsXpDisabledHelper() {
+  const { isXpDisabled: checkDisabled } = require("../systems/messageRouter");
+  const original = tryGetGuildConfig();
+
+  setGuildConfig({
+    ranks: {
+      disabledChannels: [{ id: "xp-disabled-channel", label: "" }],
+      disabledCategories: [{ id: "xp-disabled-category", label: "" }],
+    },
+  });
+
+  try {
+    assert(
+      checkDisabled(createGuildMessage({ channelId: "xp-disabled-channel" })),
+      "XP disabled channel should be detected"
+    );
+    assert(
+      checkDisabled(
+        createGuildMessage({
+          channelId: "ok-channel",
+          parentId: "xp-disabled-category",
+        })
+      ),
+      "XP disabled category should be detected"
+    );
+    assert(
+      !checkDisabled(
+        createGuildMessage({ channelId: "ok-channel", parentId: "ok-category" })
+      ),
+      "normal channel should not be XP disabled"
+    );
+  } finally {
+    setGuildConfig(original);
+  }
+}
+
 async function main() {
   testNoStrayMessageCreateRegistrations();
   await testSingleListenerRegistration();
@@ -243,6 +403,10 @@ async function main() {
   await testReputationSkippedInDisabledChannel();
   await testReputationSkippedInStaffChannel();
   testIsReputationDisabledHelper();
+  await testXpSkippedInDisabledChannel();
+  await testXpSkippedInDisabledCategory();
+  await testXpStillRunsInNormalChannel();
+  testIsXpDisabledHelper();
 
   console.log("verify-message-router: all checks passed");
 }

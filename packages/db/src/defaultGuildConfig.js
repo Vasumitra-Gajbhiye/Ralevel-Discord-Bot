@@ -460,6 +460,8 @@ function buildDefaultGuildConfig(guildId) {
       levelUpChannelKey: "levelUp",
       boosterRoleKey: "booster",
       boosterMultiplier: 2,
+      disabledChannels: [],
+      disabledCategories: [],
     },
     schedules: {
       finalizeHourIst: 6,

@@ -7,20 +7,24 @@ function toIds(list) {
     .filter(Boolean);
 }
 
+function isDisabledInLists(message, disabledChannels, disabledCategories) {
+  const channelIds = toIds(disabledChannels);
+  const categoryIds = toIds(disabledCategories);
+  if (channelIds.includes(message.channel.id)) return true;
+  if (
+    message.channel.parentId &&
+    categoryIds.includes(message.channel.parentId)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function isReputationDisabled(message) {
   const cfg = tryGetGuildConfig();
   if (cfg?.reputation) {
     const { disabledChannels = [], disabledCategories = [] } = cfg.reputation;
-    const channelIds = toIds(disabledChannels);
-    const categoryIds = toIds(disabledCategories);
-    if (channelIds.includes(message.channel.id)) return true;
-    if (
-      message.channel.parentId &&
-      categoryIds.includes(message.channel.parentId)
-    ) {
-      return true;
-    }
-    return false;
+    return isDisabledInLists(message, disabledChannels, disabledCategories);
   }
 
   // Env fallback (verify scripts / pre-config)
@@ -37,6 +41,14 @@ function isReputationDisabled(message) {
   return false;
 }
 
+function isXpDisabled(message) {
+  const cfg = tryGetGuildConfig();
+  if (!cfg?.ranks) return false;
+
+  const { disabledChannels = [], disabledCategories = [] } = cfg.ranks;
+  return isDisabledInLists(message, disabledChannels, disabledCategories);
+}
+
 module.exports = function messageRouter(client, handlers) {
   const { handleMessageTracker, handleSticky, handleReputation } = handlers;
 
@@ -44,7 +56,11 @@ module.exports = function messageRouter(client, handlers) {
     if (message.author.bot || !message.guild) return;
 
     const cfg = tryGetGuildConfig();
-    const tasks = [handleMessageTracker(message)];
+    const tasks = [];
+
+    if (!isXpDisabled(message)) {
+      tasks.push(handleMessageTracker(message));
+    }
 
     if (!cfg?.features || cfg.features.sticky !== false) {
       tasks.push(handleSticky(message));
@@ -62,3 +78,4 @@ module.exports = function messageRouter(client, handlers) {
 };
 
 module.exports.isReputationDisabled = isReputationDisabled;
+module.exports.isXpDisabled = isXpDisabled;

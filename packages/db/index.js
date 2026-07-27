@@ -35,6 +35,7 @@ const {
   migrateGuildConfigInPlace,
   normalizeIdLabels,
   normalizeReputationIdLabels,
+  normalizeRanksIdLabels,
   migrateRankLadder,
   normalizeRanksConfig,
 } = require("./src/migrateGuildConfig");
@@ -73,6 +74,7 @@ module.exports = {
   migrateGuildConfigInPlace,
   normalizeIdLabels,
   normalizeReputationIdLabels,
+  normalizeRanksIdLabels,
   migrateRankLadder,
   normalizeRanksConfig,
 };

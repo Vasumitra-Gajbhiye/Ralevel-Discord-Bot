@@ -186,18 +186,46 @@ function ranksLadderNeedMigration(ranks) {
   });
 }
 
+function normalizeRanksIdLabels(ranks) {
+  if (!ranks || typeof ranks !== "object") return ranks;
+
+  return {
+    ...ranks,
+    disabledChannels: normalizeIdLabels(ranks.disabledChannels),
+    disabledCategories: normalizeIdLabels(ranks.disabledCategories),
+  };
+}
+
+function ranksIdLabelsNeedMigration(ranks) {
+  if (!ranks || typeof ranks !== "object") return false;
+
+  for (const key of ["disabledChannels", "disabledCategories"]) {
+    const arr = ranks[key];
+    if (!Array.isArray(arr)) continue;
+    for (const item of arr) {
+      if (typeof item === "string") return true;
+      if (!item || typeof item !== "object" || !item.id) return true;
+    }
+  }
+
+  return false;
+}
+
 function normalizeRanksConfig(roles, ranks) {
   if (!ranks || typeof ranks !== "object") {
     return { roles: roles || [], ranks };
   }
-  if (!ranksLadderNeedMigration(ranks)) {
-    return { roles: roles || [], ranks };
+
+  const normalizedRanks = normalizeRanksIdLabels(ranks);
+
+  if (!ranksLadderNeedMigration(normalizedRanks)) {
+    return { roles: roles || [], ranks: normalizedRanks };
   }
 
-  const migrated = migrateRankLadder(roles, ranks.ladder);
+  const migrated = migrateRankLadder(roles, normalizedRanks.ladder);
   return {
     roles: migrated.roles,
-    ranks: { ...ranks, ladder: migrated.ladder },
+    ranks: { ...normalizedRanks, ladder: migrated.ladder },
   };
 }
 
@@ -233,7 +261,12 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
   if (ranksLadderNeedMigration(raw.ranks)) {
     const migrated = migrateRankLadder(raw.roles, raw.ranks.ladder);
     $set.roles = migrated.roles;
-    $set.ranks = { ...raw.ranks, ladder: migrated.ladder };
+    $set.ranks = normalizeRanksIdLabels({
+      ...raw.ranks,
+      ladder: migrated.ladder,
+    });
+  } else if (ranksIdLabelsNeedMigration(raw.ranks)) {
+    $set.ranks = normalizeRanksIdLabels(raw.ranks);
   }
 
   if (!raw.certificates?.panel) {
@@ -350,8 +383,15 @@ function migrateGuildConfigInPlace(doc) {
   if (ranksLadderNeedMigration(doc.ranks)) {
     const migrated = migrateRankLadder(doc.roles, doc.ranks.ladder);
     doc.roles = migrated.roles;
-    doc.ranks = { ...doc.ranks, ladder: migrated.ladder };
+    doc.ranks = normalizeRanksIdLabels({
+      ...doc.ranks,
+      ladder: migrated.ladder,
+    });
     doc.markModified("roles");
+    doc.markModified("ranks");
+    changed = true;
+  } else if (ranksIdLabelsNeedMigration(doc.ranks)) {
+    doc.ranks = normalizeRanksIdLabels(doc.ranks);
     doc.markModified("ranks");
     changed = true;
   }
@@ -402,6 +442,7 @@ module.exports = {
   migrateGuildConfigInPlace,
   normalizeIdLabels,
   normalizeReputationIdLabels,
+  normalizeRanksIdLabels,
   migrateRankLadder,
   normalizeRanksConfig,
 };
