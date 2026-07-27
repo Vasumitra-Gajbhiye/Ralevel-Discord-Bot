@@ -18,7 +18,7 @@ module.exports = {
 Commands are:
 
 1. **Loaded at runtime** by `systems/commands.js` (scans `commands/` on startup)
-2. **Registered with Discord** via `scripts/deploy-commands.js` (run manually after changes) or **Settings → Command visibility → Sync to Discord** in the web dashboard
+2. **Registered with Discord** automatically on bot startup (or manually via `scripts/deploy-commands.js` / **Settings → Command visibility → Sync to Discord**)
 
 There are no prefix commands. All user commands are slash commands.
 
@@ -196,7 +196,9 @@ const HIERARCHY_ROLE_OPTIONS = {
 
 ### 5. Deploy to Discord
 
-Restart the bot (or let nodemon restart), then register the command with Discord:
+Restart the bot (or let nodemon restart). Slash commands are **registered automatically on bot startup** — the catalog is exported and guild commands are synced to Discord using saved visibility overrides from MongoDB.
+
+You can still register manually if needed:
 
 ```bash
 node scripts/deploy-commands.js
@@ -204,19 +206,15 @@ node scripts/deploy-commands.js
 
 Or use **Settings → Command visibility → Sync to Discord** in the web dashboard after saving visibility settings.
 
-After adding or changing a command definition, regenerate the dashboard catalog:
-
-```bash
-pnpm export-command-catalog
-```
+The command catalog is regenerated automatically during `pnpm build`, bot `prestart`, and every bot startup. You only need to run `pnpm export-command-catalog` manually when working on the catalog file itself without restarting the bot.
 
 Requires `TOKEN`, `CLIENT_ID`, and `GUILD_ID` in `.env`.
 
-Expected output:
+Expected startup log:
 
 ```
-Started refreshing 73 application (/) commands.
-Successfully reloaded 73 application (/) commands.
+[command-catalog] Exported 73 commands.
+[deploy-commands] Registered 73 guild slash commands.
 ```
 
 Commands appear in Discord immediately (guild-scoped, not global).
@@ -306,11 +304,11 @@ Before opening a PR with a new command:
 - [ ] File in correct `commands/<category>/` folder
 - [ ] Exports `data` (SlashCommandBuilder) and `execute`
 - [ ] Slash name is lowercase and matches permissions.config key exactly
-- [ ] Role restrictions added to `permissions.config.js` (if restricted)
+- [ ] Role restrictions added to `DEFAULT_COMMAND_PERMISSIONS` in `packages/db/src/defaultGuildConfig.js` (if restricted — used as initial defaults for new commands)
 - [ ] Hierarchy mapping added to `systems/commands.js` (if moderation)
-- [ ] Discord permission bits set (if should be hidden from non-mods)
-- [ ] Ran `pnpm export-command-catalog` if command metadata changed
-- [ ] Ran `node scripts/deploy-commands.js` or synced from **Settings → Command visibility**
+- [ ] Discord permission bits set on the SlashCommandBuilder (if should be hidden from non-mods)
+- [ ] Restart bot — catalog export and Discord registration happen automatically
+- [ ] Confirm new command appears on **Settings → Commands** and **Settings → Command visibility**
 - [ ] Tested in dev guild with allowed and denied roles
 - [ ] Error handling for missing DB records, invalid input, etc.
 

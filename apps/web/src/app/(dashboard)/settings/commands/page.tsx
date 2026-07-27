@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { RolePicker } from "@/components/RolePicker";
 import { SaveActions } from "@/components/SaveActions";
@@ -13,41 +13,108 @@ const BAN_APPEAL_COMMANDS = new Set([
   "ban-appeal-rejected",
 ]);
 
+type CatalogCommand = {
+  name: string;
+};
+
+function buildPermissionsToSave(
+  catalogNames: string[],
+  current: Record<string, string[]>,
+  saved: Record<string, string[]>,
+) {
+  const catalogSet = new Set(catalogNames);
+  const merged = { ...saved };
+
+  for (const cmd of catalogNames) {
+    merged[cmd] = current[cmd] ?? saved[cmd] ?? [];
+  }
+
+  for (const key of Object.keys(merged)) {
+    if (!catalogSet.has(key) && !BAN_APPEAL_COMMANDS.has(key)) {
+      delete merged[key];
+    }
+  }
+
+  return merged;
+}
+
 export default function CommandsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<Record<string, string[]> | null>(null);
+  const [catalog, setCatalog] = useState<CatalogCommand[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
 
   const savedPermissions = useMemo(
     () => config?.commandPermissions ?? {},
     [config?.commandPermissions],
   );
-  const permissions = draft ?? savedPermissions;
+
+  const loadCatalog = useCallback(async () => {
+    setCatalogLoading(true);
+    setCatalogError(null);
+    try {
+      const res = await fetch("/api/commands/catalog");
+      if (!res.ok) throw new Error(await res.text());
+      const data = (await res.json()) as { commands: CatalogCommand[] };
+      setCatalog(data.commands);
+    } catch (e) {
+      setCatalogError(e instanceof Error ? e.message : "Failed to load catalog");
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
+
+  const commandNames = useMemo(() => {
+    return catalog
+      .map((cmd) => cmd.name)
+      .filter((cmd) => !BAN_APPEAL_COMMANDS.has(cmd))
+      .sort();
+  }, [catalog]);
+
+  const permissions = useMemo(() => {
+    const base = draft ?? savedPermissions;
+    const merged = { ...base };
+    for (const cmd of commandNames) {
+      if (!(cmd in merged)) {
+        merged[cmd] = savedPermissions[cmd] ?? [];
+      }
+    }
+    return merged;
+  }, [draft, savedPermissions, commandNames]);
+
+  const normalizedSaved = useMemo(() => {
+    const merged = { ...savedPermissions };
+    for (const cmd of commandNames) {
+      if (!(cmd in merged)) {
+        merged[cmd] = [];
+      }
+    }
+    return merged;
+  }, [savedPermissions, commandNames]);
 
   const isDirty = useMemo(
-    () => isDraftDirty(draft, savedPermissions),
-    [draft, savedPermissions],
+    () => isDraftDirty(draft, normalizedSaved),
+    [draft, normalizedSaved],
   );
 
   const roles = config?.roles ?? [];
-
-  const commandNames = useMemo(() => {
-    return Array.from(new Set(Object.keys(permissions)))
-      .filter((cmd) => !BAN_APPEAL_COMMANDS.has(cmd))
-      .sort();
-  }, [permissions]);
 
   function setCommandRoles(command: string, keys: string[]) {
     setDraft({ ...permissions, [command]: keys });
   }
 
-  function addCommand() {
-    const name = prompt("Slash command name (must match Discord setName):");
-    if (!name?.trim()) return;
-    setDraft({ ...permissions, [name.trim()]: [] });
-  }
-
   async function onSave() {
-    await save({ commandPermissions: permissions });
+    const nextPermissions = buildPermissionsToSave(
+      commandNames,
+      permissions,
+      savedPermissions,
+    );
+    await save({ commandPermissions: nextPermissions });
     setDraft(null);
   }
 
@@ -56,7 +123,7 @@ export default function CommandsPage() {
     onDiscard: () => setDraft(null),
   });
 
-  if (loading) return <p className="muted">Loading…</p>;
+  if (loading || catalogLoading) return <p className="muted">Loading…</p>;
 
   return (
     <>
@@ -66,6 +133,7 @@ export default function CommandsPage() {
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
+      {catalogError ? <p className="status err">{catalogError}</p> : null}
       {status ? <p className="status ok">{status}</p> : null}
 
       <div className="card stack">
@@ -74,7 +142,7 @@ export default function CommandsPage() {
           <Link href="/moderation/ban-messages" style={{ color: "var(--accent)" }}>
             Moderation → Ban messages
           </Link>
-          .
+          . Commands are synced from the bot catalog automatically.
         </p>
         <div className="table-wrap">
           <table className="data">
@@ -100,10 +168,7 @@ export default function CommandsPage() {
             </tbody>
           </table>
         </div>
-        <div className="row row-between">
-          <button type="button" className="btn" onClick={addCommand}>
-            Add command
-          </button>
+        <div className="row row-end">
           <SaveActions
             saveBarRef={saveBarRef}
             isDirty={isDirty}

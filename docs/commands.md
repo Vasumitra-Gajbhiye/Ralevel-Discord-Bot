@@ -335,9 +335,12 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 |---|---|
 | **File** | `commands/moderation/poll.js` |
 | **Description** | Create and manage server polls |
+| **Subcommands** | `create`, `breakdown` |
 | **Discord permissions** | `ManageMessages` |
 | **Role access** | admin, dcHead, generalStaff, srMods, jrMods, trialMods |
 | **Dependencies** | `Poll`, `PollVote` models, `systems/polls.js` |
+
+**Discord UI note:** `/poll` uses subcommands, so Discord’s slash picker may list them as `/poll create` and `/poll breakdown` (sometimes shown as `poll-create` / `poll-breakdown`). There is no standalone `/poll` without a subcommand — that is expected.
 
 ### `/purge`
 

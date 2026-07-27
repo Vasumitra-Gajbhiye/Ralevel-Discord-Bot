@@ -4,6 +4,7 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "turbo run dev",
+    "prebuild": "pnpm export-command-catalog",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint",
@@ -11,7 +12,7 @@
     "dev:web": "turbo run dev --filter=@ralevel/web",
     "start:bot": "turbo run start --filter=@ralevel/bot",
     "build:web": "turbo run build --filter=@ralevel/web",
-    "export-command-catalog": "node apps/bot/scripts/export-command-catalog.js",
+    "export-command-catalog": "pnpm --filter @ralevel/bot export-command-catalog",
     "deploy-commands": "node apps/bot/scripts/deploy-commands.js"
   },
   "devDependencies": {

@@ -17,6 +17,8 @@ const messageRouter = require("./systems/messageRouter");
 const xpFlushSystem = require("./systems/xpFlushSystem");
 const pollSystem = require("./systems/polls");
 const { startCommandSyncServer } = require("./systems/commandSyncServer");
+const { deployCommandsOnReady } = require("./systems/deployCommandsOnReady");
+const { exportCommandCatalog } = require("./scripts/export-command-catalog");
 
 const client = new Client({
   intents: [
@@ -28,9 +30,13 @@ const client = new Client({
 });
 
 async function start() {
+  const { commandCount } = exportCommandCatalog();
+  console.log(`[command-catalog] Exported ${commandCount} commands.`);
+
   await connectDB();
   await loadGuildConfig(client);
   startGuildConfigWatcher(client);
+  deployCommandsOnReady(client);
 
   loadCommands(client);
   const handleReputation = reputationSystem(client);

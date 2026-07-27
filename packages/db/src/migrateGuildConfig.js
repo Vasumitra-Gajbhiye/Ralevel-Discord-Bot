@@ -1,12 +1,24 @@
 /**
  * Normalizes reputation IdLabel arrays from legacy string[] or partial objects.
  */
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   buildDefaultCertPanel,
   DEFAULT_BAN_MESSAGES,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_PERMISSIONS,
 } = require("./defaultGuildConfig");
+
+const CATALOG_PATH = path.resolve(
+  __dirname,
+  "../../shared/src/generated/commandCatalog.json",
+);
+
+const PRESERVED_ORPHAN_COMMAND_KEYS = new Set([
+  "ban-appeal-approved",
+  "ban-appeal-rejected",
+]);
 
 const DEFAULT_BAN_APPEAL_APPROVER_ROLE_KEYS = ["admin", "dcHead"];
 
@@ -54,6 +66,71 @@ function mergeMissingCommandDefaults(existing, defaults) {
   }
 
   return { map: base, changed };
+}
+
+function loadCommandCatalog() {
+  try {
+    if (!fs.existsSync(CATALOG_PATH)) return { commands: [] };
+    return JSON.parse(fs.readFileSync(CATALOG_PATH, "utf8"));
+  } catch {
+    return { commands: [] };
+  }
+}
+
+function getCatalogCommandNames(catalog) {
+  return (catalog.commands || []).map((cmd) => cmd.name);
+}
+
+function buildCatalogRoleDefaults(catalog) {
+  const defaults = {};
+  for (const cmd of catalog.commands || []) {
+    defaults[cmd.name] = DEFAULT_COMMAND_PERMISSIONS[cmd.name] ?? [];
+  }
+  return defaults;
+}
+
+function buildCatalogDiscordDefaults(catalog) {
+  const defaults = {};
+  for (const cmd of catalog.commands || []) {
+    defaults[cmd.name] =
+      DEFAULT_COMMAND_DISCORD_PERMISSIONS[cmd.name] ?? cmd.fileDefault ?? "";
+  }
+  return defaults;
+}
+
+function pruneOrphanedCommandKeys(map, catalogNames) {
+  const allowed = new Set(catalogNames);
+  const base =
+    map instanceof Map ? Object.fromEntries(map.entries()) : { ...(map || {}) };
+  let changed = false;
+
+  for (const key of Object.keys(base)) {
+    if (allowed.has(key) || PRESERVED_ORPHAN_COMMAND_KEYS.has(key)) continue;
+    delete base[key];
+    changed = true;
+  }
+
+  return { map: base, changed };
+}
+
+function syncCommandPermissionMap(existing, catalogDefaults, catalogNames) {
+  const renamed = renameCommandPermissionKeys(existing);
+  const current = renamed.changed
+    ? renamed.map
+    : existing instanceof Map
+      ? Object.fromEntries(existing.entries())
+      : { ...(existing || {}) };
+
+  const merged = mergeMissingCommandDefaults(current, catalogDefaults);
+  const pruned =
+    catalogNames.length > 0
+      ? pruneOrphanedCommandKeys(merged.map, catalogNames)
+      : { map: merged.map, changed: false };
+
+  return {
+    map: pruned.map,
+    changed: renamed.changed || merged.changed || pruned.changed,
+  };
 }
 
 function resolveBanAppealApproverRoleKeys(raw) {
@@ -287,6 +364,17 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
       resolveBanAppealApproverRoleKeys(raw);
   }
 
+  const catalog = loadCommandCatalog();
+  const catalogNames = getCatalogCommandNames(catalog);
+  const roleDefaults =
+    catalogNames.length > 0
+      ? buildCatalogRoleDefaults(catalog)
+      : DEFAULT_COMMAND_PERMISSIONS;
+  const discordDefaults =
+    catalogNames.length > 0
+      ? buildCatalogDiscordDefaults(catalog)
+      : DEFAULT_COMMAND_DISCORD_PERMISSIONS;
+
   if (
     !raw.commandDiscordPermissions ||
     (raw.commandDiscordPermissions instanceof Map &&
@@ -295,37 +383,25 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
       !Array.isArray(raw.commandDiscordPermissions) &&
       Object.keys(raw.commandDiscordPermissions).length === 0)
   ) {
-    $set.commandDiscordPermissions = { ...DEFAULT_COMMAND_DISCORD_PERMISSIONS };
+    $set.commandDiscordPermissions = { ...discordDefaults };
   } else {
-    const renamedDiscordPerms = renameCommandPermissionKeys(
+    const syncedDiscordPerms = syncCommandPermissionMap(
       raw.commandDiscordPermissions,
+      discordDefaults,
+      catalogNames,
     );
-    const discordPerms = renamedDiscordPerms.changed
-      ? renamedDiscordPerms.map
-      : raw.commandDiscordPermissions instanceof Map
-        ? Object.fromEntries(raw.commandDiscordPermissions.entries())
-        : { ...raw.commandDiscordPermissions };
-    const mergedDiscordPerms = mergeMissingCommandDefaults(
-      discordPerms,
-      DEFAULT_COMMAND_DISCORD_PERMISSIONS,
-    );
-    if (renamedDiscordPerms.changed || mergedDiscordPerms.changed) {
-      $set.commandDiscordPermissions = mergedDiscordPerms.map;
+    if (syncedDiscordPerms.changed) {
+      $set.commandDiscordPermissions = syncedDiscordPerms.map;
     }
   }
 
-  const renamedCommandPerms = renameCommandPermissionKeys(raw.commandPermissions);
-  const commandPerms = renamedCommandPerms.changed
-    ? renamedCommandPerms.map
-    : raw.commandPermissions instanceof Map
-      ? Object.fromEntries(raw.commandPermissions.entries())
-      : { ...(raw.commandPermissions || {}) };
-  const mergedCommandPerms = mergeMissingCommandDefaults(
-    commandPerms,
-    DEFAULT_COMMAND_PERMISSIONS,
+  const syncedCommandPerms = syncCommandPermissionMap(
+    raw.commandPermissions,
+    roleDefaults,
+    catalogNames,
   );
-  if (renamedCommandPerms.changed || mergedCommandPerms.changed) {
-    $set.commandPermissions = mergedCommandPerms.map;
+  if (syncedCommandPerms.changed) {
+    $set.commandPermissions = syncedCommandPerms.map;
   }
 
   if (!Object.keys($set).length && !Object.keys($unset).length) {
@@ -416,19 +492,24 @@ function migrateGuildConfigInPlace(doc) {
     changed = true;
   }
 
+  const catalog = loadCommandCatalog();
+  const catalogNames = getCatalogCommandNames(catalog);
+  const roleDefaults =
+    catalogNames.length > 0
+      ? buildCatalogRoleDefaults(catalog)
+      : DEFAULT_COMMAND_PERMISSIONS;
+  const discordDefaults =
+    catalogNames.length > 0
+      ? buildCatalogDiscordDefaults(catalog)
+      : DEFAULT_COMMAND_DISCORD_PERMISSIONS;
+
   for (const [field, defaults] of [
-    ["commandPermissions", DEFAULT_COMMAND_PERMISSIONS],
-    ["commandDiscordPermissions", DEFAULT_COMMAND_DISCORD_PERMISSIONS],
+    ["commandPermissions", roleDefaults],
+    ["commandDiscordPermissions", discordDefaults],
   ]) {
-    const renamed = renameCommandPermissionKeys(doc[field]);
-    const current = renamed.changed
-      ? renamed.map
-      : doc[field] instanceof Map
-        ? Object.fromEntries(doc[field].entries())
-        : { ...(doc[field] || {}) };
-    const merged = mergeMissingCommandDefaults(current, defaults);
-    if (renamed.changed || merged.changed) {
-      doc[field] = merged.map;
+    const synced = syncCommandPermissionMap(doc[field], defaults, catalogNames);
+    if (synced.changed) {
+      doc[field] = synced.map;
       doc.markModified(field);
       changed = true;
     }
