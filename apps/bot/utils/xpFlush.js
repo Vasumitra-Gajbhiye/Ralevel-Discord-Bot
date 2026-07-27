@@ -398,22 +398,27 @@ async function resumeOrphanDrains(client) {
 }
 
 async function getPendingXpOverlay(guildId, userId) {
-  const [rawCount, rawBooster] = await Promise.all([
-    redis.hget(getPendingKey(guildId), userId),
-    redis.hget(getBoosterKey(guildId), userId),
-  ]);
+  try {
+    const [rawCount, rawBooster] = await Promise.all([
+      redis.hget(getPendingKey(guildId), userId),
+      redis.hget(getBoosterKey(guildId), userId),
+    ]);
 
-  const messages = parseInt(rawCount || "0", 10) || 0;
-  if (messages <= 0) {
+    const messages = parseInt(rawCount || "0", 10) || 0;
+    if (messages <= 0) {
+      return { messages: 0, xp: 0 };
+    }
+
+    const isBooster = rawBooster === "true";
+    const boosterMultiplier =
+      tryGetGuildConfig()?.ranks?.boosterMultiplier ?? 2;
+    const xp = isBooster ? messages * boosterMultiplier : messages;
+
+    return { messages, xp };
+  } catch (err) {
+    console.error("[xpFlush] pending overlay unavailable:", err.message || err);
     return { messages: 0, xp: 0 };
   }
-
-  const isBooster = rawBooster === "true";
-  const boosterMultiplier =
-    tryGetGuildConfig()?.ranks?.boosterMultiplier ?? 2;
-  const xp = isBooster ? messages * boosterMultiplier : messages;
-
-  return { messages, xp };
 }
 
 module.exports = {

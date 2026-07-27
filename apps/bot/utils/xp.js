@@ -1,6 +1,6 @@
 const { User } = require("@ralevel/db");
 const { EmbedBuilder } = require("discord.js");
-const { getRank, handleRanks } = require("../systems/rankSystem");
+const { getRank, getRanks, handleRanks } = require("../systems/rankSystem");
 const { getRoleId } = require("./guildConfigStore");
 const { getPendingXpOverlay } = require("./xpFlush");
 
