@@ -1,12 +1,11 @@
-const { ModLog } = require("@ralevel/db");
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   EmbedBuilder,
 } = require("discord.js");
 const logModAction = require("../../utils/logModAction.js");
-
 const generateId = require("../../utils/generateId.js");
+const resolveTargetMessage = require("../../utils/resolveTargetMessage.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,8 +15,10 @@ module.exports = {
 
     .addStringOption((opt) =>
       opt
-        .setName("message-id")
-        .setDescription("The ID of the message to pin.")
+        .setName("message-link")
+        .setDescription(
+          "Discord message link or message ID (right-click message → Copy Link).",
+        )
         .setRequired(true),
     )
 
@@ -26,38 +27,40 @@ module.exports = {
         .setName("reason")
         .setDescription("Reason for pinning the message.")
         .setRequired(true),
+    )
+
+    .addChannelOption((opt) =>
+      opt
+        .setName("channel")
+        .setDescription(
+          "Channel containing the message (defaults to current channel).",
+        ),
     ),
 
   async execute(interaction) {
-    const messageId = interaction.options.getString("message-id");
+    const rawInput = interaction.options.getString("message-link");
     const reason = interaction.options.getString("reason");
 
-    // Fetch the message from the same channel
-    const msg = await interaction.channel.messages
-      .fetch(messageId)
-      .catch(() => null);
-
-    if (!msg) {
+    const resolved = await resolveTargetMessage(interaction, rawInput);
+    if (resolved.error) {
       return interaction.reply({
-        content:
-          "❌ Message not found in this channel. Make sure the ID is correct.",
+        content: resolved.error,
         ephemeral: true,
       });
     }
 
-    // Pin message
-    await msg.pin().catch(() => {});
+    const { msg } = resolved;
 
-    // Logging
+    try {
+      await msg.pin();
+    } catch (err) {
+      return interaction.reply({
+        content: `❌ Failed to pin message: ${err.message}`,
+        ephemeral: true,
+      });
+    }
+
     const actionId = generateId();
-    const logReason = `
-Action: Pin
-Message ID: ${msg.id}
-Channel: #${msg.channel.name}
-Message Author: ${msg.author.tag}
-Moderator: ${interaction.user.tag}
-Reason: ${reason}
-`.trim();
 
     // await ModLog.create({
     //   userId: msg.author.id,
@@ -83,7 +86,6 @@ Reason: ${reason}
       channelId: msg.channel.id,
     });
 
-    // Confirmation embed
     const embed = new EmbedBuilder()
       .setColor("#00ffff")
       .setTitle("📌 Message Pinned")

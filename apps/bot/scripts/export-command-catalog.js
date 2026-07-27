@@ -62,4 +62,7 @@ fs.writeFileSync(
 );
 
 console.log(`Exported ${commands.length} commands to ${outputPath}`);
-console.log(`Exported ${Object.keys(permissionBitfields).length} permission bitfields to ${bitfieldsPath}`);
+console.log(
+  `Exported ${Object.keys(permissionBitfields).length} permission bitfields to ${bitfieldsPath}`,
+);
+process.exit(0);

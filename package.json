@@ -11,7 +11,8 @@
     "dev:web": "turbo run dev --filter=@ralevel/web",
     "start:bot": "turbo run start --filter=@ralevel/bot",
     "build:web": "turbo run build --filter=@ralevel/web",
-    "export-command-catalog": "pnpm --filter @ralevel/bot exec node scripts/export-command-catalog.js"
+    "export-command-catalog": "node apps/bot/scripts/export-command-catalog.js",
+    "deploy-commands": "node apps/bot/scripts/deploy-commands.js"
   },
   "devDependencies": {
     "turbo": "^2.3.3"
