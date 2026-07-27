@@ -28,6 +28,10 @@ const {
   isValidCertTypeId,
   syncCertPanel,
 } = require("../utils/certPanel");
+const {
+  buildPendingReviewEmbed,
+  buildResolvedReviewPayload,
+} = require("../utils/certReviewEmbed");
 
 function memberHasCertModRole(member) {
   const cfg = getGuildConfig();
@@ -107,6 +111,19 @@ module.exports = function certificateSystem(client) {
           app.moderatorId = interaction.user.id;
           app.resolvedAt = new Date();
           await app.save();
+
+          if (interaction.message?.edit) {
+            await interaction.message
+              .edit(
+                buildResolvedReviewPayload(app, {
+                  decision: "rejected",
+                  moderatorTag: interaction.user.tag,
+                  reason,
+                }),
+              )
+              .catch(() => {});
+          }
+
           await interaction.deferReply({ ephemeral: true });
 
           // DM applicant (best-effort)
@@ -280,37 +297,11 @@ module.exports = function certificateSystem(client) {
           createdAt: new Date(),
         });
 
-        // prepare review embed
-        const appEmbed = new EmbedBuilder()
-          .setTitle("📨 New Certificate Application")
-          .setColor("#5865F2")
-          .addFields(
-            {
-              name: "Applicant",
-              value: `${user.tag} (${user.id})`,
-              inline: true,
-            },
-            { name: "Type", value: `${type}`, inline: true },
-            { name: "Rep", value: `${rep}`, inline: true },
-            {
-              name: "Joined",
-              value: joinedAt
-                ? `<t:${Math.floor(joinedAt.getTime() / 1000)}:R>`
-                : "Unknown",
-              inline: true,
-            },
-            {
-              name: "Submitted",
-              value: `<t:${Math.floor(app.createdAt.getTime() / 1000)}:F>`,
-              inline: true,
-            },
-            { name: "Application ID", value: `\`${app._id}\``, inline: false },
-          )
-          .setFooter({
-            text: channel
-              ? `Submitted in #${channel.name}`
-              : "Submitted (unknown channel)",
-          });
+        const appEmbed = buildPendingReviewEmbed(app, {
+          userTag: user.tag,
+          userId: user.id,
+          channelName: channel?.name ?? null,
+        });
 
         const approveId = `cert_approve:${app._id}`;
         const rejectId = `cert_reject:${app._id}`;
@@ -331,11 +322,14 @@ module.exports = function certificateSystem(client) {
           .fetch(getChannelId("review"))
           .catch(() => null);
         if (reviewCh) {
-          await reviewCh
+          const reviewMsg = await reviewCh
             .send({ embeds: [appEmbed], components: [reviewRow] })
-            .catch(() => {
-              // swallow
-            });
+            .catch(() => null);
+          if (reviewMsg) {
+            app.reviewMessageId = reviewMsg.id;
+            app.reviewChannelId = reviewCh.id;
+            await app.save().catch(() => {});
+          }
         }
 
         // DM applicant (best-effort)
@@ -453,14 +447,19 @@ module.exports = function certificateSystem(client) {
             });
           }
 
-          // defer ephemeral reply while we update DB and DM the user
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferUpdate();
 
-          // Update DB
           app.status = "approved";
           app.moderatorId = interaction.user.id;
           app.resolvedAt = new Date();
           await app.save();
+
+          await interaction.editReply(
+            buildResolvedReviewPayload(app, {
+              decision: "approved",
+              moderatorTag: interaction.user.tag,
+            }),
+          );
 
           // If resource type, grant resource contributor role (best-effort)
           try {
@@ -559,7 +558,9 @@ module.exports = function certificateSystem(client) {
             console.log(err);
           }
 
-          await interaction.editReply({ content: `✅ Approved` });
+          await interaction
+            .followUp({ ephemeral: true, content: "✅ Approved" })
+            .catch(() => {});
           return;
         }
 

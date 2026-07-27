@@ -8,6 +8,7 @@ const {
   getChannelId,
   resolveRoleKeys,
 } = require("../../utils/guildConfigStore");
+const { updateStoredReviewMessage } = require("../../utils/certReviewEmbed");
 
 function memberHasCertModRole(member) {
   const cfg = getGuildConfig();
@@ -55,7 +56,15 @@ module.exports = {
     app.moderatorId = interaction.user.id;
     app.resolvedAt = new Date();
     await app.save();
-          await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: true });
+
+    await updateStoredReviewMessage(
+      interaction.client,
+      app,
+      "rejected",
+      interaction.user.tag,
+      reason,
+    );
 
     // DM applicant
     try {
@@ -77,8 +86,8 @@ module.exports = {
     } catch {
        // Send update 
               try {
-                const updatesCh = await client.channels.fetch(getChannelId("certUpdates"));
-                const applicantUser = await client.users.fetch(app.userId);
+                const updatesCh = await interaction.client.channels.fetch(getChannelId("certUpdates"));
+                const applicantUser = await interaction.client.users.fetch(app.userId);
     
                 const updateEmbed =  new EmbedBuilder()
                     .setTitle("❌ Certificate Application — Rejected")

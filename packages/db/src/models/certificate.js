@@ -31,6 +31,10 @@ const CertificateSchema = new mongoose.Schema({
   // Extra helpful fields
   rep: { type: Number, default: 0 },
   joinedAt: { type: Date, default: null },
+
+  // Review channel message reference (for in-place embed updates)
+  reviewMessageId: { type: String, default: null },
+  reviewChannelId: { type: String, default: null },
 });
 
 module.exports = mongoose.models["CertificateApplication"] || mongoose.model("CertificateApplication", CertificateSchema);

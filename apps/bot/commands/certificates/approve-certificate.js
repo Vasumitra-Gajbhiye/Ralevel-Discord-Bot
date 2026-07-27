@@ -10,6 +10,7 @@ const {
   getChannelId,
   resolveRoleKeys,
 } = require("../../utils/guildConfigStore");
+const { updateStoredReviewMessage } = require("../../utils/certReviewEmbed");
 
 function memberHasCertModRole(member) {
   const cfg = getGuildConfig();
@@ -79,6 +80,13 @@ module.exports = {
         content: "⚠️ Failed to approve application. Check logs.",
       });
     }
+
+    await updateStoredReviewMessage(
+      interaction.client,
+      app,
+      "approved",
+      interaction.user.tag,
+    );
 
     // Send approval DM EMBED
     try {
