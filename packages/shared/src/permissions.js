@@ -91,6 +91,7 @@ const commands = {
   "get-notes": [admin, dcHead, srMods, jrMods, trialMods],
   pin: [admin, dcHead, srMods],
   purge: [admin, dcHead, srMods],
+  purgeuser: [admin, dcHead, srMods],
   "remove-role": [admin, dcHead, generalStaff],
   say: [admin, dcHead, srMods, jrMods],
   "set-nickname": [admin, dcHead, srMods, ialAgent],

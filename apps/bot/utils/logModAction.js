@@ -30,6 +30,9 @@ module.exports = async function logModAction({
   purgeFilter = "Not Provided",
   purgeKeyword = "Not Provided",
   purgeHours = "Not Provided",
+  purgeDays = "Not Provided",
+  purgeScope = "Not Provided",
+  categoryId = "Not Provided",
   sayMessage = "Not Provided",
   sayMsgEmbedBoolean = "Not Provided",
   oldNickname = "Not Provided",
@@ -316,6 +319,30 @@ module.exports = async function logModAction({
         { name: "Purge Filter", value: String(purgeFilter || "N/A") },
         { name: "Purge Keyword", value: String(purgeKeyword || "N/A") },
         { name: "Purge Hours", value: String(purgeHours || "N/A") }
+      )
+      .setTimestamp();
+  } else if (action === "purgeuser") {
+    embed = new EmbedBuilder()
+      .setTitle(`🔨 ${prettyAction}`)
+      .setColor(0x8ecae6)
+      .addFields(
+        { name: "User", value: `${userTag || "N/A"} (${userId || "N/A"})` },
+        { name: "Moderator", value: moderatorTag },
+        { name: "Reason ", value: reason || "No reason provided" },
+        { name: "Action ID", value: actionId },
+        { name: "Scope", value: String(purgeScope || "N/A") },
+        {
+          name: "Category",
+          value:
+            categoryId && categoryId !== "N/A"
+              ? `${channelTag} (${categoryId})`
+              : "N/A",
+        },
+        { name: "Days", value: String(purgeDays || "N/A") },
+        {
+          name: "Deleted Messages",
+          value: String(numberOfPurgeMessages || "N/A"),
+        }
       )
       .setTimestamp();
   } else if (action === "say") {

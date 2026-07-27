@@ -22,6 +22,7 @@ const ACTION_EMOJIS = {
   slowmode: "🐢",
   slowmode_off: "🚀",
   purge: "🧽",
+  purgeuser: "🧽",
   lock: "🔒",
   unlock: "🔓",
 };

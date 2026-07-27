@@ -48,6 +48,7 @@ const HIERARCHY_TARGET_OPTIONS = {
   "add-role": "user",
   "remove-role": "user",
   purge: "target",
+  purgeuser: "user",
 };
 
 // Commands that assign/remove a role; value is the slash-command role option name.
