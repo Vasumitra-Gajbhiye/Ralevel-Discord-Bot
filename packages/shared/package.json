@@ -36,6 +36,10 @@
     },
     "./commandCatalog": {
       "default": "./src/commandCatalog.js"
+    },
+    "./commandDisplayNames": {
+      "types": "./src/commandDisplayNames.d.ts",
+      "default": "./src/commandDisplayNames.js"
     }
   }
 }

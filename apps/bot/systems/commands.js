@@ -32,7 +32,7 @@ const { Collection } = require("discord.js");
 
 const checkRoleHierarchy = require("../utils/checkRoleHierarchy.js");
 const checkRoleAssignment = require("../utils/checkRoleAssignment.js");
-const { getCommandAllowedRoleIds } = require("../utils/guildConfigStore");
+const { getCommandAllowedRoleIds, resolveCanonicalCommandName } = require("../utils/guildConfigStore");
 
 // Commands that act on a member and require role hierarchy checks.
 // Value is the slash-command option name that holds the target user.
@@ -79,13 +79,14 @@ module.exports = (client) => {
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    const command = client.commands.get(interaction.commandName);
+    const canonicalName = resolveCanonicalCommandName(interaction.commandName);
+    const command = client.commands.get(canonicalName);
     if (!command) return;
 
     // ==========================================
     // 🛡️ GLOBAL ROLE ACCESS CHECK
     // ==========================================
-    const allowedRoles = getCommandAllowedRoleIds(interaction.commandName);
+    const allowedRoles = getCommandAllowedRoleIds(canonicalName);
 
     if (allowedRoles && allowedRoles.length > 0) {
       // Prevent crashes if someone tries to use a restricted command in a DM
@@ -112,7 +113,7 @@ module.exports = (client) => {
     // ==========================================
     // 🪜 ROLE HIERARCHY CHECK (moderation)
     // ==========================================
-    const targetOption = HIERARCHY_TARGET_OPTIONS[interaction.commandName];
+    const targetOption = HIERARCHY_TARGET_OPTIONS[canonicalName];
 
     if (targetOption && interaction.member && interaction.guild) {
       const targetUser = interaction.options.getUser(targetOption);
@@ -134,8 +135,7 @@ module.exports = (client) => {
             });
           }
 
-          const roleOption =
-            HIERARCHY_ROLE_OPTIONS[interaction.commandName];
+          const roleOption = HIERARCHY_ROLE_OPTIONS[canonicalName];
           if (roleOption) {
             const role = interaction.options.getRole(roleOption);
             if (role) {
@@ -163,10 +163,12 @@ module.exports = (client) => {
     try {
       await command.execute(interaction);
     } catch (error) {
-      console.error(
-        `[ERROR] Command /${interaction.commandName} failed:`,
-        error,
-      );
+      const deployedName = interaction.commandName;
+      const label =
+        deployedName === canonicalName
+          ? `/${deployedName}`
+          : `/${deployedName} (${canonicalName})`;
+      console.error(`[ERROR] Command ${label} failed:`, error);
 
       const errorMessage =
         "❌ There was an error while executing this command!";

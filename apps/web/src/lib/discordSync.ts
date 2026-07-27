@@ -26,6 +26,8 @@ async function syncDirect() {
   const overrides =
     (config.commandDiscordPermissions as Record<string, string> | undefined) ??
     {};
+  const nameOverrides =
+    (config.commandDisplayNames as Record<string, string> | undefined) ?? {};
 
   return registerGuildCommandsFromCatalog({
     token,
@@ -33,6 +35,7 @@ async function syncDirect() {
     guildId,
     catalogCommands: getCommandCatalog(),
     overrides,
+    nameOverrides,
   });
 }
 

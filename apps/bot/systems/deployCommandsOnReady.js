@@ -13,11 +13,23 @@ function getDiscordPermissionOverrides(config) {
   return { ...perms };
 }
 
+function getCommandDisplayNameOverrides(config) {
+  if (!config?.commandDisplayNames) return {};
+
+  const names = config.commandDisplayNames;
+  if (names instanceof Map) {
+    return Object.fromEntries(names);
+  }
+
+  return { ...names };
+}
+
 function deployCommandsOnReady(client) {
   client.once("ready", async () => {
     try {
       const config = tryGetGuildConfig();
       const overrides = getDiscordPermissionOverrides(config);
+      const nameOverrides = getCommandDisplayNameOverrides(config);
       const commandsRoot = path.join(__dirname, "..", "commands");
 
       const { commandCount } = await registerGuildCommands({
@@ -26,6 +38,7 @@ function deployCommandsOnReady(client) {
         guildId: process.env.GUILD_ID,
         commandsRoot,
         overrides,
+        nameOverrides,
       });
 
       console.log(

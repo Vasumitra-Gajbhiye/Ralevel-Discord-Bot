@@ -3,12 +3,12 @@ const { GuildConfig } = require("@ralevel/db");
 const { registerGuildCommandsFromCatalog } = require("@ralevel/shared/commandPermissions");
 const { getCommandCatalog } = require("@ralevel/shared/commandCatalog");
 
-function normalizeOverrides(commandDiscordPermissions) {
-  if (!commandDiscordPermissions) return {};
-  if (commandDiscordPermissions instanceof Map) {
-    return Object.fromEntries(commandDiscordPermissions);
+function normalizeOverrides(mapValue) {
+  if (!mapValue) return {};
+  if (mapValue instanceof Map) {
+    return Object.fromEntries(mapValue);
   }
-  return { ...commandDiscordPermissions };
+  return { ...mapValue };
 }
 
 async function syncGuildCommandsFromConfig() {
@@ -27,6 +27,7 @@ async function syncGuildCommandsFromConfig() {
 
   const doc = await GuildConfig.findOne({ guildId });
   const overrides = normalizeOverrides(doc?.commandDiscordPermissions);
+  const nameOverrides = normalizeOverrides(doc?.commandDisplayNames);
 
   return registerGuildCommandsFromCatalog({
     token,
@@ -34,6 +35,7 @@ async function syncGuildCommandsFromConfig() {
     guildId,
     catalogCommands: getCommandCatalog(),
     overrides,
+    nameOverrides,
   });
 }
 

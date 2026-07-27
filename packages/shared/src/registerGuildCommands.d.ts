@@ -1,6 +1,8 @@
 export interface CommandCatalogEntry {
   category: string;
   name: string;
+  displayName: string | null;
+  effectiveName: string;
   fileDefault: string | null;
   saved: string | null | undefined;
   effective: string | null;
@@ -15,7 +17,8 @@ export declare function resolveCommandsRoot(
 
 export declare function loadCommandPayloads(
   commandsRoot?: string,
-  overrides?: Record<string, string> | Map<string, string>,
+  permissionOverrides?: Record<string, string> | Map<string, string>,
+  nameOverrides?: Record<string, string> | Map<string, string>,
 ): CommandCatalogEntry[];
 
 export declare function registerGuildCommands(options: {
@@ -24,4 +27,5 @@ export declare function registerGuildCommands(options: {
   guildId: string;
   commandsRoot?: string;
   overrides?: Record<string, string> | Map<string, string>;
+  nameOverrides?: Record<string, string> | Map<string, string>;
 }): Promise<{ commandCount: number; commands: CommandCatalogEntry[] }>;

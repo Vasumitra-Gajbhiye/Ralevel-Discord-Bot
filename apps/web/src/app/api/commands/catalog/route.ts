@@ -24,11 +24,19 @@ export async function GET() {
     const overrides =
       (config.commandDiscordPermissions as Record<string, string> | undefined) ??
       {};
+    const nameOverrides =
+      (config.commandDisplayNames as Record<string, string> | undefined) ?? {};
 
-    const commands = buildCatalogEntries(getCommandCatalog(), overrides).map(
-      ({ category, name, fileDefault, saved, effective }) => ({
+    const commands = buildCatalogEntries(
+      getCommandCatalog(),
+      overrides,
+      nameOverrides,
+    ).map(
+      ({ category, name, displayName, effectiveName, fileDefault, saved, effective }) => ({
         category,
         name,
+        displayName,
+        effectiveName,
         fileDefault,
         saved,
         effective,

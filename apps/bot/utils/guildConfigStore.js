@@ -4,11 +4,30 @@
  */
 
 const { getBanAppealApproverRoleKeys } = require("./banAppeals");
+const { getCommandCatalog } = require("@ralevel/shared/commandCatalog");
+const {
+  buildDeployedToCanonicalObject,
+} = require("@ralevel/shared/commandDisplayNames");
 
 let guildConfig = null;
+let deployedToCanonical = {};
+
+function rebuildDeployedToCanonicalMap(config = guildConfig) {
+  const nameOverrides = config?.commandDisplayNames;
+  const normalized =
+    nameOverrides instanceof Map
+      ? Object.fromEntries(nameOverrides)
+      : { ...(nameOverrides || {}) };
+
+  deployedToCanonical = buildDeployedToCanonicalObject(
+    getCommandCatalog(),
+    normalized,
+  );
+}
 
 function setGuildConfig(config) {
   guildConfig = config;
+  rebuildDeployedToCanonicalMap(config);
 }
 
 function getGuildConfig() {
@@ -59,6 +78,10 @@ function resolveRoleKeys(keys = [], config = guildConfig) {
   return keys.map((k) => map[k]).filter(Boolean);
 }
 
+function resolveCanonicalCommandName(deployedName) {
+  return deployedToCanonical[deployedName] || deployedName;
+}
+
 /**
  * Allowed Discord role IDs for a slash command. Empty array / missing = public.
  */
@@ -90,6 +113,9 @@ function toPlainConfig(doc) {
       obj.commandDiscordPermissions,
     );
   }
+  if (obj.commandDisplayNames instanceof Map) {
+    obj.commandDisplayNames = Object.fromEntries(obj.commandDisplayNames);
+  }
   return obj;
 }
 
@@ -102,6 +128,7 @@ module.exports = {
   getChannelMap,
   getChannelId,
   resolveRoleKeys,
+  resolveCanonicalCommandName,
   getCommandAllowedRoleIds,
   toPlainConfig,
 };

@@ -113,6 +113,8 @@ const GuildConfigSchema = new mongoose.Schema(
     commandPermissions: { type: Map, of: [String], default: {} },
     // Map of commandName -> Discord PermissionFlagsBits name (empty string = Everyone)
     commandDiscordPermissions: { type: Map, of: String, default: {} },
+    // Map of canonical commandName -> custom Discord slash name
+    commandDisplayNames: { type: Map, of: String, default: {} },
     channels: { type: [ChannelEntrySchema], default: [] },
     categories: { type: [CategoryEntrySchema], default: [] },
     features: {

@@ -22,10 +22,13 @@ export declare function buildCatalogEntries(
     fileDefault: string | null;
     payload: Record<string, unknown>;
   }>,
-  overrides?: Record<string, string> | Map<string, string>,
+  permissionOverrides?: Record<string, string> | Map<string, string>,
+  nameOverrides?: Record<string, string> | Map<string, string>,
 ): Array<{
   category: string;
   name: string;
+  displayName: string | null;
+  effectiveName: string;
   fileDefault: string | null;
   saved: string | null | undefined;
   effective: string | null;
@@ -43,4 +46,5 @@ export declare function registerGuildCommandsFromCatalog(options: {
     payload: Record<string, unknown>;
   }>;
   overrides?: Record<string, string> | Map<string, string>;
+  nameOverrides?: Record<string, string> | Map<string, string>;
 }): Promise<{ commandCount: number; commands: unknown[] }>;

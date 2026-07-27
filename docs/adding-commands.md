@@ -239,6 +239,27 @@ Commands appear in Discord immediately (guild-scoped, not global).
 
 Discord slash command names must be lowercase, 1–32 characters, `a-z`, `0-9`, `-`, `_`.
 
+### Renaming from the dashboard (without code changes)
+
+Server admins can customize the **top-level slash name** shown in Discord from **Settings → Commands → Edit names**. This does not change the canonical command key used in code, permissions, or visibility settings.
+
+| Layer | Keyed by |
+|-------|----------|
+| Command handler (`setName()` in code) | Canonical name (e.g. `ban`) |
+| Dashboard role gates (`commandPermissions`) | Canonical name |
+| Dashboard visibility (`commandDiscordPermissions`) | Canonical name |
+| Discord slash picker | Effective display name (default or custom) |
+
+Workflow:
+
+1. Open **Settings → Commands** and click **Edit names**
+2. Change the display name for a command and click **Save names**
+3. Click **Sync to Discord** so the new slash name is registered with Discord
+
+Clearing a custom name reverts to the default from `setName()`. Subcommand names (e.g. `/poll create`) cannot be renamed from the dashboard.
+
+Renaming a command **in code** (changing `setName()`) is different: update permission defaults, hierarchy maps, and redeploy. Dashboard display-name overrides are pruned automatically when the canonical name changes.
+
 ---
 
 ## Command module contract
@@ -309,6 +330,7 @@ Before opening a PR with a new command:
 - [ ] Discord permission bits set on the SlashCommandBuilder (if should be hidden from non-mods)
 - [ ] Restart bot — catalog export and Discord registration happen automatically
 - [ ] Confirm new command appears on **Settings → Commands** and **Settings → Command visibility**
+- [ ] If using a custom display name, save and **Sync to Discord** from **Settings → Commands**
 - [ ] Tested in dev guild with allowed and denied roles
 - [ ] Error handling for missing DB records, invalid input, etc.
 

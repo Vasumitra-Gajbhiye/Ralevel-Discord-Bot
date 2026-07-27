@@ -9,6 +9,8 @@ import { isDraftDirty, useUnsavedChanges } from "@/lib/unsaved-changes";
 type CatalogCommand = {
   category: string;
   name: string;
+  displayName: string | null;
+  effectiveName: string;
   fileDefault: string | null;
   saved: string | null | undefined;
   effective: string | null;
@@ -91,6 +93,7 @@ export default function CommandVisibilityPage() {
     return catalog.filter(
       (command) =>
         command.name.toLowerCase().includes(query) ||
+        command.effectiveName.toLowerCase().includes(query) ||
         command.category.toLowerCase().includes(query),
     );
   }, [catalog, filter]);
@@ -193,7 +196,16 @@ export default function CommandVisibilityPage() {
 
                 return (
                   <tr key={command.name}>
-                    <td className="mono">/{command.name}</td>
+                    <td>
+                      <div className="stack" style={{ gap: "0.15rem" }}>
+                        <span className="mono">/{command.effectiveName}</span>
+                        {command.displayName ? (
+                          <span className="muted" style={{ fontSize: "0.8rem" }}>
+                            default: /{command.name}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
                     <td>{command.category}</td>
                     <td>
                       <select

@@ -1,6 +1,11 @@
 const { DEFAULT_COMMAND_DISCORD_PERMISSIONS } = require("@ralevel/db");
 const { bitfields: GENERATED_PERMISSION_BITFIELDS } = require("./generated/permissionBitfields.json");
 const { commands: CATALOG_COMMANDS } = require("./generated/commandCatalog.json");
+const {
+  getEffectiveCommandName,
+  applyCommandNameOverride,
+  normalizeNameOverrides,
+} = require("./commandDisplayNames");
 
 const PERMISSION_LABELS = {
   Administrator: "Administrator",
@@ -93,29 +98,49 @@ function applyDiscordPermissionOverride(payload, overrideValue) {
   return next;
 }
 
-function buildCatalogEntries(catalogCommands, overrides = {}) {
-  const normalizedOverrides = normalizeOverrides(overrides);
+function buildCatalogEntries(
+  catalogCommands,
+  permissionOverrides = {},
+  nameOverrides = {},
+) {
+  const normalizedPermissionOverrides = normalizeOverrides(permissionOverrides);
+  const normalizedNameOverrides = normalizeNameOverrides(nameOverrides);
 
   return catalogCommands
     .map((command) => {
       const overrideValue = Object.prototype.hasOwnProperty.call(
-        normalizedOverrides,
+        normalizedPermissionOverrides,
         command.name,
       )
-        ? normalizedOverrides[command.name]
+        ? normalizedPermissionOverrides[command.name]
         : undefined;
 
       const effectivePermission =
         overrideValue !== undefined ? overrideValue || null : command.fileDefault;
 
+      const displayName = normalizedNameOverrides[command.name];
+      const effectiveName = getEffectiveCommandName(
+        command.name,
+        normalizedNameOverrides,
+      );
+
+      let payload = applyDiscordPermissionOverride(
+        command.payload,
+        overrideValue,
+      );
+      payload = applyCommandNameOverride(payload, effectiveName);
+
       return {
         category: command.category,
         name: command.name,
+        displayName:
+          displayName && displayName !== command.name ? displayName : null,
+        effectiveName,
         fileDefault: command.fileDefault,
         saved:
           overrideValue !== undefined ? overrideValue || null : undefined,
         effective: effectivePermission,
-        payload: applyDiscordPermissionOverride(command.payload, overrideValue),
+        payload,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -127,6 +152,7 @@ async function registerGuildCommandsFromCatalog({
   guildId,
   catalogCommands,
   overrides = {},
+  nameOverrides = {},
 }) {
   if (!token) throw new Error("TOKEN is required to register guild commands");
   if (!clientId) {
@@ -136,7 +162,11 @@ async function registerGuildCommandsFromCatalog({
     throw new Error("GUILD_ID is required to register guild commands");
   }
 
-  const entries = buildCatalogEntries(catalogCommands, overrides);
+  const entries = buildCatalogEntries(
+    catalogCommands,
+    overrides,
+    nameOverrides,
+  );
   const body = entries.map((entry) => entry.payload);
 
   const response = await fetch(

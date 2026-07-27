@@ -5,6 +5,8 @@ import {
 } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
 import { normalizeReputationIdLabels, normalizeRanksConfig } from "@ralevel/db";
+import { getCommandCatalog } from "@ralevel/shared/commandCatalog";
+import { validateCommandDisplayNames } from "@ralevel/shared/commandDisplayNames";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,7 @@ const PATCHABLE = [
   "roles",
   "commandPermissions",
   "commandDiscordPermissions",
+  "commandDisplayNames",
   "channels",
   "categories",
   "features",
@@ -66,6 +69,20 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const doc = await getOrCreateGuildConfig();
 
+    if (body.commandDisplayNames !== undefined) {
+      const validation = validateCommandDisplayNames(
+        getCommandCatalog(),
+        body.commandDisplayNames,
+      );
+      if (!validation.ok) {
+        return NextResponse.json(
+          { error: validation.errors.join("; ") },
+          { status: 400 },
+        );
+      }
+      body.commandDisplayNames = validation.displayNames;
+    }
+
     for (const key of PATCHABLE) {
       if (body[key] !== undefined) {
         if (key === "reputation") {
@@ -83,7 +100,11 @@ export async function PUT(request: Request) {
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (doc as any)[key] = body[key];
-          if (key === "commandPermissions" || key === "commandDiscordPermissions") {
+          if (
+            key === "commandPermissions" ||
+            key === "commandDiscordPermissions" ||
+            key === "commandDisplayNames"
+          ) {
             doc.markModified(key);
           }
         }

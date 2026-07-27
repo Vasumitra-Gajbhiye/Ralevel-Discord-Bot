@@ -11,7 +11,7 @@ const commandsRoot = path.join(__dirname, "..", "commands");
 const MONGO_TIMEOUT_MS = 10_000;
 
 async function loadOverrides() {
-  if (!guildId) return {};
+  if (!guildId) return { permissionOverrides: {}, nameOverrides: {} };
 
   try {
     await Promise.race([
@@ -25,19 +25,25 @@ async function loadOverrides() {
     ]);
 
     const doc = await GuildConfig.findOne({ guildId });
-    if (!doc?.commandDiscordPermissions) return {};
+    if (!doc) return { permissionOverrides: {}, nameOverrides: {} };
 
-    if (doc.commandDiscordPermissions instanceof Map) {
-      return Object.fromEntries(doc.commandDiscordPermissions);
-    }
+    const permissionOverrides =
+      doc.commandDiscordPermissions instanceof Map
+        ? Object.fromEntries(doc.commandDiscordPermissions)
+        : { ...(doc.commandDiscordPermissions || {}) };
 
-    return { ...doc.commandDiscordPermissions };
+    const nameOverrides =
+      doc.commandDisplayNames instanceof Map
+        ? Object.fromEntries(doc.commandDisplayNames)
+        : { ...(doc.commandDisplayNames || {}) };
+
+    return { permissionOverrides, nameOverrides };
   } catch (err) {
     console.warn(
       "[deploy-commands] Could not load GuildConfig overrides; using file defaults.",
       err?.message || err,
     );
-    return {};
+    return { permissionOverrides: {}, nameOverrides: {} };
   }
 }
 
@@ -45,7 +51,7 @@ async function loadOverrides() {
   let exitCode = 0;
 
   try {
-    const overrides = await loadOverrides();
+    const { permissionOverrides, nameOverrides } = await loadOverrides();
     console.log("Started refreshing application (/) commands.");
 
     const { commandCount } = await registerGuildCommands({
@@ -53,7 +59,8 @@ async function loadOverrides() {
       clientId,
       guildId,
       commandsRoot,
-      overrides,
+      overrides: permissionOverrides,
+      nameOverrides,
     });
 
     console.log(`Successfully reloaded ${commandCount} application (/) commands.`);
