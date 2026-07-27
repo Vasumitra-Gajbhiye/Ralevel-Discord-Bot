@@ -4,6 +4,7 @@ const User = require("./src/models/User");
 const Reputation = require("./src/models/reputation");
 const RepBan = require("./src/models/repban");
 const XpBan = require("./src/models/xpban");
+const XpFlushGrant = require("./src/models/xpFlushGrant");
 const Sticky = require("./src/models/sticky");
 const StickyLog = require("./src/models/stickyLog");
 const Poll = require("./src/models/poll");
@@ -44,6 +45,7 @@ module.exports = {
   Reputation,
   RepBan,
   XpBan,
+  XpFlushGrant,
   Sticky,
   StickyLog,
   Poll,

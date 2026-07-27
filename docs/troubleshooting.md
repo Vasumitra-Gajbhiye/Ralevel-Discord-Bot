@@ -216,44 +216,43 @@ Restart the bot.
 
 **Diagnosis steps:**
 
-1. Check Redis has message counts:
+1. Check Redis has pending message counts:
    ```bash
-   redis-cli HGETALL messages:<GUILD_ID>:<YYYY-MM-DD>
+   redis-cli HGETALL xp:pending:<GUILD_ID>
    ```
-2. Check finalize ran (logs at 6 AM IST):
+2. Check flush ran (logs every ~90s when there is pending data):
    ```
-   🔥 [FINALIZE] Running for 2026-06-19 at 6:0 IST
+   [xpFlush] flushId=... users=N granted=M
    ```
 3. Check MongoDB user document:
    ```javascript
    db.users.findOne({ _id: "<userId>" })
    ```
-4. Verify `GUILD_ID` and `BOOSTER_ROLE_ID` are set
+4. Verify `GUILD_ID` and booster role config / `BOOSTER_ROLE_ID` are set
 
 **Common causes:**
 
 | Cause | Fix |
 |-------|-----|
 | Redis not running | Start Redis, set `REDIS_URL` |
-| Finalize lock exists | Check `GET processed:<guildId>:<date>` — delete if stale |
+| Flush lock stuck | Check `GET xp:flush:lock:<guildId>` — delete if stale |
 | Wrong `GUILD_ID` | Must match the server where messages are sent |
-| Before 6 AM IST | XP flushes once daily; wait for finalize |
+| User XP-banned | Check `XpBan` collection / `/xp-ban-list` |
+| Waiting for flush | Pending XP shows on `/my-xp`; Mongo updates within ~90s |
 
 ---
 
-### Double finalize / skipped finalize
+### Double flush / stuck flush
 
-**Symptom:** Finalize runs twice or never runs.
+**Symptom:** Flush appears stuck or draining keys linger after a crash.
 
-**Cause:** Redis lock key `processed:{guildId}:{date}`.
+**Cause:** Redis lock `xp:flush:lock:{guildId}` or orphan keys `xp:draining:{guildId}:{flushId}`.
 
 **Fix:**
 
-- If stuck (lock exists but finalize didn't complete): delete the lock key:
-  ```bash
-  redis-cli DEL processed:<GUILD_ID>:<YYYY-MM-DD>
-  ```
-- If running twice: should not happen with `SET NX` — check for multiple bot instances
+- If lock is stale: `redis-cli DEL xp:flush:lock:<GUILD_ID>`
+- Orphan drains are resumed automatically on bot startup; ledger + `appliedFlushIds` prevent double-counting
+- Do not run multiple bot instances
 
 ---
 

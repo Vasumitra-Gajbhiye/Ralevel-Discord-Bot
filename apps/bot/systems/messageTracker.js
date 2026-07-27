@@ -1,13 +1,11 @@
 const redis = require("../redis");
 const { XpBan } = require("@ralevel/db");
 const { getRoleId, tryGetGuildConfig } = require("../utils/guildConfigStore");
-
-const MESSAGE_KEY_TTL_SEC = 60 * 60 * 72;
-
-function getTodayDate() {
-  const now = new Date();
-  return now.toISOString().split("T")[0];
-}
+const {
+  getPendingKey,
+  getBoosterKey,
+  PENDING_KEY_TTL_SEC,
+} = require("../utils/xpKeys");
 
 function buildMessageTrackerPipeline(
   redisClient,
@@ -16,8 +14,8 @@ function buildMessageTrackerPipeline(
   const pipeline = redisClient.pipeline();
   pipeline.hincrby(countKey, userId, 1);
   pipeline.hset(boosterKey, userId, isBooster ? "true" : "false");
-  pipeline.expire(countKey, MESSAGE_KEY_TTL_SEC);
-  pipeline.expire(boosterKey, MESSAGE_KEY_TTL_SEC);
+  pipeline.expire(countKey, PENDING_KEY_TTL_SEC);
+  pipeline.expire(boosterKey, PENDING_KEY_TTL_SEC);
   return pipeline;
 }
 
@@ -27,10 +25,8 @@ async function handleMessageTracker(message) {
     if (await XpBan.exists({ userId })) return;
 
     const guildId = message.guild.id;
-    const date = getTodayDate();
-
-    const countKey = `messages:${guildId}:${date}`;
-    const boosterKey = `messages:boosters:${guildId}:${date}`;
+    const countKey = getPendingKey(guildId);
+    const boosterKey = getBoosterKey(guildId);
 
     const cfg = tryGetGuildConfig();
     const boosterRoleKey = cfg?.ranks?.boosterRoleKey || "booster";
@@ -48,9 +44,6 @@ async function handleMessageTracker(message) {
       isBooster,
     });
     await pipeline.exec();
-
-    // Debug
-    // console.log(`+1 → ${userId} | booster: ${isBooster}`);
   } catch (err) {
     console.error("Redis error:", err);
   }
@@ -59,5 +52,6 @@ async function handleMessageTracker(message) {
 module.exports = {
   handleMessageTracker,
   buildMessageTrackerPipeline,
-  MESSAGE_KEY_TTL_SEC,
+  MESSAGE_KEY_TTL_SEC: PENDING_KEY_TTL_SEC,
+  PENDING_KEY_TTL_SEC,
 };

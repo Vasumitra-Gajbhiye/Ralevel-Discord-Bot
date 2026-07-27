@@ -60,13 +60,37 @@ Tracks message activity and XP per Discord user.
 | `guild_id` | String | Discord server ID (indexed) |
 | `total_messages` | Number | Lifetime message count (default 0) |
 | `xp` | Number | Total XP (default 0) |
+| `appliedFlushIds` | String[] | Recent flushIds already applied (capped, idempotency) |
 | `createdAt` / `updatedAt` | Date | Auto timestamps |
 
 **Indexes:** `{ guild_id: 1 }`, `{ xp: -1 }`
 
-**Written by:** `utils/dailyFinalize.js` (daily bulkWrite from Redis)
+**Written by:** `utils/xpFlush.js` (90s bulkWrite from Redis via grant ledger)
 
 **Read by:** Rank system, XP-related commands
+
+---
+
+### `xpflushgrants` — XpFlushGrant
+
+**Model:** `models/xpFlushGrant.js`
+
+Idempotent ledger of each XP flush batch per user.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `guildId` | String | Discord server ID |
+| `flushId` | String | Unique flush batch id |
+| `userId` | String | Discord user ID |
+| `messages` | Number | Messages in this flush |
+| `xp` | Number | XP granted in this flush |
+| `dateIst` | String | IST date `YYYY-MM-DD` (audit) |
+| `applied` | Boolean | Whether User apply completed |
+| `createdAt` | Date | Auto timestamp |
+
+**Indexes:** unique `{ guildId: 1, flushId: 1, userId: 1 }`
+
+**Written by:** `utils/xpFlush.js`
 
 ---
 
@@ -414,45 +438,34 @@ Staff notes on users (separate from warnings).
 
 ## Redis keys
 
-Redis is used **only** for high-frequency message counting and finalize locking. No general-purpose caching.
+Redis is used **only** for high-frequency message counting and XP flush locking. No general-purpose caching.
 
 ### Current key patterns
 
 | Key pattern | Type | Written by | Read by | TTL |
 |-------------|------|------------|---------|-----|
-| `messages:{guildId}:{date}` | Hash | `messageTracker` (pipelined `HINCRBY` + `EXPIRE`) | `dailyFinalize` | 72h sliding TTL; deleted after finalize |
-| `messages:boosters:{guildId}:{date}` | Hash | `messageTracker` (pipelined `HSET` + `EXPIRE`) | `dailyFinalize` | 72h sliding TTL; deleted after finalize |
-| `processed:{guildId}:{date}` | String | `dailyFinalize` (`SET NX EX`) | `dailyFinalizeSystem` | 1h processing / 7d completed |
+| `xp:pending:{guildId}` | Hash | `messageTracker` (pipelined `HINCRBY` + `EXPIRE`) | `xpFlush` | 7d sliding TTL; renamed on flush |
+| `xp:boosters:{guildId}` | Hash | `messageTracker` (pipelined `HSET` + `EXPIRE`) | `xpFlush` | 7d sliding TTL; renamed on flush |
+| `xp:draining:{guildId}:{flushId}` | Hash | `xpFlush` (`RENAME` from pending) | `xpFlush` | Deleted after apply |
+| `xp:draining-boosters:{guildId}:{flushId}` | Hash | `xpFlush` (`RENAME` from boosters) | `xpFlush` | Deleted after apply |
+| `xp:flush:lock:{guildId}` | String | `xpFlush` (`SET NX EX`) | `xpFlush` | 120s |
 
 **Hash fields:**
 
-- `messages:{guildId}:{date}` → `{ userId: messageCount }`
-- `messages:boosters:{guildId}:{date}` → `{ userId: "true" | "false" }`
-
-**Date format:** `YYYY-MM-DD` UTC (`new Date().toISOString().split("T")[0]`)
-
-**Finalize date:** Yesterday's date — finalize at 6 AM IST processes the previous day's counts.
-
-### Legacy key patterns (fallback in dailyFinalize)
-
-| Key pattern | Type | Purpose |
-|-------------|------|---------|
-| `messages:users:{guildId}:{date}` | Set | Legacy user ID set |
-| `messages:{guildId}:{date}:{userId}` | Hash | Legacy per-user `{ count, booster }` |
-
-The finalize system reads aggregate hashes first, then falls back to legacy keys if empty.
+- `xp:pending:{guildId}` → `{ userId: messageCount }`
+- `xp:boosters:{guildId}` → `{ userId: "true" | "false" }`
 
 ### Lock behavior
 
 ```javascript
-// Acquire lock (1 hour TTL while processing)
-await redis.set(lockKey, "true", "EX", 3600, "NX");
+// Acquire lock (120s TTL while flushing)
+await redis.set(lockKey, "1", "EX", 120, "NX");
 
-// After successful finalize (7 day TTL — prevents re-processing)
-await redis.expire(lockKey, 604800);
+// Atomic drain so new messages create a fresh pending hash
+await redis.rename(pendingKey, drainingKey);
 
-// Delete day keys after finalize
-await redis.del(countKey, boosterKey, usersSetKey);
+// Delete draining keys after ledger + User apply
+await redis.del(drainingKey, drainingBoostersKey);
 ```
 
 ---
@@ -465,15 +478,16 @@ await redis.del(countKey, boosterKey, usersSetKey);
 flowchart LR
     MSG[User sends message] --> MT[messageTracker]
     MT --> Pipe["Redis pipeline: HINCRBY + HSET + EXPIRE"]
-    Pipe --> R1["messages:guild:date"]
-    Pipe --> R2["messages:boosters:guild:date"]
+    Pipe --> R1["xp:pending:guild"]
+    Pipe --> R2["xp:boosters:guild"]
 
-    SCHED[6 AM IST finalize] --> FIN[dailyFinalize]
+    SCHED[Every 90s] --> FIN[xpFlush]
     FIN --> R1
+    FIN --> LEDGER["MongoDB: XpFlushGrant"]
     FIN --> MONGO["MongoDB: users xp + total_messages"]
     FIN --> RANK[rankSystem]
     RANK --> ROLES[Discord rank roles]
-    FIN --> DEL[Delete Redis day keys]
+    FIN --> DEL[Delete draining keys]
 ```
 
 ### Reputation (immediate, no Redis)

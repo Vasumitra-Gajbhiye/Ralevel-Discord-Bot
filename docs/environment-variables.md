@@ -61,13 +61,13 @@ Used in: `database.js`, verification scripts, migration scripts
 
 |                       |                                                                |
 | --------------------- | -------------------------------------------------------------- |
-| **Purpose**           | Redis connection for daily message counters and finalize locks |
+| **Purpose**           | Redis connection for pending XP counters and flush locks |
 | **Example (local)**   | `redis://127.0.0.1:6379`                                       |
 | **Example (Coolify)** | `redis://redis:6379` (internal service URL)                    |
 | **Required**          | Yes                                                            |
 | **If missing**        | Process throws `REDIS_URL is required` on import of `redis.js` |
 
-Used in: `redis.js` → `messageTracker`, `dailyFinalize`, `dailyFinalizeSystem`
+Used in: `redis.js` → `messageTracker`, `xpFlush`, `xpFlushSystem`
 
 ---
 
@@ -77,10 +77,10 @@ Used in: `redis.js` → `messageTracker`, `dailyFinalize`, `dailyFinalizeSystem`
 | -------------- | --------------------------------------------------- |
 | **Purpose**    | Target Discord server ID                            |
 | **Example**    | `1114437735692902481`                               |
-| **Required**   | Yes (for finalize, deploy, flush scripts)           |
-| **If missing** | Daily finalize skips or errors; deploy script fails |
+| **Required**   | Yes (for XP flush, deploy, flush scripts)           |
+| **If missing** | XP flush skips or errors; deploy script fails |
 
-Used in: `scripts/deploy-commands.js`, `systems/dailyFinalizeSystem.js`, `utils/dailyFinalize.js`, `utils/flushRedisToMongo.js`
+Used in: `scripts/deploy-commands.js`, `systems/xpFlushSystem.js`, `utils/xpFlush.js`, `utils/flushRedisToMongo.js`
 
 ---
 

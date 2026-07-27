@@ -4,6 +4,7 @@ const {
   buildXpProfileEmbed,
   getOrCreateUser,
   getServerRank,
+  getXpTotalsWithPending,
 } = require("../../utils/xp");
 
 module.exports = {
@@ -16,8 +17,11 @@ module.exports = {
     const guildId = interaction.guild.id;
 
     const user = await getOrCreateUser(guildId, userId);
-    const xp = user.xp ?? 0;
-    const totalMessages = user.total_messages ?? 0;
+    const { xp, totalMessages } = await getXpTotalsWithPending(
+      guildId,
+      userId,
+      user,
+    );
     const serverRank = await getServerRank(guildId, xp);
     const isBanned = Boolean(await XpBan.exists({ userId }));
 

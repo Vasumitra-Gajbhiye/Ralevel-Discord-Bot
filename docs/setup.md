@@ -226,7 +226,7 @@ Run these after changing core systems:
 | Poll votes | `pnpm --filter @ralevel/bot verify:poll-votes` | Poll vote integrity (needs `MONGO_URI`) |
 | Poll sweeper | `pnpm --filter @ralevel/bot verify:poll-sweeper` | Adaptive deadline scheduling + sweep logic (needs `MONGO_URI`) |
 | Sequential IDs | `pnpm --filter @ralevel/bot verify:sequential-ids` | Counter/ID generation (needs `MONGO_URI`) |
-| Daily finalize | `pnpm --filter @ralevel/bot verify:finalize` | Redis finalize + lock behavior |
+| XP flush | `pnpm --filter @ralevel/bot verify:xp-flush` | Redis XP flush + lock behavior |
 | Message router | `pnpm --filter @ralevel/bot verify:message-router` | Single MessageCreate listener, rep gating |
 | Welcome system | `pnpm --filter @ralevel/bot verify:welcome` | Background image cache (no reload per join) |
 | Task display | `pnpm --filter @ralevel/bot verify:task-display` | Cached display message ID (no 50-msg scan per update) |

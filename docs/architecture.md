@@ -61,7 +61,7 @@ r-alevel bot code/
 │   ├── messageTracker.js    # Redis message counters
 │   ├── reputation.js        # Thank-you rep system
 │   ├── sticky.js            # Sticky message reposter
-│   ├── dailyFinalizeSystem.js
+│   ├── xpFlushSystem.js
 │   ├── rankSystem.js        # XP rank roles (via finalize)
 │   ├── qotd.js              # QOTD reminder scheduler
 │   ├── polls.js             # Poll vote/view button handlers
@@ -96,7 +96,7 @@ flowchart TD
     H --> I[welcomeSystem]
     I --> J[confessionsSystem]
     J --> K[messageRouter - wire MessageCreate]
-    K --> L[dailyFinalizeSystem - 5min interval]
+    K --> L[xpFlushSystem - 90s interval]
     L --> M[pollSystem - adaptive sweeper]
     M --> N[client.login TOKEN]
 ```
@@ -153,7 +153,7 @@ qotdSystem(client);
 welcomeSystem(client);
 confessionsSystem(client);
 messageRouter(client, { handleMessageTracker, handleSticky, handleReputation });
-dailyFinalizeSystem(client);
+xpFlushSystem(client);
 pollSystem(client);
 ```
 
@@ -223,7 +223,7 @@ flowchart LR
     end
 
     subgraph daily [Daily at 6 AM IST]
-        REDIS --> FIN[dailyFinalize]
+        REDIS --> FIN[xpFlush]
         FIN --> MONGO[(MongoDB User)]
         FIN --> RANK[rankSystem]
         RANK --> ROLES[Discord rank roles]
@@ -276,7 +276,7 @@ No cron library. All scheduling uses `setInterval` / `setTimeout` with IST timez
 
 | Job | Interval | Trigger | Module |
 |-----|----------|---------|--------|
-| Daily finalize | 5 min + 10s startup | ≥ 6:00 AM IST, no Redis lock | `dailyFinalizeSystem.js` |
+| XP flush | 90s + 10s startup | Redis lock absent; orphan drain resume | `xpFlushSystem.js` |
 | QOTD reminder | 5 min + 10s startup | ≥ 6:00 AM IST, not sent today; skips MongoDB before cutoff | `qotd.js` |
 | Poll sweeper | Adaptive (5 min idle cap) + 10s startup | `deadline <= now` | `utils/pollSweeper.js` |
 | Sticky flush | Debounced 5s | After sticky repost | `sticky.js` |
@@ -291,7 +291,7 @@ No cron library. All scheduling uses `setInterval` / `setTimeout` with IST timez
 | **Guild commands** | Instant updates on deploy; single-server bot |
 | **Single MessageCreate listener** | Avoids duplicate processing; consolidated via messageRouter |
 | **Redis for message counts** | High write frequency — avoid MongoDB on every message |
-| **Daily finalize batch** | Aggregate Redis → MongoDB once per day with XP + rank updates |
+| **XP flush batch** | Aggregate Redis → MongoDB every 90s with idempotent grants + rank updates |
 | **Monolithic process** | Simple deployment (one Docker container) |
 | **Legacy `config/constants.js`** | Hardcoded IDs from before env migration — kept for reference |
 

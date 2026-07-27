@@ -1,7 +1,8 @@
 const { User } = require("@ralevel/db");
 const { EmbedBuilder } = require("discord.js");
-const { getRank, getRanks, handleRanks } = require("../systems/rankSystem");
+const { getRank, handleRanks } = require("../systems/rankSystem");
 const { getRoleId } = require("./guildConfigStore");
+const { getPendingXpOverlay } = require("./xpFlush");
 
 function buildProgressBar(pct, length = 10) {
   const clamped = Math.max(0, Math.min(100, pct));
@@ -75,6 +76,17 @@ async function getServerRank(guildId, xp) {
   return higherCount + 1;
 }
 
+async function getXpTotalsWithPending(guildId, userId, userDoc) {
+  const storedXp = userDoc?.xp ?? 0;
+  const storedMessages = userDoc?.total_messages ?? 0;
+  const pending = await getPendingXpOverlay(guildId, userId);
+  return {
+    xp: storedXp + pending.xp,
+    totalMessages: storedMessages + pending.messages,
+    pending,
+  };
+}
+
 function buildXpProfileEmbed({
   guild,
   targetUser,
@@ -146,5 +158,6 @@ module.exports = {
   resolveRankDisplayName,
   getOrCreateUser,
   getServerRank,
+  getXpTotalsWithPending,
   applyXpChange,
 };

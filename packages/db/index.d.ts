@@ -6,6 +6,7 @@ export declare const User: Model<any>;
 export declare const Reputation: Model<any>;
 export declare const RepBan: Model<any>;
 export declare const XpBan: Model<any>;
+export declare const XpFlushGrant: Model<any>;
 export declare const Sticky: Model<any>;
 export declare const StickyLog: Model<any>;
 export declare const Poll: Model<any>;

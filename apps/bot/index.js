@@ -14,7 +14,7 @@ const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
 const { handleMessageTracker } = require("./systems/messageTracker");
 const messageRouter = require("./systems/messageRouter");
-const dailyFinalizeSystem = require("./systems/dailyFinalizeSystem");
+const xpFlushSystem = require("./systems/xpFlushSystem");
 const pollSystem = require("./systems/polls");
 const { startCommandSyncServer } = require("./systems/commandSyncServer");
 
@@ -44,7 +44,7 @@ async function start() {
     handleSticky,
     handleReputation,
   });
-  dailyFinalizeSystem(client);
+  xpFlushSystem(client);
   pollSystem(client);
   startCommandSyncServer();
 

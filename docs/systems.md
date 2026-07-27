@@ -15,8 +15,8 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Message tracker | `systems/messageTracker.js` | Called by router | Redis |
 | Reputation | `systems/reputation.js` | Called by router | MongoDB |
 | Sticky | `systems/sticky.js` | Called by router + `ready` | MongoDB + cache |
-| Daily finalize | `systems/dailyFinalizeSystem.js`, `utils/dailyFinalize.js` | 5 min interval | Redis → MongoDB |
-| Rank system | `systems/rankSystem.js` | Called by finalize | Discord roles |
+| XP flush | `systems/xpFlushSystem.js`, `utils/xpFlush.js` | 90s interval | Redis → MongoDB |
+| Rank system | `systems/rankSystem.js` | Called by XP flush | Discord roles |
 | QOTD | `systems/qotd.js`, `utils/qotdHelpers.js` | 5 min interval | MongoDB + cache |
 | Polls | `systems/polls.js`, `utils/applyPollVote.js`, `utils/pollSweeper.js` | Buttons + adaptive sweeper | MongoDB |
 | Welcome | `systems/welcome.js` | `guildMemberAdd` | Canvas image |
@@ -29,7 +29,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 
 | Job | Interval | Condition | Handler |
 |-----|----------|-----------|---------|
-| Daily finalize | 5 min + 10s on startup | ≥ 6:00 AM IST, Redis lock absent | `dailyFinalizeSystem.js` |
+| XP flush | 90s + 10s on startup | Redis lock absent; resumes orphan drains | `xpFlushSystem.js` |
 | QOTD reminder | 5 min + 10s on startup | ≥ 6:00 AM IST, not sent today; skips MongoDB before cutoff | `qotd.js` |
 | Poll deadline sweeper | Adaptive (5 min idle cap) + 10s on startup | `deadline <= now` | `utils/pollSweeper.js` |
 | Sticky `lastMessageId` flush | Debounced 5s | After sticky repost | `sticky.js` |
@@ -105,30 +105,29 @@ client.on(Events.MessageCreate, async (message) => {
 
 **File:** `systems/messageTracker.js`
 
-**Purpose:** Increment per-user daily message counts in Redis on every guild message.
+**Purpose:** Increment per-user pending message counts in Redis on every guild message.
 
 **Trigger:** Called by message router (not a direct Discord listener)
 
 **Internal flow:**
 
 ```javascript
-const countKey = `messages:${guildId}:${date}`;       // Hash: userId → count
-const boosterKey = `messages:boosters:${guildId}:${date}`; // Hash: userId → "true"/"false"
+const countKey = `xp:pending:${guildId}`;       // Hash: userId → count
+const boosterKey = `xp:boosters:${guildId}`;    // Hash: userId → "true"/"false"
 
 pipeline.hincrby(countKey, userId, 1);
 pipeline.hset(boosterKey, userId, isBooster ? "true" : "false");
-pipeline.expire(countKey, MESSAGE_KEY_TTL_SEC);   // 72h sliding TTL
-pipeline.expire(boosterKey, MESSAGE_KEY_TTL_SEC);
+pipeline.expire(countKey, PENDING_KEY_TTL_SEC);   // 7d sliding TTL
+pipeline.expire(boosterKey, PENDING_KEY_TTL_SEC);
 ```
 
-- Date format: `YYYY-MM-DD` UTC (`toISOString().split("T")[0]`)
-- Booster detection: checks `BOOSTER_ROLE_ID` on message author's roles
+- Booster detection: checks configured booster role / `BOOSTER_ROLE_ID` on message author's roles
 - Four Redis commands per message via a single pipeline (`HINCRBY`, `HSET`, `EXPIRE` × 2) — one network round trip
-- Key TTL: 72 hours (refreshed on each message); keys are also deleted after daily finalize
+- Key TTL: 7 days (refreshed on each message); keys are renamed away during XP flush
 
-**Dependencies:** `redis.js`, `BOOSTER_ROLE_ID`
+**Dependencies:** `redis.js`, `utils/xpKeys.js`, `BOOSTER_ROLE_ID`
 
-**Downstream:** Data consumed by `utils/dailyFinalize.js` at 6 AM IST
+**Downstream:** Data consumed by `utils/xpFlush.js` every 90 seconds
 
 **Verification:** `npm run verify:message-tracker`
 
@@ -201,41 +200,44 @@ client.stickies = Map<channelId, { content, lineThreshold, lastMessageId, enable
 
 ---
 
-## 6. Daily finalize system
+## 6. XP flush system
 
-**Files:** `systems/dailyFinalizeSystem.js`, `utils/dailyFinalize.js`
+**Files:** `systems/xpFlushSystem.js`, `utils/xpFlush.js`, `utils/xpKeys.js`
 
-**Purpose:** Once daily at 6:00 AM IST, flush yesterday's Redis message counts to MongoDB, update XP, and assign rank roles.
+**Purpose:** Every 90 seconds, drain pending Redis message counts into MongoDB via an idempotent grant ledger, update XP, and assign rank roles (with level-up announcements).
 
-**Schedule:** Checks every 5 minutes; runs finalize when IST hour ≥ 6 and Redis lock is absent.
+**Schedule:** `setInterval` every 90s; also resumes orphan drains and runs once ~10s after startup.
 
 **Internal flow:**
 
 ```mermaid
 flowchart TD
-    A[Check IST time >= 6 AM] --> B{Lock exists?}
-    B -->|Yes| SKIP[Skip]
-    B -->|No| C[Acquire lock SET NX EX]
-    C --> D[Read Redis hashes for yesterday]
-    D --> E[User.bulkWrite - increment messages + XP]
-    E --> F[handleRanks - assign XP tier roles]
-    F --> G[Extend lock TTL 7 days]
-    G --> H[Delete Redis day keys]
+    A[Every 90s] --> B{Acquire flush lock NX?}
+    B -->|No| SKIP[Skip]
+    B -->|Yes| C[RENAME pending to draining flushId]
+    C --> D[Insert XpFlushGrant rows]
+    D --> E["User bulkWrite $inc if flushId not in appliedFlushIds"]
+    E --> F[handleRanks announce]
+    F --> G[DEL draining keys + release lock]
+    H[Startup] --> I[Scan xp:draining orphans]
+    I --> D
 ```
 
 **XP formula:**
 
 ```
-xpGained = isBooster ? messageCount * 2 : messageCount
+xpGained = isBooster ? messageCount * boosterMultiplier : messageCount
 ```
 
-**Lock key:** `processed:{guildId}:{date}` — prevents double finalize
+**Idempotency:** `XpFlushGrant` unique on `{ guildId, flushId, userId }`; User updates use `appliedFlushIds: { $nin: [flushId] }` so retries cannot double-count.
 
-**Dependencies:** `redis.js`, `GUILD_ID`, MongoDB (`User`), `systems/rankSystem.js`
+**Lock key:** `xp:flush:lock:{guildId}` (TTL 120s)
 
-**Verification:** `npm run verify:finalize`
+**Dependencies:** `redis.js`, `GUILD_ID`, MongoDB (`User`, `XpFlushGrant`, `XpBan`), `systems/rankSystem.js`
 
-**Manual flush:** `utils/flushRedisToMongo.js` — one-shot flush without XP or rank updates
+**Verification:** `npm run verify:xp-flush`
+
+**Manual flush:** `utils/flushRedisToMongo.js` — one-shot call to the same idempotent `flushPendingXp` helper
 
 ---
 
@@ -243,7 +245,7 @@ xpGained = isBooster ? messageCount * 2 : messageCount
 
 **File:** `systems/rankSystem.js`
 
-**Purpose:** Assign XP-based rank roles after daily finalize. Not bootstrapped directly in `index.js` — only called from `utils/dailyFinalize.js`.
+**Purpose:** Assign XP-based rank roles after XP flush. Not bootstrapped directly in `index.js` — called from `utils/xpFlush.js` (and admin XP commands via `utils/xp.js`).
 
 **Rank thresholds** (hardcoded role IDs in `RANKS` array):
 

@@ -282,7 +282,7 @@ Error: Used disallowed intents → enable intents in Developer Portal
 | Commands work | Run `/ping` |
 | Redis working | Send messages, check Redis keys exist |
 | MongoDB working | Run a command that reads DB (e.g. `/my-reputation`) |
-| Finalize working | Check logs at 6 AM IST for `[FINALIZE]` messages |
+| XP flush working | Check logs for `[xpFlush]` messages (~every 90s when pending) |
 
 ---
 
@@ -290,7 +290,7 @@ Error: Used disallowed intents → enable intents in Developer Portal
 
 This bot is designed as a **single-instance** application:
 
-- Redis locks prevent double finalize — running multiple instances could cause race conditions
+- Redis locks prevent double XP flush — running multiple instances could cause race conditions
 - In-memory caches (`client.stickies`, bounded `processedMessageIds` reputation dedup cache) are not shared across instances
 - Run **one bot container** per Discord server
 

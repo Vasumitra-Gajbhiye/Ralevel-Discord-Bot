@@ -22,19 +22,19 @@ function testQotdSourceOrder() {
   );
 }
 
-function testDailyFinalizeNoDuplicateISTHelper() {
+function testXpFlushUsesSharedISTHelper() {
   const source = fs.readFileSync(
-    path.join(__dirname, "../systems/dailyFinalizeSystem.js"),
+    path.join(__dirname, "../utils/xpFlush.js"),
     "utf8",
   );
 
   assert(
     !source.includes("function getISTDateInfo"),
-    "dailyFinalizeSystem.js must import getISTDateInfo instead of defining it",
+    "xpFlush.js must import getISTDateInfo instead of defining it",
   );
   assert(
-    source.includes('require("../utils/qotdHelpers")'),
-    "dailyFinalizeSystem.js must import from qotdHelpers",
+    source.includes('require("./qotdHelpers")'),
+    "xpFlush.js must import from qotdHelpers",
   );
 }
 
@@ -108,7 +108,7 @@ async function testUpdateRotationCache() {
 
 async function main() {
   testQotdSourceOrder();
-  testDailyFinalizeNoDuplicateISTHelper();
+  testXpFlushUsesSharedISTHelper();
   testGetISTDateInfoShape();
   await testRotationCacheTTL();
   await testUpdateRotationCache();

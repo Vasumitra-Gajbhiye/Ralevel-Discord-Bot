@@ -1,9 +1,11 @@
+require("../loadEnv");
 const fs = require("fs");
 const path = require("path");
 const {
   buildMessageTrackerPipeline,
   MESSAGE_KEY_TTL_SEC,
 } = require("../systems/messageTracker");
+const { getPendingKey, getBoosterKey } = require("../utils/xpKeys");
 
 function assert(condition, message) {
   if (!condition) {
@@ -63,8 +65,11 @@ function createMockRedis() {
 async function withReloadedMessageTracker(setup, run) {
   const messageTrackerPath = require.resolve("../systems/messageTracker");
   const redisModule = require("../redis");
+  const { XpBan } = require("@ralevel/db");
   const savedPipeline = redisModule.pipeline;
+  const savedExists = XpBan.exists;
 
+  XpBan.exists = async () => false;
   setup(redisModule);
   delete require.cache[messageTrackerPath];
   const reloaded = require("../systems/messageTracker");
@@ -73,6 +78,7 @@ async function withReloadedMessageTracker(setup, run) {
     await run(reloaded);
   } finally {
     redisModule.pipeline = savedPipeline;
+    XpBan.exists = savedExists;
     delete require.cache[messageTrackerPath];
     require("../systems/messageTracker");
   }
@@ -98,8 +104,8 @@ function testNoSequentialDirectRedisCalls() {
 
 function testBuildMessageTrackerPipelineCommands() {
   const mockRedis = createMockRedis();
-  const countKey = "messages:guild-1:2026-06-21";
-  const boosterKey = "messages:boosters:guild-1:2026-06-21";
+  const countKey = getPendingKey("guild-1");
+  const boosterKey = getBoosterKey("guild-1");
 
   buildMessageTrackerPipeline(mockRedis, {
     countKey,
@@ -121,13 +127,13 @@ function testBuildMessageTrackerPipelineCommands() {
 
   assert(commands[2].op === "expire", "third command should be expire");
   assert(commands[2].key === countKey, "count key should get TTL");
-  assert(commands[2].ttl === MESSAGE_KEY_TTL_SEC, "count key TTL should be 72h");
+  assert(commands[2].ttl === MESSAGE_KEY_TTL_SEC, "count key TTL should be 7d");
 
   assert(commands[3].op === "expire", "fourth command should be expire");
   assert(commands[3].key === boosterKey, "booster key should get TTL");
   assert(
     commands[3].ttl === MESSAGE_KEY_TTL_SEC,
-    "booster key TTL should be 72h"
+    "booster key TTL should be 7d"
   );
 }
 
@@ -160,9 +166,12 @@ async function testHandleMessageTrackerUsesSinglePipeline() {
         "non-booster users should be stored as false"
       );
       assert(
-        commands[0].key ===
-          "messages:guild-9:" + new Date().toISOString().split("T")[0],
-        "count key should use guild and today's UTC date"
+        commands[0].key === getPendingKey("guild-9"),
+        "count key should be xp:pending:{guildId}"
+      );
+      assert(
+        commands[1].key === getBoosterKey("guild-9"),
+        "booster key should be xp:boosters:{guildId}"
       );
     }
   );
