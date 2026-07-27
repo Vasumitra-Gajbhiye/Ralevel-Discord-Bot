@@ -444,6 +444,48 @@ table.data input {
   overflow-x: auto;
 }
 
+.drag-handle-cell {
+  width: 2.25rem;
+  padding-left: 0.35rem !important;
+  padding-right: 0.15rem !important;
+  vertical-align: middle !important;
+}
+
+.drag-handle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+tr[data-dragging="true"] {
+  opacity: 0.55;
+  background: var(--bg-muted);
+}
+
+.reorder-mode-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+}
+
 table.data {
   width: 100%;
   border-collapse: collapse;

@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react";
 import { AddRoleModal } from "@/components/AddRoleModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { InfoHelpIcon } from "@/components/InfoHelpIcon";
+import {
+  RolesSortableTable,
+  arrayMove,
+} from "@/components/RolesSortableTable";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
@@ -24,6 +27,7 @@ export default function RolesPage() {
     null,
   );
   const [showAddModal, setShowAddModal] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
 
   const savedRoles = useMemo(() => config?.roles ?? [], [config?.roles]);
   const roles = draft ?? savedRoles;
@@ -53,6 +57,15 @@ export default function RolesPage() {
     setDraft(next);
   }
 
+  function reorderRoles(fromIndex: number, toIndex: number) {
+    setDraft(arrayMove(roles, fromIndex, toIndex));
+  }
+
+  function handleDiscard() {
+    setDraft(null);
+    setReorderMode(false);
+  }
+
   async function handleAddRole(role: {
     key: string;
     label: string;
@@ -72,11 +85,12 @@ export default function RolesPage() {
   async function onSave() {
     await save({ roles });
     setDraft(null);
+    setReorderMode(false);
   }
 
   const { saveBarRef } = useUnsavedChanges({
     isDirty,
-    onDiscard: () => setDraft(null),
+    onDiscard: handleDiscard,
   });
 
   if (loading) return <p className="muted">Loading…</p>;
@@ -93,7 +107,7 @@ export default function RolesPage() {
     <>
       <PageHeader
         title="Roles"
-        description="Named role keys map to Discord role snowflake IDs. Command permissions reference these keys."
+        description="Named role keys map to Discord role snowflake IDs. Command permissions reference these keys. Role order controls hierarchy display in the dashboard."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -101,92 +115,43 @@ export default function RolesPage() {
 
       <div className="card stack">
         <div className="row row-between">
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setShowAddModal(true)}
-          >
-            Add role
-          </button>
+          <div className="row" style={{ gap: "0.5rem" }}>
+            <button
+              type="button"
+              className="btn"
+              disabled={reorderMode}
+              onClick={() => setShowAddModal(true)}
+            >
+              Add role
+            </button>
+            <button
+              type="button"
+              className={`btn${reorderMode ? " btn-primary" : ""}`}
+              onClick={() => setReorderMode((prev) => !prev)}
+            >
+              {reorderMode ? "Done reordering" : "Reorder"}
+            </button>
+          </div>
           <SaveActions
             saveBarRef={saveBarRef}
             isDirty={isDirty}
             saving={saving}
             onSave={onSave}
-            onDiscard={() => setDraft(null)}
+            onDiscard={handleDiscard}
             saveLabel="Save roles"
           />
         </div>
 
-        <div className="table-wrap">
-          <table className="data">
-            <thead>
-              <tr>
-                <th>
-                  <span className="th-with-help">
-                    Key
-                    <InfoHelpIcon content={KEY_HELP} />
-                  </span>
-                </th>
-                <th>
-                  <span className="th-with-help">
-                    Label
-                    <InfoHelpIcon content={LABEL_HELP} />
-                  </span>
-                </th>
-                <th>
-                  <span className="th-with-help">
-                    Discord role ID
-                    <InfoHelpIcon content={ROLE_ID_HELP} />
-                  </span>
-                </th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((role, i) => (
-                <tr key={`${role.key}-${i}`}>
-                  <td>
-                    <input
-                      className="input mono"
-                      value={role.key}
-                      onChange={(e) =>
-                        updateRole(
-                          i,
-                          "key",
-                          e.target.value.replace(/\s/g, ""),
-                        )
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="input"
-                      value={role.label}
-                      onChange={(e) => updateRole(i, "label", e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="input mono"
-                      value={role.roleId}
-                      onChange={(e) => updateRole(i, "roleId", e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => setPendingRemoveIndex(i)}
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <RolesSortableTable
+          roles={roles}
+          reorderMode={reorderMode}
+          keyHelp={KEY_HELP}
+          labelHelp={LABEL_HELP}
+          roleIdHelp={ROLE_ID_HELP}
+          onReorder={reorderRoles}
+          onUpdateRole={updateRole}
+          onRemove={setPendingRemoveIndex}
+        />
       </div>
 
       <AddRoleModal
