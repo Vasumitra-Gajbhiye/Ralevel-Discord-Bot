@@ -7,6 +7,7 @@ import { requireAllowlistedAuth } from "@/lib/auth";
 import { normalizeReputationIdLabels, normalizeRanksConfig } from "@ralevel/db";
 import { getCommandCatalog } from "@ralevel/shared/commandCatalog";
 import { validateCommandDisplayNames } from "@ralevel/shared/commandDisplayNames";
+import { validateCommandMetadataOverrides } from "@ralevel/shared/commandMetadataOverrides";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ const PATCHABLE = [
   "commandPermissions",
   "commandDiscordPermissions",
   "commandDisplayNames",
+  "commandMetadataOverrides",
   "channels",
   "categories",
   "features",
@@ -83,6 +85,20 @@ export async function PUT(request: Request) {
       body.commandDisplayNames = validation.displayNames;
     }
 
+    if (body.commandMetadataOverrides !== undefined) {
+      const validation = validateCommandMetadataOverrides(
+        getCommandCatalog(),
+        body.commandMetadataOverrides,
+      );
+      if (!validation.ok) {
+        return NextResponse.json(
+          { error: validation.errors.join("; ") },
+          { status: 400 },
+        );
+      }
+      body.commandMetadataOverrides = validation.overrides;
+    }
+
     for (const key of PATCHABLE) {
       if (body[key] !== undefined) {
         if (key === "reputation") {
@@ -103,7 +119,8 @@ export async function PUT(request: Request) {
           if (
             key === "commandPermissions" ||
             key === "commandDiscordPermissions" ||
-            key === "commandDisplayNames"
+            key === "commandDisplayNames" ||
+            key === "commandMetadataOverrides"
           ) {
             doc.markModified(key);
           }

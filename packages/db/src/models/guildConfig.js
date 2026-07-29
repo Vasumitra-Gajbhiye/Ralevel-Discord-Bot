@@ -115,6 +115,12 @@ const GuildConfigSchema = new mongoose.Schema(
     commandDiscordPermissions: { type: Map, of: String, default: {} },
     // Map of canonical commandName -> custom Discord slash name
     commandDisplayNames: { type: Map, of: String, default: {} },
+    // Map of canonical commandName -> partial metadata override (description, option text)
+    commandMetadataOverrides: {
+      type: Map,
+      of: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
     channels: { type: [ChannelEntrySchema], default: [] },
     categories: { type: [CategoryEntrySchema], default: [] },
     features: {

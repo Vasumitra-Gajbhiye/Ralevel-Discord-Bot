@@ -8,6 +8,7 @@ export type GuildConfigData = {
   commandPermissions: Record<string, string[]>;
   commandDiscordPermissions: Record<string, string>;
   commandDisplayNames: Record<string, string>;
+  commandMetadataOverrides: Record<string, unknown>;
   channels: { key: string; label: string; channelId: string }[];
   categories: { key: string; label: string; categoryId: string }[];
   features: Record<string, boolean>;

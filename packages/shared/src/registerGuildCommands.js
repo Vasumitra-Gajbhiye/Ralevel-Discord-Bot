@@ -12,6 +12,10 @@ const {
   applyCommandNameOverride,
   normalizeNameOverrides,
 } = require("./commandDisplayNames");
+const {
+  applyMetadataOverride,
+  normalizeMetadataOverrides,
+} = require("./commandMetadataOverrides");
 
 function resolveCommandsRoot(explicitRoot) {
   if (explicitRoot) return path.resolve(explicitRoot);
@@ -59,9 +63,11 @@ function loadCommandPayloads(
   commandsRoot,
   permissionOverrides = {},
   nameOverrides = {},
+  metadataOverrides = {},
 ) {
   const normalizedPermissionOverrides = normalizeOverrides(permissionOverrides);
   const normalizedNameOverrides = normalizeNameOverrides(nameOverrides);
+  const normalizedMetadataOverrides = normalizeMetadataOverrides(metadataOverrides);
   const modules = loadCommandModules(commandsRoot);
 
   return modules
@@ -88,6 +94,10 @@ function loadCommandPayloads(
 
       let nextPayload = applyDiscordPermissionOverride(payload, overrideValue);
       nextPayload = applyCommandNameOverride(nextPayload, effectiveName);
+      nextPayload = applyMetadataOverride(
+        nextPayload,
+        normalizedMetadataOverrides[payload.name],
+      );
 
       return {
         category: folder,
@@ -112,6 +122,7 @@ async function registerGuildCommands({
   commandsRoot,
   overrides = {},
   nameOverrides = {},
+  metadataOverrides = {},
 }) {
   if (!token) throw new Error("TOKEN is required to register guild commands");
   if (!clientId) {
@@ -121,7 +132,12 @@ async function registerGuildCommands({
     throw new Error("GUILD_ID is required to register guild commands");
   }
 
-  const entries = loadCommandPayloads(commandsRoot, overrides, nameOverrides);
+  const entries = loadCommandPayloads(
+    commandsRoot,
+    overrides,
+    nameOverrides,
+    metadataOverrides,
+  );
   const body = entries.map((entry) => entry.payload);
   const rest = new REST().setToken(token);
 

@@ -11,7 +11,7 @@ const commandsRoot = path.join(__dirname, "..", "commands");
 const MONGO_TIMEOUT_MS = 10_000;
 
 async function loadOverrides() {
-  if (!guildId) return { permissionOverrides: {}, nameOverrides: {} };
+  if (!guildId) return { permissionOverrides: {}, nameOverrides: {}, metadataOverrides: {} };
 
   try {
     await Promise.race([
@@ -25,7 +25,7 @@ async function loadOverrides() {
     ]);
 
     const doc = await GuildConfig.findOne({ guildId });
-    if (!doc) return { permissionOverrides: {}, nameOverrides: {} };
+    if (!doc) return { permissionOverrides: {}, nameOverrides: {}, metadataOverrides: {} };
 
     const permissionOverrides =
       doc.commandDiscordPermissions instanceof Map
@@ -37,13 +37,18 @@ async function loadOverrides() {
         ? Object.fromEntries(doc.commandDisplayNames)
         : { ...(doc.commandDisplayNames || {}) };
 
-    return { permissionOverrides, nameOverrides };
+    const metadataOverrides =
+      doc.commandMetadataOverrides instanceof Map
+        ? Object.fromEntries(doc.commandMetadataOverrides)
+        : { ...(doc.commandMetadataOverrides || {}) };
+
+    return { permissionOverrides, nameOverrides, metadataOverrides };
   } catch (err) {
     console.warn(
       "[deploy-commands] Could not load GuildConfig overrides; using file defaults.",
       err?.message || err,
     );
-    return { permissionOverrides: {}, nameOverrides: {} };
+    return { permissionOverrides: {}, nameOverrides: {}, metadataOverrides: {} };
   }
 }
 
@@ -51,7 +56,7 @@ async function loadOverrides() {
   let exitCode = 0;
 
   try {
-    const { permissionOverrides, nameOverrides } = await loadOverrides();
+    const { permissionOverrides, nameOverrides, metadataOverrides } = await loadOverrides();
     console.log("Started refreshing application (/) commands.");
 
     const { commandCount } = await registerGuildCommands({
@@ -61,6 +66,7 @@ async function loadOverrides() {
       commandsRoot,
       overrides: permissionOverrides,
       nameOverrides,
+      metadataOverrides,
     });
 
     console.log(`Successfully reloaded ${commandCount} application (/) commands.`);

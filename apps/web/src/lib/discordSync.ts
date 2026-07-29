@@ -28,6 +28,9 @@ async function syncDirect() {
     {};
   const nameOverrides =
     (config.commandDisplayNames as Record<string, string> | undefined) ?? {};
+  const metadataOverrides =
+    (config.commandMetadataOverrides as Record<string, unknown> | undefined) ??
+    {};
 
   return registerGuildCommandsFromCatalog({
     token,
@@ -36,6 +39,7 @@ async function syncDirect() {
     catalogCommands: getCommandCatalog(),
     overrides,
     nameOverrides,
+    metadataOverrides,
   });
 }
 

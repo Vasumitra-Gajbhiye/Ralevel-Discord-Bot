@@ -6,6 +6,10 @@ const {
   applyCommandNameOverride,
   normalizeNameOverrides,
 } = require("./commandDisplayNames");
+const {
+  applyMetadataOverride,
+  normalizeMetadataOverrides,
+} = require("./commandMetadataOverrides");
 
 const PERMISSION_LABELS = {
   Administrator: "Administrator",
@@ -102,9 +106,11 @@ function buildCatalogEntries(
   catalogCommands,
   permissionOverrides = {},
   nameOverrides = {},
+  metadataOverrides = {},
 ) {
   const normalizedPermissionOverrides = normalizeOverrides(permissionOverrides);
   const normalizedNameOverrides = normalizeNameOverrides(nameOverrides);
+  const normalizedMetadataOverrides = normalizeMetadataOverrides(metadataOverrides);
 
   return catalogCommands
     .map((command) => {
@@ -129,6 +135,10 @@ function buildCatalogEntries(
         overrideValue,
       );
       payload = applyCommandNameOverride(payload, effectiveName);
+      payload = applyMetadataOverride(
+        payload,
+        normalizedMetadataOverrides[command.name],
+      );
 
       return {
         category: command.category,
@@ -153,6 +163,7 @@ async function registerGuildCommandsFromCatalog({
   catalogCommands,
   overrides = {},
   nameOverrides = {},
+  metadataOverrides = {},
 }) {
   if (!token) throw new Error("TOKEN is required to register guild commands");
   if (!clientId) {
@@ -166,6 +177,7 @@ async function registerGuildCommandsFromCatalog({
     catalogCommands,
     overrides,
     nameOverrides,
+    metadataOverrides,
   );
   const body = entries.map((entry) => entry.payload);
 

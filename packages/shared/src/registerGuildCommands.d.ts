@@ -19,6 +19,7 @@ export declare function loadCommandPayloads(
   commandsRoot?: string,
   permissionOverrides?: Record<string, string> | Map<string, string>,
   nameOverrides?: Record<string, string> | Map<string, string>,
+  metadataOverrides?: Record<string, unknown> | Map<string, unknown>,
 ): CommandCatalogEntry[];
 
 export declare function registerGuildCommands(options: {
@@ -28,4 +29,5 @@ export declare function registerGuildCommands(options: {
   commandsRoot?: string;
   overrides?: Record<string, string> | Map<string, string>;
   nameOverrides?: Record<string, string> | Map<string, string>;
+  metadataOverrides?: Record<string, unknown> | Map<string, unknown>;
 }): Promise<{ commandCount: number; commands: CommandCatalogEntry[] }>;

@@ -24,6 +24,7 @@ export declare function buildCatalogEntries(
   }>,
   permissionOverrides?: Record<string, string> | Map<string, string>,
   nameOverrides?: Record<string, string> | Map<string, string>,
+  metadataOverrides?: Record<string, unknown> | Map<string, unknown>,
 ): Array<{
   category: string;
   name: string;
@@ -47,4 +48,5 @@ export declare function registerGuildCommandsFromCatalog(options: {
   }>;
   overrides?: Record<string, string> | Map<string, string>;
   nameOverrides?: Record<string, string> | Map<string, string>;
+  metadataOverrides?: Record<string, unknown> | Map<string, unknown>;
 }): Promise<{ commandCount: number; commands: unknown[] }>;

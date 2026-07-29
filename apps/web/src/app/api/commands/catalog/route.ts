@@ -4,6 +4,7 @@ import {
   buildCatalogEntries,
 } from "@ralevel/shared/commandPermissions";
 import { getCommandCatalog } from "@ralevel/shared/commandCatalog";
+import { extractEditableMetadata } from "@ralevel/shared/commandMetadataOverrides";
 import { getOrCreateGuildConfig, guildConfigToJson } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
 
@@ -26,13 +27,24 @@ export async function GET() {
       {};
     const nameOverrides =
       (config.commandDisplayNames as Record<string, string> | undefined) ?? {};
+    const metadataOverrides =
+      (config.commandMetadataOverrides as Record<string, unknown> | undefined) ??
+      {};
 
-    const commands = buildCatalogEntries(
-      getCommandCatalog(),
+    const catalogCommands = getCommandCatalog();
+    const entries = buildCatalogEntries(
+      catalogCommands,
       overrides,
       nameOverrides,
-    ).map(
-      ({ category, name, displayName, effectiveName, fileDefault, saved, effective }) => ({
+      metadataOverrides,
+    );
+
+    const catalogByName = new Map(
+      catalogCommands.map((command) => [command.name, command]),
+    );
+
+    const commands = entries.map(
+      ({
         category,
         name,
         displayName,
@@ -40,7 +52,29 @@ export async function GET() {
         fileDefault,
         saved,
         effective,
-      }),
+        payload,
+      }) => {
+        const catalogCommand = catalogByName.get(name);
+        const defaultDescription =
+          (catalogCommand?.payload?.description as string | undefined) ?? "";
+        const description = (payload.description as string | undefined) ?? "";
+        const editableMetadata = catalogCommand
+          ? extractEditableMetadata(catalogCommand.payload, payload)
+          : { description, defaultDescription, children: [] };
+
+        return {
+          category,
+          name,
+          displayName,
+          effectiveName,
+          fileDefault,
+          saved,
+          effective,
+          description,
+          defaultDescription,
+          editableMetadata,
+        };
+      },
     );
 
     return NextResponse.json({

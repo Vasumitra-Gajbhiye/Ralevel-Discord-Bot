@@ -28,6 +28,7 @@ async function syncGuildCommandsFromConfig() {
   const doc = await GuildConfig.findOne({ guildId });
   const overrides = normalizeOverrides(doc?.commandDiscordPermissions);
   const nameOverrides = normalizeOverrides(doc?.commandDisplayNames);
+  const metadataOverrides = normalizeOverrides(doc?.commandMetadataOverrides);
 
   return registerGuildCommandsFromCatalog({
     token,
@@ -36,6 +37,7 @@ async function syncGuildCommandsFromConfig() {
     catalogCommands: getCommandCatalog(),
     overrides,
     nameOverrides,
+    metadataOverrides,
   });
 }
 

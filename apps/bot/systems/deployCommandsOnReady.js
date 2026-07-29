@@ -24,12 +24,24 @@ function getCommandDisplayNameOverrides(config) {
   return { ...names };
 }
 
+function getCommandMetadataOverrides(config) {
+  if (!config?.commandMetadataOverrides) return {};
+
+  const metadata = config.commandMetadataOverrides;
+  if (metadata instanceof Map) {
+    return Object.fromEntries(metadata);
+  }
+
+  return { ...metadata };
+}
+
 function deployCommandsOnReady(client) {
   client.once("ready", async () => {
     try {
       const config = tryGetGuildConfig();
       const overrides = getDiscordPermissionOverrides(config);
       const nameOverrides = getCommandDisplayNameOverrides(config);
+      const metadataOverrides = getCommandMetadataOverrides(config);
       const commandsRoot = path.join(__dirname, "..", "commands");
 
       const { commandCount } = await registerGuildCommands({
@@ -39,6 +51,7 @@ function deployCommandsOnReady(client) {
         commandsRoot,
         overrides,
         nameOverrides,
+        metadataOverrides,
       });
 
       console.log(

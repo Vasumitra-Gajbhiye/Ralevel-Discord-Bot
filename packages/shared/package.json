@@ -40,6 +40,10 @@
     "./commandDisplayNames": {
       "types": "./src/commandDisplayNames.d.ts",
       "default": "./src/commandDisplayNames.js"
+    },
+    "./commandMetadataOverrides": {
+      "types": "./src/commandMetadataOverrides.d.ts",
+      "default": "./src/commandMetadataOverrides.js"
     }
   }
 }

@@ -7,6 +7,11 @@ import {
   validateCommandDisplayNames,
   validateDisplayName,
 } from "@ralevel/shared/commandDisplayNames";
+import {
+  buildMetadataOverrideFromEditable,
+  type EditableMetadata,
+} from "@ralevel/shared/commandMetadataOverrides";
+import { CommandEditModal } from "@/components/CommandEditModal";
 import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { RolePicker } from "@/components/RolePicker";
 import { SaveActions } from "@/components/SaveActions";
@@ -18,11 +23,21 @@ const BAN_APPEAL_COMMANDS = new Set([
   "ban-appeal-rejected",
 ]);
 
+const DESCRIPTION_PREVIEW_LENGTH = 80;
+
 type CatalogCommand = {
   name: string;
   displayName: string | null;
   effectiveName: string;
+  description: string;
+  defaultDescription: string;
+  editableMetadata: EditableMetadata;
 };
+
+function truncateDescription(text: string, maxLength = DESCRIPTION_PREVIEW_LENGTH) {
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+}
 
 function buildPermissionsToSave(
   catalogNames: string[],
@@ -77,10 +92,14 @@ export default function CommandsPage() {
   const [nameDraft, setNameDraft] = useState<Record<string, string> | null>(
     null,
   );
-  const [pendingNameSync, setPendingNameSync] = useState(false);
+  const [pendingDiscordSync, setPendingDiscordSync] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [editingCommandName, setEditingCommandName] = useState<string | null>(
+    null,
+  );
+  const [modalSaving, setModalSaving] = useState(false);
 
   const savedPermissions = useMemo(
     () => config?.commandPermissions ?? {},
@@ -90,6 +109,11 @@ export default function CommandsPage() {
   const savedDisplayNames = useMemo(
     () => config?.commandDisplayNames ?? {},
     [config?.commandDisplayNames],
+  );
+
+  const savedMetadataOverrides = useMemo(
+    () => config?.commandMetadataOverrides ?? {},
+    [config?.commandMetadataOverrides],
   );
 
   const loadCatalog = useCallback(async () => {
@@ -114,6 +138,14 @@ export default function CommandsPage() {
   const editableCommands = useMemo(() => {
     return catalog.filter((cmd) => !BAN_APPEAL_COMMANDS.has(cmd.name));
   }, [catalog]);
+
+  const editingCommand = useMemo(() => {
+    if (!editingCommandName) return null;
+    return (
+      editableCommands.find((command) => command.name === editingCommandName) ??
+      null
+    );
+  }, [editableCommands, editingCommandName]);
 
   const commandNames = useMemo(() => {
     return editableCommands.map((cmd) => cmd.name).sort();
@@ -254,8 +286,56 @@ export default function CommandsPage() {
     await save({ commandDisplayNames: nameValidation.displayNames });
     setNameDraft(null);
     setEditingNames(false);
-    setPendingNameSync(true);
+    setPendingDiscordSync(true);
     await loadCatalog();
+  }
+
+  async function onSaveCommandEdit({
+    displayName,
+    editableMetadata,
+  }: {
+    displayName: string;
+    editableMetadata: EditableMetadata;
+  }) {
+    if (!editingCommand) return;
+
+    setModalSaving(true);
+    try {
+      const displayNameDraft = {
+        ...savedDisplayNames,
+        [editingCommand.name]: displayName,
+      };
+      const displayNameValidation = validateCommandDisplayNames(
+        editableCommands,
+        displayNameDraft,
+      );
+      if (!displayNameValidation.ok) {
+        throw new Error(displayNameValidation.errors.join("; "));
+      }
+
+      const metadataOverride = buildMetadataOverrideFromEditable(
+        {},
+        editableMetadata,
+      );
+      const nextMetadataOverrides = {
+        ...savedMetadataOverrides,
+      };
+      if (metadataOverride) {
+        nextMetadataOverrides[editingCommand.name] = metadataOverride;
+      } else {
+        delete nextMetadataOverrides[editingCommand.name];
+      }
+
+      await save({
+        commandDisplayNames: displayNameValidation.displayNames,
+        commandMetadataOverrides: nextMetadataOverrides,
+      });
+      setEditingCommandName(null);
+      setPendingDiscordSync(true);
+      await loadCatalog();
+    } finally {
+      setModalSaving(false);
+    }
   }
 
   async function onSync() {
@@ -271,7 +351,7 @@ export default function CommandsPage() {
       setSyncStatus(
         `Synced ${data.commandCount} command(s) to Discord successfully.`,
       );
-      setPendingNameSync(false);
+      setPendingDiscordSync(false);
     } catch (e) {
       setSyncError(e instanceof Error ? e.message : "Sync failed");
     } finally {
@@ -293,12 +373,12 @@ export default function CommandsPage() {
         description="Select which role keys can run each slash command. Empty selection = public (no role gate)."
         actions={
           <div className="row" style={{ gap: "0.5rem" }}>
-            {pendingNameSync ? (
+            {pendingDiscordSync ? (
               <button
                 type="button"
                 className="btn btn-primary"
                 onClick={onSync}
-                disabled={syncing || saving || isNamesDirty}
+                disabled={syncing || saving || isNamesDirty || modalSaving}
               >
                 {syncing ? "Syncing…" : "Sync to Discord"}
               </button>
@@ -329,7 +409,7 @@ export default function CommandsPage() {
                 type="button"
                 className="btn"
                 onClick={startEditingNames}
-                disabled={saving || isPermissionsDirty}
+                disabled={saving || isPermissionsDirty || Boolean(editingCommandName)}
               >
                 Edit names
               </button>
@@ -338,9 +418,9 @@ export default function CommandsPage() {
         }
       />
       <RestartBanner />
-      {pendingNameSync ? (
+      {pendingDiscordSync ? (
         <div className="restart-banner">
-          Name changes are saved but not live in Discord until you click{" "}
+          Command changes are saved but not live in Discord until you click{" "}
           <strong>Sync to Discord</strong>.
         </div>
       ) : null}
@@ -360,8 +440,9 @@ export default function CommandsPage() {
             Moderation → Ban messages
           </Link>
           . Commands are synced from the bot catalog automatically. Use{" "}
-          <strong>Edit names</strong> to customize slash command names shown in
-          Discord.
+          <strong>Edit</strong> on a command to customize its description and
+          option text, or <strong>Edit names</strong> to bulk-rename slash
+          commands in Discord.
         </p>
         <div className="table-wrap">
           <table className="data">
@@ -402,13 +483,41 @@ export default function CommandsPage() {
                             ) : null}
                           </div>
                         ) : (
-                          <div className="stack" style={{ gap: "0.15rem" }}>
-                            <span className="mono">/{command.effectiveName}</span>
-                            {command.displayName ? (
-                              <span className="muted" style={{ fontSize: "0.8rem" }}>
-                                default: /{cmd}
-                              </span>
-                            ) : null}
+                          <div className="stack" style={{ gap: "0.35rem" }}>
+                            <div
+                              className="row"
+                              style={{
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                                gap: "0.75rem",
+                              }}
+                            >
+                              <div className="stack" style={{ gap: "0.15rem" }}>
+                                <span className="mono">/{command.effectiveName}</span>
+                                {command.displayName ? (
+                                  <span className="muted" style={{ fontSize: "0.8rem" }}>
+                                    default: /{cmd}
+                                  </span>
+                                ) : null}
+                                {command.description ? (
+                                  <span
+                                    className="muted"
+                                    style={{ fontSize: "0.8rem", lineHeight: 1.4 }}
+                                    title={command.description}
+                                  >
+                                    {truncateDescription(command.description)}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-sm"
+                                onClick={() => setEditingCommandName(cmd)}
+                                disabled={saving || modalSaving}
+                              >
+                                Edit
+                              </button>
+                            </div>
                           </div>
                         )}
                       </td>
@@ -436,6 +545,14 @@ export default function CommandsPage() {
           />
         </div>
       </div>
+
+      <CommandEditModal
+        open={Boolean(editingCommand)}
+        command={editingCommand}
+        saving={modalSaving || saving}
+        onCancel={() => setEditingCommandName(null)}
+        onSave={onSaveCommandEdit}
+      />
     </>
   );
 }

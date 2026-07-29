@@ -116,6 +116,9 @@ function toPlainConfig(doc) {
   if (obj.commandDisplayNames instanceof Map) {
     obj.commandDisplayNames = Object.fromEntries(obj.commandDisplayNames);
   }
+  if (obj.commandMetadataOverrides instanceof Map) {
+    obj.commandMetadataOverrides = Object.fromEntries(obj.commandMetadataOverrides);
+  }
   return obj;
 }
 
