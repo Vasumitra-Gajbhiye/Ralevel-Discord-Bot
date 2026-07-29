@@ -626,6 +626,35 @@ table.data th {
   scroll-margin-bottom: 1.5rem;
 }
 
+.save-actions-spacer {
+  height: 4.5rem;
+}
+
+.save-actions-sticky {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 0.85rem 1.75rem;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 24px rgba(26, 28, 34, 0.08);
+}
+
+.dark .save-actions-sticky {
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 900px) {
+  .save-actions-sticky {
+    left: 0;
+  }
+}
+
 #save-actions[data-highlight="true"] {
   outline: 2px solid var(--accent);
   outline-offset: 4px;

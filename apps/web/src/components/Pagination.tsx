@@ -6,6 +6,7 @@ type PaginationProps = {
   total: number;
   onPageChange: (page: number) => void;
   loading?: boolean;
+  disabled?: boolean;
 };
 
 export function Pagination({
@@ -14,6 +15,7 @@ export function Pagination({
   total,
   onPageChange,
   loading = false,
+  disabled = false,
 }: PaginationProps) {
   if (total === 0) return null;
 
@@ -32,7 +34,7 @@ export function Pagination({
           <button
             type="button"
             className="btn btn-sm"
-            disabled={loading || page <= 1}
+            disabled={loading || disabled || page <= 1}
             onClick={() => onPageChange(page - 1)}
           >
             ← Previous
@@ -43,7 +45,7 @@ export function Pagination({
           <button
             type="button"
             className="btn btn-sm"
-            disabled={loading || page >= totalPages}
+            disabled={loading || disabled || page >= totalPages}
             onClick={() => onPageChange(page + 1)}
           >
             Next →

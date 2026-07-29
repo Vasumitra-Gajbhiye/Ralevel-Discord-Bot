@@ -77,7 +77,7 @@ export default async function OverviewPage() {
                 ["Tasks", stats.tasks, "/ops/tasks"],
                 ["Stickies", stats.stickies, "/ops/stickies"],
                 ["Confessions", stats.confessions, "/ops/confessions"],
-                ["Users", stats.users, "/ops/users"],
+                ["XP", stats.users, "/ops/xp"],
                 ["Polls", stats.polls, "/ops/polls"],
               ] as const
             ).map(([label, value, href]) => (

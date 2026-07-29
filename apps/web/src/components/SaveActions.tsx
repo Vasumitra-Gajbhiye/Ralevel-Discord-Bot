@@ -10,6 +10,7 @@ type SaveActionsProps = {
   onDiscard: () => void;
   saveLabel: string;
   className?: string;
+  sticky?: boolean;
 };
 
 export function SaveActions({
@@ -20,9 +21,21 @@ export function SaveActions({
   onDiscard,
   saveLabel,
   className = "row",
+  sticky = false,
 }: SaveActionsProps) {
+  const classes = [
+    className,
+    sticky && isDirty ? "save-actions-sticky" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div ref={saveBarRef} id="save-actions" className={className}>
+    <>
+      {sticky && isDirty ? (
+        <div className="save-actions-spacer" aria-hidden />
+      ) : null}
+      <div ref={saveBarRef} id="save-actions" className={classes}>
       {isDirty ? (
         <span className="muted" style={{ fontSize: "0.8rem" }}>
           Unsaved changes
@@ -47,5 +60,6 @@ export function SaveActions({
         {saving ? "Saving…" : saveLabel}
       </button>
     </div>
+    </>
   );
 }

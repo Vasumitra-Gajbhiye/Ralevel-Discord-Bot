@@ -13,7 +13,7 @@ import {
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
-const BLOCKED_NAV_MESSAGE =
+export const BLOCKED_NAV_MESSAGE =
   "You have unsaved changes. Save or discard before leaving this page.";
 
 export function isDraftDirty<T>(draft: T | null, saved: T): boolean {
