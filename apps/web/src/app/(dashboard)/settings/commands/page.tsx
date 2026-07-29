@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  normalizeCommandDisplayNamesForSave,
-  validateCommandDisplayNames,
-  validateDisplayName,
-} from "@ralevel/shared/commandDisplayNames";
+import { validateCommandDisplayNames } from "@ralevel/shared/commandDisplayNames";
 import {
   buildMetadataOverrideFromEditable,
   type EditableMetadata,
@@ -60,26 +56,29 @@ function buildPermissionsToSave(
   return merged;
 }
 
-function buildNameDraft(commands: CatalogCommand[]) {
-  const draft: Record<string, string> = {};
-  for (const command of commands) {
-    draft[command.name] = command.effectiveName;
-  }
-  return draft;
-}
-
-function buildDisplayNamesToSave(
-  commands: CatalogCommand[],
-  draft: Record<string, string>,
-) {
-  const raw: Record<string, string> = {};
-  for (const command of commands) {
-    const value = draft[command.name]?.trim() ?? "";
-    if (value && value !== command.name) {
-      raw[command.name] = value;
-    }
-  }
-  return normalizeCommandDisplayNamesForSave(commands, raw);
+function EditCommandIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M11.333 2.667l2 2-8.666 8.666H2.667v-2.666L11.333 2.667z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.333 4.667l2 2"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 export default function CommandsPage() {
@@ -88,10 +87,6 @@ export default function CommandsPage() {
   const [catalog, setCatalog] = useState<CatalogCommand[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
-  const [editingNames, setEditingNames] = useState(false);
-  const [nameDraft, setNameDraft] = useState<Record<string, string> | null>(
-    null,
-  );
   const [pendingDiscordSync, setPendingDiscordSync] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
@@ -177,97 +172,10 @@ export default function CommandsPage() {
     [draft, normalizedSaved],
   );
 
-  const normalizedSavedDisplayNames = useMemo(() => {
-    return { ...savedDisplayNames };
-  }, [savedDisplayNames]);
-
-  const currentNameDraft = useMemo(() => {
-    if (nameDraft) return nameDraft;
-    return buildNameDraft(editableCommands);
-  }, [nameDraft, editableCommands]);
-
-  const isNamesDirty = useMemo(() => {
-    if (!editingNames) return false;
-    const next = buildDisplayNamesToSave(editableCommands, currentNameDraft);
-    return JSON.stringify(next) !== JSON.stringify(normalizedSavedDisplayNames);
-  }, [
-    editingNames,
-    editableCommands,
-    currentNameDraft,
-    normalizedSavedDisplayNames,
-  ]);
-
-  const nameValidation = useMemo(() => {
-    if (!editingNames) {
-      return {
-        ok: true as const,
-        displayNames: {} as Record<string, string>,
-      };
-    }
-
-    const raw: Record<string, string> = {};
-    for (const command of editableCommands) {
-      const value = currentNameDraft[command.name]?.trim() ?? "";
-      if (value && value !== command.name) {
-        raw[command.name] = value;
-      }
-    }
-    return validateCommandDisplayNames(editableCommands, raw);
-  }, [editingNames, editableCommands, currentNameDraft]);
-
-  const rowNameErrors = useMemo(() => {
-    const errors: Record<string, string> = {};
-    if (!editingNames) return errors;
-
-    const used = new Map<string, string>();
-    for (const command of editableCommands) {
-      const value = currentNameDraft[command.name]?.trim() ?? "";
-      if (!value || value === command.name) continue;
-
-      const formatError = validateDisplayName(value);
-      if (formatError) {
-        errors[command.name] = formatError;
-        continue;
-      }
-
-      if (
-        editableCommands.some(
-          (other) => other.name === value && other.name !== command.name,
-        )
-      ) {
-        errors[command.name] = `Conflicts with another command's default name`;
-        continue;
-      }
-
-      if (used.has(value)) {
-        errors[command.name] = `Already used by /${used.get(value)}`;
-        continue;
-      }
-
-      used.set(value, command.name);
-    }
-
-    return errors;
-  }, [editingNames, editableCommands, currentNameDraft]);
-
   const roles = config?.roles ?? [];
 
   function setCommandRoles(command: string, keys: string[]) {
     setDraft({ ...permissions, [command]: keys });
-  }
-
-  function startEditingNames() {
-    setNameDraft(buildNameDraft(editableCommands));
-    setEditingNames(true);
-  }
-
-  function cancelEditingNames() {
-    setNameDraft(null);
-    setEditingNames(false);
-  }
-
-  function setCommandDisplayName(canonical: string, value: string) {
-    setNameDraft({ ...currentNameDraft, [canonical]: value });
   }
 
   async function onSavePermissions() {
@@ -278,16 +186,6 @@ export default function CommandsPage() {
     );
     await save({ commandPermissions: nextPermissions });
     setDraft(null);
-  }
-
-  async function onSaveNames() {
-    if (!nameValidation.ok) return;
-
-    await save({ commandDisplayNames: nameValidation.displayNames });
-    setNameDraft(null);
-    setEditingNames(false);
-    setPendingDiscordSync(true);
-    await loadCatalog();
   }
 
   async function onSaveCommandEdit({
@@ -372,49 +270,16 @@ export default function CommandsPage() {
         title="Command permissions"
         description="Select which role keys can run each slash command. Empty selection = public (no role gate)."
         actions={
-          <div className="row" style={{ gap: "0.5rem" }}>
-            {pendingDiscordSync ? (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={onSync}
-                disabled={syncing || saving || isNamesDirty || modalSaving}
-              >
-                {syncing ? "Syncing…" : "Sync to Discord"}
-              </button>
-            ) : null}
-            {editingNames ? (
-              <>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={cancelEditingNames}
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={onSaveNames}
-                  disabled={
-                    saving || !isNamesDirty || !nameValidation.ok
-                  }
-                >
-                  {saving ? "Saving…" : "Save names"}
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="btn"
-                onClick={startEditingNames}
-                disabled={saving || isPermissionsDirty || Boolean(editingCommandName)}
-              >
-                Edit names
-              </button>
-            )}
-          </div>
+          pendingDiscordSync ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onSync}
+              disabled={syncing || saving || modalSaving}
+            >
+              {syncing ? "Syncing…" : "Sync to Discord"}
+            </button>
+          ) : null
         }
       />
       <RestartBanner />
@@ -429,9 +294,6 @@ export default function CommandsPage() {
       {status ? <p className="status ok">{status}</p> : null}
       {syncError ? <p className="status err">{syncError}</p> : null}
       {syncStatus ? <p className="status ok">{syncStatus}</p> : null}
-      {!nameValidation.ok && editingNames ? (
-        <p className="status err">{"errors" in nameValidation ? nameValidation.errors.join("; ") : ""}</p>
-      ) : null}
 
       <div className="card stack">
         <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
@@ -439,10 +301,8 @@ export default function CommandsPage() {
           <Link href="/moderation/ban-messages" style={{ color: "var(--accent)" }}>
             Moderation → Ban messages
           </Link>
-          . Commands are synced from the bot catalog automatically. Use{" "}
-          <strong>Edit</strong> on a command to customize its description and
-          option text, or <strong>Edit names</strong> to bulk-rename slash
-          commands in Discord.
+          . Commands are synced from the bot catalog automatically. Click the pen
+          icon on a command to edit its name, description, and option text.
         </p>
         <div className="table-wrap">
           <table className="data">
@@ -450,6 +310,7 @@ export default function CommandsPage() {
               <tr>
                 <th>Command</th>
                 <th>Allowed roles</th>
+                <th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
@@ -458,68 +319,27 @@ export default function CommandsPage() {
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((command) => {
                   const cmd = command.name;
-                  const rowError = rowNameErrors[cmd];
 
                   return (
                     <tr key={cmd}>
                       <td>
-                        {editingNames ? (
-                          <div className="stack" style={{ gap: "0.25rem" }}>
-                            <input
-                              className="input mono"
-                              value={currentNameDraft[cmd] ?? ""}
-                              placeholder={cmd}
-                              onChange={(event) =>
-                                setCommandDisplayName(cmd, event.target.value)
-                              }
-                            />
+                        <div className="stack" style={{ gap: "0.15rem" }}>
+                          <span className="mono">/{command.effectiveName}</span>
+                          {command.displayName ? (
                             <span className="muted" style={{ fontSize: "0.8rem" }}>
                               default: /{cmd}
                             </span>
-                            {rowError ? (
-                              <span className="status err" style={{ fontSize: "0.8rem" }}>
-                                {rowError}
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="stack" style={{ gap: "0.35rem" }}>
-                            <div
-                              className="row"
-                              style={{
-                                justifyContent: "space-between",
-                                alignItems: "flex-start",
-                                gap: "0.75rem",
-                              }}
+                          ) : null}
+                          {command.description ? (
+                            <span
+                              className="muted"
+                              style={{ fontSize: "0.8rem", lineHeight: 1.4 }}
+                              title={command.description}
                             >
-                              <div className="stack" style={{ gap: "0.15rem" }}>
-                                <span className="mono">/{command.effectiveName}</span>
-                                {command.displayName ? (
-                                  <span className="muted" style={{ fontSize: "0.8rem" }}>
-                                    default: /{cmd}
-                                  </span>
-                                ) : null}
-                                {command.description ? (
-                                  <span
-                                    className="muted"
-                                    style={{ fontSize: "0.8rem", lineHeight: 1.4 }}
-                                    title={command.description}
-                                  >
-                                    {truncateDescription(command.description)}
-                                  </span>
-                                ) : null}
-                              </div>
-                              <button
-                                type="button"
-                                className="btn btn-sm"
-                                onClick={() => setEditingCommandName(cmd)}
-                                disabled={saving || modalSaving}
-                              >
-                                Edit
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                              {truncateDescription(command.description)}
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
                       <td>
                         <RolePicker
@@ -527,6 +347,17 @@ export default function CommandsPage() {
                           selectedKeys={permissions[cmd] || []}
                           onChange={(keys) => setCommandRoles(cmd, keys)}
                         />
+                      </td>
+                      <td style={{ width: "3rem", textAlign: "right" }}>
+                        <button
+                          type="button"
+                          className="btn btn-icon"
+                          aria-label={`Edit /${cmd}`}
+                          onClick={() => setEditingCommandName(cmd)}
+                          disabled={saving || modalSaving}
+                        >
+                          <EditCommandIcon />
+                        </button>
                       </td>
                     </tr>
                   );
