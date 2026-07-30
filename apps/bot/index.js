@@ -1,6 +1,6 @@
 require("./loadEnv");
 const { connectDB } = require("@ralevel/db");
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, Partials } = require("discord.js");
 const {
   loadGuildConfig,
   startGuildConfigWatcher,
@@ -13,6 +13,7 @@ const qotdSystem = require("./systems/qotd");
 const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
 const ruleSyncSystem = require("./systems/ruleSync");
+const modmailSystem = require("./systems/modmail");
 const { handleMessageTracker } = require("./systems/messageTracker");
 const messageRouter = require("./systems/messageRouter");
 const xpFlushSystem = require("./systems/xpFlushSystem");
@@ -27,7 +28,9 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
   ],
+  partials: [Partials.Channel],
 });
 
 async function start() {
@@ -47,10 +50,13 @@ async function start() {
   welcomeSystem(client);
   confessionsSystem(client);
   ruleSyncSystem(client);
+  const { handleModmailDm, handleModmailStaffReply } = modmailSystem(client);
   messageRouter(client, {
     handleMessageTracker,
     handleSticky,
     handleReputation,
+    handleModmailDm,
+    handleModmailStaffReply,
   });
   xpFlushSystem(client);
   pollSystem(client);

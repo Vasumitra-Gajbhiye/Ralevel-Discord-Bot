@@ -22,6 +22,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Welcome | `systems/welcome.js` | `guildMemberAdd` | Canvas image |
 | Certificates | `systems/certificates.js` | Buttons/modals | MongoDB |
 | Confessions | `systems/confessions.js` | Buttons/modals | MongoDB |
+| Modmail | `systems/modmail.js` | Called by router + `/close` | MongoDB |
 
 ---
 
@@ -75,7 +76,7 @@ const HIERARCHY_TARGET_OPTIONS = {
 
 **File:** `systems/messageRouter.js`
 
-**Purpose:** Single `MessageCreate` listener that fans out to tracker, sticky, and reputation handlers in parallel.
+**Purpose:** Single `MessageCreate` listener that fans out to tracker, sticky, and reputation handlers in parallel. Also routes DMs and ticket-category messages to modmail.
 
 **Discord events:** `MessageCreate`
 
@@ -83,19 +84,20 @@ const HIERARCHY_TARGET_OPTIONS = {
 
 ```javascript
 client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot || !message.guild) return;
-
-  const tasks = [handleMessageTracker(message), handleSticky(message)];
-  if (!isReputationDisabled(message)) {
-    tasks.push(handleReputation(message));
+  if (message.author.bot) return;
+  if (!message.guild) {
+    await handleModmailDm?.(message);
+    return;
   }
-  await Promise.all(tasks);
+  if (await handleModmailStaffReply?.(message)) return;
+
+  // guild fan-out: tracker / sticky / reputation
 });
 ```
 
 **Reputation gating:** Skips reputation in channels/categories listed in `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` env vars (or the matching guild config fields). Legacy `STAFF_CHANNEL_IDS` values are merged into `DISABLED_CHANNELS` on new configs.
 
-**Dependencies:** Handlers injected from `index.js` — `messageTracker`, `sticky`, `reputation`
+**Dependencies:** Handlers injected from `index.js` — `messageTracker`, `sticky`, `reputation`, `modmail`
 
 **Verification:** `npm run verify:message-router`
 
@@ -394,6 +396,28 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 **Dependencies:** `MOD_ACTION_CHANNEL`, `VENT_CHANNEL`, MongoDB (`Confession`, `ConfessionBan`)
 
 **Known bug:** The approve handler references undefined `replyText` / `attachment` variables — the approve path may be broken. Fix before relying on it in production.
+
+---
+
+## 13. Modmail
+
+**File:** `systems/modmail.js`
+
+**Purpose:** Relay between user DMs and private staff ticket channels under `TICKET_CATEGORY_ID`. Staff identity is hidden in the user DM only.
+
+**Discord events:** Handled via `messageRouter` (`MessageCreate`); close via slash `/close`
+
+**Workflow:**
+
+1. User DMs the bot → create (or reuse) an open ticket channel under `TICKET_CATEGORY_ID`
+2. User messages relay into the ticket as embeds showing their identity
+3. Staff replies in the ticket relay anonymously to the user DM (label: Staff)
+4. Messages starting with `.` stay staff-only (not relayed)
+5. `/close` marks the ticket closed, notifies the user, deletes the channel
+
+**Dependencies:** `TICKET_CATEGORY_ID`, `GUILD_ID`, MongoDB (`ModmailTicket`), intents `DirectMessages` + partial `Channel`
+
+**Related commands:** `/close`
 
 ---
 

@@ -59,6 +59,7 @@ function testNoStrayMessageCreateRegistrations() {
     "../systems/messageTracker.js",
     "../systems/reputation.js",
     "../systems/sticky.js",
+    "../systems/modmail.js",
   ];
 
   const pattern =
@@ -104,7 +105,7 @@ async function testSingleListenerRegistration() {
 
 async function testSharedGuardsSkipHandlers() {
   const client = createMockClient();
-  const calls = { tracker: 0, sticky: 0, reputation: 0 };
+  const calls = { tracker: 0, sticky: 0, reputation: 0, modmailDm: 0 };
 
   messageRouter(client, {
     handleMessageTracker: async () => {
@@ -116,6 +117,9 @@ async function testSharedGuardsSkipHandlers() {
     handleReputation: async () => {
       calls.reputation += 1;
     },
+    handleModmailDm: async () => {
+      calls.modmailDm += 1;
+    },
   });
 
   await client.emitMessageCreate(
@@ -126,6 +130,40 @@ async function testSharedGuardsSkipHandlers() {
   assert(calls.tracker === 0, "bot/DM messages should not invoke tracker");
   assert(calls.sticky === 0, "bot/DM messages should not invoke sticky");
   assert(calls.reputation === 0, "bot/DM messages should not invoke reputation");
+  assert(calls.modmailDm === 1, "DM messages should invoke modmail DM handler");
+}
+
+async function testModmailTicketChannelSkipsGuildHandlers() {
+  const client = createMockClient();
+  const calls = { tracker: 0, sticky: 0, reputation: 0, staffReply: 0 };
+
+  messageRouter(client, {
+    handleMessageTracker: async () => {
+      calls.tracker += 1;
+    },
+    handleSticky: async () => {
+      calls.sticky += 1;
+    },
+    handleReputation: async () => {
+      calls.reputation += 1;
+    },
+    handleModmailStaffReply: async () => {
+      calls.staffReply += 1;
+      return true;
+    },
+  });
+
+  await client.emitMessageCreate(
+    createGuildMessage({ channelId: "modmail-ticket-1" })
+  );
+
+  assert(calls.staffReply === 1, "modmail staff reply should run");
+  assert(calls.tracker === 0, "tracker should be skipped in modmail tickets");
+  assert(calls.sticky === 0, "sticky should be skipped in modmail tickets");
+  assert(
+    calls.reputation === 0,
+    "reputation should be skipped in modmail tickets"
+  );
 }
 
 async function testReputationSkippedInDisabledChannel() {
@@ -400,6 +438,7 @@ async function main() {
   testNoStrayMessageCreateRegistrations();
   await testSingleListenerRegistration();
   await testSharedGuardsSkipHandlers();
+  await testModmailTicketChannelSkipsGuildHandlers();
   await testReputationSkippedInDisabledChannel();
   await testReputationSkippedInStaffChannel();
   testIsReputationDisabledHelper();

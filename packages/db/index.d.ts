@@ -13,6 +13,7 @@ export declare const Poll: Model<any>;
 export declare const PollVote: Model<any>;
 export declare const Confession: Model<any>;
 export declare const ConfessionBan: Model<any>;
+export declare const ModmailTicket: Model<any>;
 export declare const Certificate: Model<any>;
 export declare const QotdRotation: Model<any>;
 export declare const Counter: Model<any>;

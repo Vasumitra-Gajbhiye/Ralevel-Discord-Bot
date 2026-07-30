@@ -50,10 +50,28 @@ function isXpDisabled(message) {
 }
 
 module.exports = function messageRouter(client, handlers) {
-  const { handleMessageTracker, handleSticky, handleReputation } = handlers;
+  const {
+    handleMessageTracker,
+    handleSticky,
+    handleReputation,
+    handleModmailDm,
+    handleModmailStaffReply,
+  } = handlers;
 
   client.on(Events.MessageCreate, async (message) => {
-    if (message.author.bot || !message.guild) return;
+    if (message.author.bot) return;
+
+    if (!message.guild) {
+      if (handleModmailDm) {
+        await handleModmailDm(message);
+      }
+      return;
+    }
+
+    if (handleModmailStaffReply) {
+      const handled = await handleModmailStaffReply(message);
+      if (handled) return;
+    }
 
     const cfg = tryGetGuildConfig();
     const tasks = [];

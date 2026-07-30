@@ -11,6 +11,7 @@ const Poll = require("./src/models/poll");
 const PollVote = require("./src/models/pollVote");
 const Confession = require("./src/models/confession");
 const ConfessionBan = require("./src/models/confessionBan");
+const ModmailTicket = require("./src/models/modmailTicket");
 const Certificate = require("./src/models/certificate");
 const QotdRotation = require("./src/models/qotdRotation");
 const Counter = require("./src/models/counter");
@@ -53,6 +54,7 @@ module.exports = {
   PollVote,
   Confession,
   ConfessionBan,
+  ModmailTicket,
   Certificate,
   QotdRotation,
   Counter,
