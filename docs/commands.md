@@ -37,7 +37,6 @@ Three layers apply before a command executes:
 |------------|-------------------|--------|
 | `set-nickname` | `setnickname` | Role gate not applied |
 | `set-helper` | `sethelper` | Role gate not applied |
-| *(missing)* | `softban` | No custom role gate |
 
 ---
 
@@ -396,8 +395,8 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 |---|---|
 | **File** | `commands/moderation/softban.js` |
 | **Description** | Softban (ban + unban to purge messages) |
-| **Discord permissions** | None |
-| **Role access** | **Public** (not in permissions.config) |
+| **Discord permissions** | `BanMembers` |
+| **Role access** | admin, dcHead, srMods, jrMods |
 | **Hierarchy check** | Yes |
 
 ### `/timeout`
@@ -760,6 +759,26 @@ Task commands are channel-scoped — they only work in `GRAPHIC_CHANNEL`, `DEV_C
 | **Discord permissions** | None |
 | **Role access** | Public |
 | **Dependencies** | Links to `https://ralevel.com/` |
+
+### `/privacy-policy`
+
+| | |
+|---|---|
+| **File** | `commands/web/privacy-policy.js` |
+| **Description** | Get the r/alevel Bot Privacy Policy |
+| **Discord permissions** | None |
+| **Role access** | Public |
+| **Dependencies** | Links to `https://ralevel.com/legal/ralevel-bot/privacy-policy` |
+
+### `/terms-of-service`
+
+| | |
+|---|---|
+| **File** | `commands/web/terms-of-service.js` |
+| **Description** | Get the r/alevel Bot Terms of Service |
+| **Discord permissions** | None |
+| **Role access** | Public |
+| **Dependencies** | Links to `https://ralevel.com/legal/ralevel-bot/terms-of-service` |
 
 ---
 

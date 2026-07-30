@@ -1,5 +1,9 @@
 const { ModLog } = require("@ralevel/db");
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
 
 const generateActionId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction.js");
@@ -21,7 +25,8 @@ module.exports = {
         .setName("reason")
         .setDescription("Reason for softban")
         .setRequired(true),
-    ),
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   async execute(interaction) {
     await interaction.deferReply();
