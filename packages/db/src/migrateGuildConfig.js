@@ -404,10 +404,9 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     $set.commandPermissions = syncedCommandPerms.map;
   }
 
-  const syncedDisplayNames = pruneOrphanedCommandKeys(
-    raw.commandDisplayNames,
-    catalogNames,
-  );
+  const syncedDisplayNames = catalogNames.length > 0
+    ? pruneOrphanedCommandKeys(raw.commandDisplayNames, catalogNames)
+    : { changed: false };
   if (syncedDisplayNames.changed) {
     $set.commandDisplayNames = syncedDisplayNames.map;
   }
@@ -523,10 +522,9 @@ function migrateGuildConfigInPlace(doc) {
     }
   }
 
-  const syncedDisplayNames = pruneOrphanedCommandKeys(
-    doc.commandDisplayNames,
-    catalogNames,
-  );
+  const syncedDisplayNames = catalogNames.length > 0
+    ? pruneOrphanedCommandKeys(doc.commandDisplayNames, catalogNames)
+    : { changed: false };
   if (syncedDisplayNames.changed) {
     doc.commandDisplayNames = syncedDisplayNames.map;
     doc.markModified("commandDisplayNames");
