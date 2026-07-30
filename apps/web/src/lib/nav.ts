@@ -37,7 +37,7 @@ export const NAV = [
       { href: "/ops/confessions", label: "Confessions" },
       { href: "/ops/reputation", label: "Reputation" },
       { href: "/ops/helpers", label: "Helper mappings" },
-      { href: "/ops/qotd", label: "QOTD" },
+      { href: "/ops/qotd", label: "QOTD & SOTD" },
       { href: "/ops/xp", label: "XP" },
       { href: "/ops/xp-bans", label: "XP bans" },
       { href: "/ops/polls", label: "Polls" },
