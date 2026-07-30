@@ -54,12 +54,13 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    const member = interaction.options.getMember("user");
+    // Use getUser so users not currently in the guild can still be banned by ID
+    const user = interaction.options.getUser("user");
     const reason = interaction.options.getString("reason");
     const appealable = interaction.options.getBoolean("appealable");
     const deleteMsgs = interaction.options.getString("deletemsgs");
 
-    if (!member)
+    if (!user)
       return interaction.editReply({
         content: "❌ User not found.",
         ephemeral: true,
@@ -67,7 +68,7 @@ module.exports = {
 
     const deleteSeconds = DELETE_MESSAGE_SECONDS[deleteMsgs];
 
-    // DM user
+    // DM user (may fail for non-members with no mutual servers)
     try {
       const banMessages = {
         ...DEFAULT_BAN_MESSAGES,
@@ -80,17 +81,17 @@ module.exports = {
       const message = renderMessageTemplate(template, {
         reason,
         serverName: interaction.guild.name,
-        userTag: member.user.tag,
-        userId: member.user.id,
+        userTag: user.tag,
+        userId: user.id,
         appealUrl: banMessages.appealUrl,
       });
 
-      await member.send(message);
+      await user.send(message);
     } catch {}
 
-    // Ban the user
+    // Ban by user ID — works even if they are not in the server
     try {
-      await member.ban({
+      await interaction.guild.members.ban(user.id, {
         reason,
         deleteMessageSeconds: deleteSeconds,
       });
@@ -105,8 +106,8 @@ module.exports = {
     const actionId = generateActionId();
     await logModAction({
       interaction,
-      userId: member.user.id,
-      userTag: member.user.tag,
+      userId: user.id,
+      userTag: user.tag,
       moderatorTag: interaction.user.tag,
       moderatorId: interaction.user.id,
       action: "ban",
@@ -120,7 +121,7 @@ module.exports = {
       .setTitle("🔨 User Banned")
       .setColor("#ff0000")
       .addFields(
-        { name: "User", value: `${member.user.tag} (${member.id})` },
+        { name: "User", value: `${user.tag} (${user.id})` },
         { name: "Moderator", value: interaction.user.tag },
         { name: "Reason", value: reason },
         { name: "Appealable?", value: appealable ? "Yes" : "No" },
