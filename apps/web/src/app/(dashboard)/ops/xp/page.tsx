@@ -13,6 +13,7 @@ type UserRow = {
   guild_id?: string;
   xp?: number;
   total_messages?: number;
+  createdAt?: string;
 };
 
 type RowFields = {
@@ -31,6 +32,13 @@ function fieldsEqual(a: RowFields, b: RowFields): boolean {
   return a.xp === b.xp && a.total_messages === b.total_messages;
 }
 
+function formatDate(value?: string): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString();
+}
+
 export default function OpsXpPage() {
   const {
     items,
@@ -39,11 +47,27 @@ export default function OpsXpPage() {
     error,
     q,
     setQ,
+    sort,
+    setSort,
+    order,
+    setOrder,
+    xpMin,
+    setXpMin,
+    xpMax,
+    setXpMax,
+    messagesMin,
+    setMessagesMin,
+    messagesMax,
+    setMessagesMax,
     page,
     setPage,
     pageSize,
     load,
-  } = useOpsCollection<UserRow>("users", { pageSize: 10 });
+  } = useOpsCollection<UserRow>("users", {
+    pageSize: 10,
+    initialSort: "xp",
+    initialOrder: "desc",
+  });
 
   const [originals, setOriginals] = useState<Record<string, RowFields>>({});
   const [edits, setEdits] = useState<Record<string, RowFields>>({});
@@ -165,6 +189,30 @@ export default function OpsXpPage() {
     guardDirty(() => setQ(value));
   }
 
+  function handleSortChange(value: string) {
+    guardDirty(() => setSort(value));
+  }
+
+  function handleOrderChange(value: "asc" | "desc") {
+    guardDirty(() => setOrder(value));
+  }
+
+  function handleXpMinChange(value: string) {
+    guardDirty(() => setXpMin(value));
+  }
+
+  function handleXpMaxChange(value: string) {
+    guardDirty(() => setXpMax(value));
+  }
+
+  function handleMessagesMinChange(value: string) {
+    guardDirty(() => setMessagesMin(value));
+  }
+
+  function handleMessagesMaxChange(value: string) {
+    guardDirty(() => setMessagesMax(value));
+  }
+
   function handleRefresh() {
     guardDirty(() => {
       void load();
@@ -189,9 +237,70 @@ export default function OpsXpPage() {
               placeholder="user id…"
             />
           </div>
+          <div className="field">
+            <label>Sort</label>
+            <select
+              value={sort}
+              onChange={(e) => handleSortChange(e.target.value)}
+            >
+              <option value="xp">XP</option>
+              <option value="total_messages">Messages</option>
+              <option value="createdAt">Created</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Order</label>
+            <select
+              value={order}
+              onChange={(e) =>
+                handleOrderChange(e.target.value as "asc" | "desc")
+              }
+            >
+              <option value="desc">Desc</option>
+              <option value="asc">Asc</option>
+            </select>
+          </div>
           <button type="button" className="btn" onClick={handleRefresh}>
             Refresh
           </button>
+        </div>
+        <div className="row">
+          <div className="field">
+            <label>XP min</label>
+            <input
+              type="number"
+              value={xpMin}
+              onChange={(e) => handleXpMinChange(e.target.value)}
+              placeholder="—"
+            />
+          </div>
+          <div className="field">
+            <label>XP max</label>
+            <input
+              type="number"
+              value={xpMax}
+              onChange={(e) => handleXpMaxChange(e.target.value)}
+              placeholder="—"
+            />
+          </div>
+          <div className="field">
+            <label>Messages min</label>
+            <input
+              type="number"
+              value={messagesMin}
+              onChange={(e) => handleMessagesMinChange(e.target.value)}
+              placeholder="—"
+            />
+          </div>
+          <div className="field">
+            <label>Messages max</label>
+            <input
+              type="number"
+              value={messagesMax}
+              onChange={(e) => handleMessagesMaxChange(e.target.value)}
+              placeholder="—"
+            />
+          </div>
         </div>
         {displayError ? <p className="status err">{displayError}</p> : null}
         <p className="muted">{loading ? "Loading…" : `${total} total`}</p>
@@ -202,6 +311,7 @@ export default function OpsXpPage() {
                 <th>User ID</th>
                 <th>XP</th>
                 <th>Messages</th>
+                <th>Created</th>
               </tr>
             </thead>
             <tbody>
@@ -236,6 +346,7 @@ export default function OpsXpPage() {
                         }
                       />
                     </td>
+                    <td className="muted">{formatDate(user.createdAt)}</td>
                   </tr>
                 );
               })}

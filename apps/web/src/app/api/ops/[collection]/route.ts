@@ -70,6 +70,32 @@ function getModel(db: DbModels, collection: string): AnyModel | null {
   return db[key] as unknown as AnyModel;
 }
 
+const SORT_ALLOWLIST: Partial<Record<CollectionKey, string[]>> = {
+  users: ["xp", "total_messages", "createdAt", "_id"],
+  xpBans: ["userId", "reason", "createdAt", "_id"],
+};
+
+const DEFAULT_SORT = { createdAt: -1, timestamp: -1, _id: -1 };
+
+function parseOptionalNumber(value: string | null): number | null {
+  if (value === null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function buildSort(
+  collection: string,
+  sortParam: string | null,
+  orderParam: string | null,
+): Record<string, 1 | -1> {
+  const allowlist = SORT_ALLOWLIST[collection as CollectionKey];
+  if (!allowlist || !sortParam || !allowlist.includes(sortParam)) {
+    return DEFAULT_SORT;
+  }
+  const dir = orderParam === "asc" ? 1 : -1;
+  return { [sortParam]: dir };
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ collection: string }> },
@@ -98,6 +124,11 @@ export async function GET(
     const q = searchParams.get("q");
     const userId = searchParams.get("userId");
     const status = searchParams.get("status");
+    const sort = buildSort(
+      collection,
+      searchParams.get("sort"),
+      searchParams.get("order"),
+    );
     const filter: Record<string, unknown> = {};
 
     if (userId) filter.userId = userId;
@@ -124,12 +155,28 @@ export async function GET(
       }
     }
 
+    if (collection === "users") {
+      const xpMin = parseOptionalNumber(searchParams.get("xpMin"));
+      const xpMax = parseOptionalNumber(searchParams.get("xpMax"));
+      const messagesMin = parseOptionalNumber(searchParams.get("messagesMin"));
+      const messagesMax = parseOptionalNumber(searchParams.get("messagesMax"));
+
+      if (xpMin !== null || xpMax !== null) {
+        const xpFilter: Record<string, number> = {};
+        if (xpMin !== null) xpFilter.$gte = xpMin;
+        if (xpMax !== null) xpFilter.$lte = xpMax;
+        filter.xp = xpFilter;
+      }
+      if (messagesMin !== null || messagesMax !== null) {
+        const messagesFilter: Record<string, number> = {};
+        if (messagesMin !== null) messagesFilter.$gte = messagesMin;
+        if (messagesMax !== null) messagesFilter.$lte = messagesMax;
+        filter.total_messages = messagesFilter;
+      }
+    }
+
     const [items, total] = await Promise.all([
-      Model.find(filter)
-        .sort({ createdAt: -1, timestamp: -1, _id: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      Model.find(filter).sort(sort).skip(skip).limit(limit).lean(),
       Model.countDocuments(filter),
     ]);
 

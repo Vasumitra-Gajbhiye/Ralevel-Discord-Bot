@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type UseOpsCollectionOptions = {
   pageSize?: number;
+  initialSort?: string;
+  initialOrder?: "asc" | "desc";
 };
 
 export function useOpsCollection<T extends { _id?: string }>(
@@ -17,15 +19,51 @@ export function useOpsCollection<T extends { _id?: string }>(
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
+  const [sort, setSort] = useState(options?.initialSort ?? "");
+  const [order, setOrder] = useState<"asc" | "desc">(
+    options?.initialOrder ?? "desc",
+  );
+  const [xpMin, setXpMin] = useState("");
+  const [xpMax, setXpMax] = useState("");
+  const [messagesMin, setMessagesMin] = useState("");
+  const [messagesMax, setMessagesMax] = useState("");
   const [page, setPage] = useState(1);
-  const prevFilters = useRef({ q, status });
+  const prevFilters = useRef({
+    q,
+    status,
+    sort,
+    order,
+    xpMin,
+    xpMax,
+    messagesMin,
+    messagesMax,
+  });
 
   useEffect(() => {
-    if (prevFilters.current.q !== q || prevFilters.current.status !== status) {
-      prevFilters.current = { q, status };
+    const prev = prevFilters.current;
+    if (
+      prev.q !== q ||
+      prev.status !== status ||
+      prev.sort !== sort ||
+      prev.order !== order ||
+      prev.xpMin !== xpMin ||
+      prev.xpMax !== xpMax ||
+      prev.messagesMin !== messagesMin ||
+      prev.messagesMax !== messagesMax
+    ) {
+      prevFilters.current = {
+        q,
+        status,
+        sort,
+        order,
+        xpMin,
+        xpMax,
+        messagesMin,
+        messagesMax,
+      };
       setPage(1);
     }
-  }, [q, status]);
+  }, [q, status, sort, order, xpMin, xpMax, messagesMin, messagesMax]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +76,14 @@ export function useOpsCollection<T extends { _id?: string }>(
       }
       if (q) params.set("q", q);
       if (status) params.set("status", status);
+      if (sort) {
+        params.set("sort", sort);
+        params.set("order", order);
+      }
+      if (xpMin) params.set("xpMin", xpMin);
+      if (xpMax) params.set("xpMax", xpMax);
+      if (messagesMin) params.set("messagesMin", messagesMin);
+      if (messagesMax) params.set("messagesMax", messagesMax);
       const res = await fetch(`/api/ops/${collection}?${params}`);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
@@ -56,7 +102,19 @@ export function useOpsCollection<T extends { _id?: string }>(
     } finally {
       setLoading(false);
     }
-  }, [collection, q, status, page, pageSize]);
+  }, [
+    collection,
+    q,
+    status,
+    sort,
+    order,
+    xpMin,
+    xpMax,
+    messagesMin,
+    messagesMax,
+    page,
+    pageSize,
+  ]);
 
   useEffect(() => {
     load();
@@ -99,6 +157,18 @@ export function useOpsCollection<T extends { _id?: string }>(
     setQ,
     status,
     setStatus,
+    sort,
+    setSort,
+    order,
+    setOrder,
+    xpMin,
+    setXpMin,
+    xpMax,
+    setXpMax,
+    messagesMin,
+    setMessagesMin,
+    messagesMax,
+    setMessagesMax,
     page,
     setPage,
     pageSize,

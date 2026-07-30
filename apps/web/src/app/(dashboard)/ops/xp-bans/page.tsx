@@ -11,7 +11,11 @@ type XpBan = {
   _id: string;
   userId: string;
   reason?: string;
+  createdAt?: string;
 };
+
+type SortField = "userId" | "reason" | "createdAt";
+type ReasonFilter = "" | "has" | "none";
 
 const PAGE_SIZE = 10;
 const TEMP_ID_PREFIX = "temp-";
@@ -22,12 +26,40 @@ function normalizeBans(bans: XpBan[]): XpBan[] {
       _id: ban._id,
       userId: ban.userId,
       reason: ban.reason ?? "",
+      createdAt: ban.createdAt,
     }))
     .sort((a, b) => a.userId.localeCompare(b.userId));
 }
 
 function bansEqual(a: XpBan[], b: XpBan[]): boolean {
   return JSON.stringify(normalizeBans(a)) === JSON.stringify(normalizeBans(b));
+}
+
+function formatDate(value?: string): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString();
+}
+
+function compareBans(
+  a: XpBan,
+  b: XpBan,
+  sort: SortField,
+  order: "asc" | "desc",
+): number {
+  const dir = order === "asc" ? 1 : -1;
+  let cmp = 0;
+  if (sort === "userId") {
+    cmp = a.userId.localeCompare(b.userId);
+  } else if (sort === "reason") {
+    cmp = (a.reason ?? "").localeCompare(b.reason ?? "");
+  } else {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    cmp = aTime - bTime;
+  }
+  return cmp * dir;
 }
 
 export default function OpsXpBansPage() {
@@ -38,6 +70,9 @@ export default function OpsXpBansPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<SortField>("userId");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [reasonFilter, setReasonFilter] = useState<ReasonFilter>("");
   const [page, setPage] = useState(1);
   const [banUserId, setBanUserId] = useState("");
   const [banReason, setBanReason] = useState("");
@@ -72,17 +107,28 @@ export default function OpsXpBansPage() {
 
   const filteredBans = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return allBans;
-    return allBans.filter(
-      (ban) =>
-        ban.userId.toLowerCase().includes(query) ||
-        (ban.reason ?? "").toLowerCase().includes(query),
-    );
-  }, [allBans, q]);
+    let next = allBans;
+
+    if (query) {
+      next = next.filter(
+        (ban) =>
+          ban.userId.toLowerCase().includes(query) ||
+          (ban.reason ?? "").toLowerCase().includes(query),
+      );
+    }
+
+    if (reasonFilter === "has") {
+      next = next.filter((ban) => (ban.reason ?? "").trim().length > 0);
+    } else if (reasonFilter === "none") {
+      next = next.filter((ban) => (ban.reason ?? "").trim().length === 0);
+    }
+
+    return [...next].sort((a, b) => compareBans(a, b, sort, order));
+  }, [allBans, q, reasonFilter, sort, order]);
 
   useEffect(() => {
     setPage(1);
-  }, [q]);
+  }, [q, reasonFilter, sort, order]);
 
   const total = filteredBans.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -193,6 +239,18 @@ export default function OpsXpBansPage() {
     guardDirty(() => setQ(value));
   }
 
+  function handleSortChange(value: SortField) {
+    guardDirty(() => setSort(value));
+  }
+
+  function handleOrderChange(value: "asc" | "desc") {
+    guardDirty(() => setOrder(value));
+  }
+
+  function handleReasonFilterChange(value: ReasonFilter) {
+    guardDirty(() => setReasonFilter(value));
+  }
+
   function handleRefresh() {
     guardDirty(() => {
       void load();
@@ -252,6 +310,42 @@ export default function OpsXpBansPage() {
               placeholder="user id or reason…"
             />
           </div>
+          <div className="field">
+            <label>Sort</label>
+            <select
+              value={sort}
+              onChange={(e) => handleSortChange(e.target.value as SortField)}
+            >
+              <option value="userId">User ID</option>
+              <option value="reason">Reason</option>
+              <option value="createdAt">Created</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Order</label>
+            <select
+              value={order}
+              onChange={(e) =>
+                handleOrderChange(e.target.value as "asc" | "desc")
+              }
+            >
+              <option value="asc">Asc</option>
+              <option value="desc">Desc</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Reason</label>
+            <select
+              value={reasonFilter}
+              onChange={(e) =>
+                handleReasonFilterChange(e.target.value as ReasonFilter)
+              }
+            >
+              <option value="">All</option>
+              <option value="has">Has reason</option>
+              <option value="none">No reason</option>
+            </select>
+          </div>
           <button type="button" className="btn" onClick={handleRefresh}>
             Refresh
           </button>
@@ -288,6 +382,7 @@ export default function OpsXpBansPage() {
               <tr>
                 <th>User ID</th>
                 <th>Reason</th>
+                <th>Created</th>
                 <th />
               </tr>
             </thead>
@@ -302,6 +397,7 @@ export default function OpsXpBansPage() {
                       placeholder="—"
                     />
                   </td>
+                  <td className="muted">{formatDate(ban.createdAt)}</td>
                   <td>
                     <button
                       type="button"
