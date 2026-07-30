@@ -77,6 +77,26 @@ module.exports = (client) => {
   }
 
   client.on("interactionCreate", async (interaction) => {
+    // ==========================================
+    // 🔍 AUTOCOMPLETE (no role gates)
+    // ==========================================
+    if (interaction.isAutocomplete()) {
+      const canonicalName = resolveCanonicalCommandName(interaction.commandName);
+      const command = client.commands.get(canonicalName);
+      if (!command?.autocomplete) return;
+
+      try {
+        await command.autocomplete(interaction);
+      } catch (error) {
+        console.error(
+          `[ERROR] Autocomplete for /${interaction.commandName} failed:`,
+          error,
+        );
+        await interaction.respond([]).catch(() => {});
+      }
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const canonicalName = resolveCanonicalCommandName(interaction.commandName);

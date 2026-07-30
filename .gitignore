@@ -13,3 +13,4 @@ pnpm-debug.log*
 .DS_Store
 coverage
 .nyc_output
+apps/bot/data/rules-cache.json

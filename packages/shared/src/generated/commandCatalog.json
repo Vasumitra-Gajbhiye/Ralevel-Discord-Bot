@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-30T10:20:54.473Z",
+  "generatedAt": "2026-07-30T14:22:42.654Z",
   "commands": [
     {
       "category": "reputation",
@@ -1202,6 +1202,17 @@
       }
     },
     {
+      "category": "web",
+      "name": "privacy-policy",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "privacy-policy",
+        "description": "Get the r/alevel Bot Privacy Policy",
+        "type": 1
+      }
+    },
+    {
       "category": "moderation",
       "name": "purge",
       "fileDefault": "ManageMessages",
@@ -1500,6 +1511,25 @@
       }
     },
     {
+      "category": "web",
+      "name": "rule",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "number",
+            "description": "Rule or section number (e.g. 1.1 or 1)",
+            "required": true
+          }
+        ],
+        "name": "rule",
+        "description": "Look up an r/alevel Discord regulation by number",
+        "type": 1
+      }
+    },
+    {
       "category": "moderation",
       "name": "say",
       "fileDefault": "SendMessages",
@@ -1682,7 +1712,7 @@
     {
       "category": "moderation",
       "name": "softban",
-      "fileDefault": null,
+      "fileDefault": "BanMembers",
       "payload": {
         "options": [
           {
@@ -1700,6 +1730,7 @@
         ],
         "name": "softban",
         "description": "Softban a user (ban + unban to delete messages from last 24 hours)",
+        "default_member_permissions": "4",
         "type": 1
       }
     },
@@ -1854,6 +1885,17 @@
         ],
         "name": "tasks",
         "description": "View available tasks or see details for a specific task",
+        "type": 1
+      }
+    },
+    {
+      "category": "web",
+      "name": "terms-of-service",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "terms-of-service",
+        "description": "Get the r/alevel Bot Terms of Service",
         "type": 1
       }
     },

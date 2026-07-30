@@ -36,6 +36,7 @@
     "@napi-rs/canvas": "^0.1.84",
     "@ralevel/db": "workspace:*",
     "@ralevel/shared": "workspace:*",
+    "cheerio": "^1.2.0",
     "discord-api-types": "^0.37.46",
     "discord.js": "^14.11.0",
     "dotenv": "^16.6.1",

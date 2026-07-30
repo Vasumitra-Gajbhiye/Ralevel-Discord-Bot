@@ -12,6 +12,7 @@ const stickySystem = require("./systems/sticky");
 const qotdSystem = require("./systems/qotd");
 const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
+const ruleSyncSystem = require("./systems/ruleSync");
 const { handleMessageTracker } = require("./systems/messageTracker");
 const messageRouter = require("./systems/messageRouter");
 const xpFlushSystem = require("./systems/xpFlushSystem");
@@ -45,6 +46,7 @@ async function start() {
   qotdSystem(client);
   welcomeSystem(client);
   confessionsSystem(client);
+  ruleSyncSystem(client);
   messageRouter(client, {
     handleMessageTracker,
     handleSticky,

@@ -1,0 +1,8 @@
+{
+  "watch": ["."],
+  "ext": "js,mjs,cjs,json",
+  "ignore": [
+    "data/**",
+    "node_modules/**"
+  ]
+}
