@@ -40,6 +40,7 @@ const PATCHABLE = [
   "commandDiscordPermissions",
   "commandDisplayNames",
   "commandMetadataOverrides",
+  "commandEphemeral",
   "channels",
   "categories",
   "features",
@@ -120,7 +121,8 @@ export async function PUT(request: Request) {
             key === "commandPermissions" ||
             key === "commandDiscordPermissions" ||
             key === "commandDisplayNames" ||
-            key === "commandMetadataOverrides"
+            key === "commandMetadataOverrides" ||
+            key === "commandEphemeral"
           ) {
             doc.markModified(key);
           }

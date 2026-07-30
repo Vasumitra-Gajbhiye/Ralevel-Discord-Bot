@@ -90,6 +90,7 @@ export function guildConfigToJson(doc: {
   commandDiscordPermissions?: Map<string, string> | Record<string, string>;
   commandDisplayNames?: Map<string, string> | Record<string, string>;
   commandMetadataOverrides?: Map<string, unknown> | Record<string, unknown>;
+  commandEphemeral?: Map<string, boolean> | Record<string, boolean>;
   [key: string]: unknown;
 }) {
   const obj =
@@ -107,6 +108,9 @@ export function guildConfigToJson(doc: {
   }
   if (obj.commandMetadataOverrides instanceof Map) {
     obj.commandMetadataOverrides = Object.fromEntries(obj.commandMetadataOverrides);
+  }
+  if (obj.commandEphemeral instanceof Map) {
+    obj.commandEphemeral = Object.fromEntries(obj.commandEphemeral);
   }
   return obj;
 }

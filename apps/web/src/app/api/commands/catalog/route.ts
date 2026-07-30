@@ -5,6 +5,7 @@ import {
 } from "@ralevel/shared/commandPermissions";
 import { getCommandCatalog } from "@ralevel/shared/commandCatalog";
 import { extractEditableMetadata } from "@ralevel/shared/commandMetadataOverrides";
+import { DEFAULT_COMMAND_EPHEMERAL } from "@ralevel/db";
 import { getOrCreateGuildConfig, guildConfigToJson } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
 
@@ -73,6 +74,7 @@ export async function GET() {
           description,
           defaultDescription,
           editableMetadata,
+          defaultEphemeral: DEFAULT_COMMAND_EPHEMERAL[name] ?? false,
         };
       },
     );

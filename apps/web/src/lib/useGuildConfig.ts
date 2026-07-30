@@ -9,6 +9,7 @@ export type GuildConfigData = {
   commandDiscordPermissions: Record<string, string>;
   commandDisplayNames: Record<string, string>;
   commandMetadataOverrides: Record<string, unknown>;
+  commandEphemeral: Record<string, boolean>;
   channels: { key: string; label: string; channelId: string }[];
   categories: { key: string; label: string; categoryId: string }[];
   features: Record<string, boolean>;

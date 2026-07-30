@@ -8,6 +8,7 @@ const { getCommandCatalog } = require("@ralevel/shared/commandCatalog");
 const {
   buildDeployedToCanonicalObject,
 } = require("@ralevel/shared/commandDisplayNames");
+const { DEFAULT_COMMAND_EPHEMERAL } = require("@ralevel/db");
 
 let guildConfig = null;
 let deployedToCanonical = {};
@@ -102,6 +103,19 @@ function getCommandAllowedRoleIds(commandName, config = guildConfig) {
   return resolveRoleKeys(keys, config);
 }
 
+/**
+ * Whether a slash command's main reply should be ephemeral (visible only to user).
+ * Falls back to DEFAULT_COMMAND_EPHEMERAL when unset.
+ */
+function isCommandEphemeral(commandName, config = guildConfig) {
+  const map = config?.commandEphemeral;
+  if (map) {
+    const stored = map instanceof Map ? map.get(commandName) : map[commandName];
+    if (typeof stored === "boolean") return stored;
+  }
+  return DEFAULT_COMMAND_EPHEMERAL[commandName] ?? false;
+}
+
 function toPlainConfig(doc) {
   const obj = typeof doc.toObject === "function" ? doc.toObject() : { ...doc };
   // Normalize Map -> plain object for commandPermissions
@@ -119,6 +133,9 @@ function toPlainConfig(doc) {
   if (obj.commandMetadataOverrides instanceof Map) {
     obj.commandMetadataOverrides = Object.fromEntries(obj.commandMetadataOverrides);
   }
+  if (obj.commandEphemeral instanceof Map) {
+    obj.commandEphemeral = Object.fromEntries(obj.commandEphemeral);
+  }
   return obj;
 }
 
@@ -133,5 +150,6 @@ module.exports = {
   resolveRoleKeys,
   resolveCanonicalCommandName,
   getCommandAllowedRoleIds,
+  isCommandEphemeral,
   toPlainConfig,
 };

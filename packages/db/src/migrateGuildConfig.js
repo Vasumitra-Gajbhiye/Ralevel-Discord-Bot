@@ -7,6 +7,7 @@ const {
   buildDefaultCertPanel,
   DEFAULT_BAN_MESSAGES,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
+  DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_COMMAND_PERMISSIONS,
 } = require("./defaultGuildConfig");
 
@@ -94,6 +95,14 @@ function buildCatalogDiscordDefaults(catalog) {
   for (const cmd of catalog.commands || []) {
     defaults[cmd.name] =
       DEFAULT_COMMAND_DISCORD_PERMISSIONS[cmd.name] ?? cmd.fileDefault ?? "";
+  }
+  return defaults;
+}
+
+function buildCatalogEphemeralDefaults(catalog) {
+  const defaults = {};
+  for (const cmd of catalog.commands || []) {
+    defaults[cmd.name] = DEFAULT_COMMAND_EPHEMERAL[cmd.name] ?? false;
   }
   return defaults;
 }
@@ -374,6 +383,10 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     catalogNames.length > 0
       ? buildCatalogDiscordDefaults(catalog)
       : DEFAULT_COMMAND_DISCORD_PERMISSIONS;
+  const ephemeralDefaults =
+    catalogNames.length > 0
+      ? buildCatalogEphemeralDefaults(catalog)
+      : DEFAULT_COMMAND_EPHEMERAL;
 
   if (
     !raw.commandDiscordPermissions ||
@@ -392,6 +405,26 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     );
     if (syncedDiscordPerms.changed) {
       $set.commandDiscordPermissions = syncedDiscordPerms.map;
+    }
+  }
+
+  if (
+    !raw.commandEphemeral ||
+    (raw.commandEphemeral instanceof Map &&
+      raw.commandEphemeral.size === 0) ||
+    (typeof raw.commandEphemeral === "object" &&
+      !Array.isArray(raw.commandEphemeral) &&
+      Object.keys(raw.commandEphemeral).length === 0)
+  ) {
+    $set.commandEphemeral = { ...ephemeralDefaults };
+  } else {
+    const syncedEphemeral = syncCommandPermissionMap(
+      raw.commandEphemeral,
+      ephemeralDefaults,
+      catalogNames,
+    );
+    if (syncedEphemeral.changed) {
+      $set.commandEphemeral = syncedEphemeral.map;
     }
   }
 
@@ -509,10 +542,15 @@ function migrateGuildConfigInPlace(doc) {
     catalogNames.length > 0
       ? buildCatalogDiscordDefaults(catalog)
       : DEFAULT_COMMAND_DISCORD_PERMISSIONS;
+  const ephemeralDefaults =
+    catalogNames.length > 0
+      ? buildCatalogEphemeralDefaults(catalog)
+      : DEFAULT_COMMAND_EPHEMERAL;
 
   for (const [field, defaults] of [
     ["commandPermissions", roleDefaults],
     ["commandDiscordPermissions", discordDefaults],
+    ["commandEphemeral", ephemeralDefaults],
   ]) {
     const synced = syncCommandPermissionMap(doc[field], defaults, catalogNames);
     if (synced.changed) {

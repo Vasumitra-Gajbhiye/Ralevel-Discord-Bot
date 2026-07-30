@@ -32,7 +32,11 @@ const { Collection } = require("discord.js");
 
 const checkRoleHierarchy = require("../utils/checkRoleHierarchy.js");
 const checkRoleAssignment = require("../utils/checkRoleAssignment.js");
-const { getCommandAllowedRoleIds, resolveCanonicalCommandName } = require("../utils/guildConfigStore");
+const {
+  getCommandAllowedRoleIds,
+  isCommandEphemeral,
+  resolveCanonicalCommandName,
+} = require("../utils/guildConfigStore");
 
 // Commands that act on a member and require role hierarchy checks.
 // Value is the slash-command option name that holds the target user.
@@ -180,7 +184,23 @@ module.exports = (client) => {
     // ==========================================
     // ⚙️ COMMAND EXECUTION
     // ==========================================
+    const originalDeferReply = interaction.deferReply.bind(interaction);
+    const originalReply = interaction.reply.bind(interaction);
+
     try {
+      const ephemeral = isCommandEphemeral(canonicalName);
+
+      interaction.deferReply = (options = {}) =>
+        originalDeferReply({ ...options, ephemeral });
+      interaction.reply = (options) => {
+        // discord.js accepts a string shorthand for content; spreading a
+        // string into an options object drops the message body.
+        if (typeof options === "string") {
+          return originalReply({ content: options, ephemeral });
+        }
+        return originalReply({ ...options, ephemeral });
+      };
+
       await command.execute(interaction);
     } catch (error) {
       const deployedName = interaction.commandName;
@@ -194,14 +214,15 @@ module.exports = (client) => {
         "❌ There was an error while executing this command!";
 
       // Handle cases where the command might have already deferred/replied before crashing
+      // Always ephemeral — do not use the wrapped reply (command setting).
       if (interaction.replied || interaction.deferred) {
         await interaction
           .followUp({ content: errorMessage, ephemeral: true })
           .catch(() => {});
       } else {
-        await interaction
-          .reply({ content: errorMessage, ephemeral: true })
-          .catch(() => {});
+        await originalReply({ content: errorMessage, ephemeral: true }).catch(
+          () => {},
+        );
       }
     }
   });

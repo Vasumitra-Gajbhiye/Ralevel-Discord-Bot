@@ -28,6 +28,7 @@ type CatalogCommand = {
   description: string;
   defaultDescription: string;
   editableMetadata: EditableMetadata;
+  defaultEphemeral: boolean;
 };
 
 function truncateDescription(text: string, maxLength = DESCRIPTION_PREVIEW_LENGTH) {
@@ -45,6 +46,28 @@ function buildPermissionsToSave(
 
   for (const cmd of catalogNames) {
     merged[cmd] = current[cmd] ?? saved[cmd] ?? [];
+  }
+
+  for (const key of Object.keys(merged)) {
+    if (!catalogSet.has(key) && !BAN_APPEAL_COMMANDS.has(key)) {
+      delete merged[key];
+    }
+  }
+
+  return merged;
+}
+
+function buildEphemeralToSave(
+  catalogNames: string[],
+  current: Record<string, boolean>,
+  saved: Record<string, boolean>,
+  defaults: Record<string, boolean>,
+) {
+  const catalogSet = new Set(catalogNames);
+  const merged = { ...saved };
+
+  for (const cmd of catalogNames) {
+    merged[cmd] = current[cmd] ?? saved[cmd] ?? defaults[cmd] ?? false;
   }
 
   for (const key of Object.keys(merged)) {
@@ -81,9 +104,61 @@ function EditCommandIcon() {
   );
 }
 
+/** Open eye — reply visible to everyone (ephemeral: false) */
+function EyeOpenIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.25" />
+    </svg>
+  );
+}
+
+/** Closed eye — reply visible only to user (ephemeral: true) */
+function EyeClosedIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.25" />
+      <path
+        d="M2.5 2.5l11 11"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function CommandsPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
   const [draft, setDraft] = useState<Record<string, string[]> | null>(null);
+  const [ephemeralDraft, setEphemeralDraft] = useState<Record<
+    string,
+    boolean
+  > | null>(null);
   const [catalog, setCatalog] = useState<CatalogCommand[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -101,6 +176,11 @@ export default function CommandsPage() {
     [config?.commandPermissions],
   );
 
+  const savedEphemeral = useMemo(
+    () => config?.commandEphemeral ?? {},
+    [config?.commandEphemeral],
+  );
+
   const savedDisplayNames = useMemo(
     () => config?.commandDisplayNames ?? {},
     [config?.commandDisplayNames],
@@ -110,6 +190,14 @@ export default function CommandsPage() {
     () => config?.commandMetadataOverrides ?? {},
     [config?.commandMetadataOverrides],
   );
+
+  const ephemeralDefaults = useMemo(() => {
+    const defaults: Record<string, boolean> = {};
+    for (const cmd of catalog) {
+      defaults[cmd.name] = cmd.defaultEphemeral ?? false;
+    }
+    return defaults;
+  }, [catalog]);
 
   const loadCatalog = useCallback(async () => {
     setCatalogLoading(true);
@@ -157,6 +245,17 @@ export default function CommandsPage() {
     return merged;
   }, [draft, savedPermissions, commandNames]);
 
+  const ephemeral = useMemo(() => {
+    const base = ephemeralDraft ?? savedEphemeral;
+    const merged = { ...base };
+    for (const cmd of commandNames) {
+      if (!(cmd in merged)) {
+        merged[cmd] = savedEphemeral[cmd] ?? ephemeralDefaults[cmd] ?? false;
+      }
+    }
+    return merged;
+  }, [ephemeralDraft, savedEphemeral, commandNames, ephemeralDefaults]);
+
   const normalizedSaved = useMemo(() => {
     const merged = { ...savedPermissions };
     for (const cmd of commandNames) {
@@ -167,10 +266,27 @@ export default function CommandsPage() {
     return merged;
   }, [savedPermissions, commandNames]);
 
+  const normalizedSavedEphemeral = useMemo(() => {
+    const merged = { ...savedEphemeral };
+    for (const cmd of commandNames) {
+      if (!(cmd in merged)) {
+        merged[cmd] = ephemeralDefaults[cmd] ?? false;
+      }
+    }
+    return merged;
+  }, [savedEphemeral, commandNames, ephemeralDefaults]);
+
   const isPermissionsDirty = useMemo(
     () => isDraftDirty(draft, normalizedSaved),
     [draft, normalizedSaved],
   );
+
+  const isEphemeralDirty = useMemo(
+    () => isDraftDirty(ephemeralDraft, normalizedSavedEphemeral),
+    [ephemeralDraft, normalizedSavedEphemeral],
+  );
+
+  const isDirty = isPermissionsDirty || isEphemeralDirty;
 
   const roles = config?.roles ?? [];
 
@@ -178,14 +294,43 @@ export default function CommandsPage() {
     setDraft({ ...permissions, [command]: keys });
   }
 
-  async function onSavePermissions() {
-    const nextPermissions = buildPermissionsToSave(
-      commandNames,
-      permissions,
-      savedPermissions,
-    );
-    await save({ commandPermissions: nextPermissions });
+  function toggleCommandEphemeral(command: string) {
+    setEphemeralDraft({
+      ...ephemeral,
+      [command]: !ephemeral[command],
+    });
+  }
+
+  function onDiscard() {
     setDraft(null);
+    setEphemeralDraft(null);
+  }
+
+  async function onSave() {
+    const patch: {
+      commandPermissions?: Record<string, string[]>;
+      commandEphemeral?: Record<string, boolean>;
+    } = {};
+
+    if (isPermissionsDirty) {
+      patch.commandPermissions = buildPermissionsToSave(
+        commandNames,
+        permissions,
+        savedPermissions,
+      );
+    }
+    if (isEphemeralDirty) {
+      patch.commandEphemeral = buildEphemeralToSave(
+        commandNames,
+        ephemeral,
+        savedEphemeral,
+        ephemeralDefaults,
+      );
+    }
+
+    await save(patch);
+    setDraft(null);
+    setEphemeralDraft(null);
   }
 
   async function onSaveCommandEdit({
@@ -258,8 +403,8 @@ export default function CommandsPage() {
   }
 
   const { saveBarRef } = useUnsavedChanges({
-    isDirty: isPermissionsDirty,
-    onDiscard: () => setDraft(null),
+    isDirty,
+    onDiscard,
   });
 
   if (loading || catalogLoading) return <p className="muted">Loading…</p>;
@@ -268,7 +413,7 @@ export default function CommandsPage() {
     <>
       <PageHeader
         title="Command permissions"
-        description="Select which role keys can run each slash command. Empty selection = public (no role gate)."
+        description="Select which role keys can run each slash command. Empty selection = public (no role gate). Use the eye icon to toggle whether replies are visible only to the user."
         actions={
           pendingDiscordSync ? (
             <button
@@ -303,6 +448,7 @@ export default function CommandsPage() {
           </Link>
           . Commands are synced from the bot catalog automatically. Click the pen
           icon on a command to edit its name, description, and option text.
+          Closed eye = visible only to the user; open eye = visible to everyone.
         </p>
         <div className="table-wrap">
           <table className="data">
@@ -319,12 +465,44 @@ export default function CommandsPage() {
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((command) => {
                   const cmd = command.name;
+                  const isEphemeral = ephemeral[cmd] ?? false;
 
                   return (
                     <tr key={cmd}>
                       <td>
                         <div className="stack" style={{ gap: "0.15rem" }}>
-                          <span className="mono">/{command.effectiveName}</span>
+                          <span
+                            className="mono"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.35rem",
+                            }}
+                          >
+                            /{command.effectiveName}
+                            <button
+                              type="button"
+                              className="btn btn-icon"
+                              aria-label={
+                                isEphemeral
+                                  ? "Visible only to user (click to show to everyone)"
+                                  : "Visible to everyone (click to show only to user)"
+                              }
+                              title={
+                                isEphemeral
+                                  ? "Visible only to user"
+                                  : "Visible to everyone"
+                              }
+                              onClick={() => toggleCommandEphemeral(cmd)}
+                              disabled={saving || modalSaving}
+                            >
+                              {isEphemeral ? (
+                                <EyeClosedIcon />
+                              ) : (
+                                <EyeOpenIcon />
+                              )}
+                            </button>
+                          </span>
                           {command.displayName ? (
                             <span className="muted" style={{ fontSize: "0.8rem" }}>
                               default: /{cmd}
@@ -368,11 +546,11 @@ export default function CommandsPage() {
         <div className="row row-end">
           <SaveActions
             saveBarRef={saveBarRef}
-            isDirty={isPermissionsDirty}
+            isDirty={isDirty}
             saving={saving}
-            onSave={onSavePermissions}
-            onDiscard={() => setDraft(null)}
-            saveLabel="Save permissions"
+            onSave={onSave}
+            onDiscard={onDiscard}
+            saveLabel="Save changes"
           />
         </div>
       </div>

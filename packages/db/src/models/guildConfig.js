@@ -121,6 +121,8 @@ const GuildConfigSchema = new mongoose.Schema(
       of: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    // Map of canonical commandName -> whether slash replies are ephemeral (visible only to user)
+    commandEphemeral: { type: Map, of: Boolean, default: {} },
     channels: { type: [ChannelEntrySchema], default: [] },
     categories: { type: [CategoryEntrySchema], default: [] },
     features: {
