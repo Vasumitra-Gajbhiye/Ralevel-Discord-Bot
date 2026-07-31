@@ -20,6 +20,19 @@ const {
 
 /* ================= HELPERS ================= */
 
+const CONFESSION_COLORS = [
+  "#6D6AF8",
+  "#E17055",
+  "#00B894",
+  "#0984E3",
+  "#FDCB6E",
+  "#E84393",
+];
+
+function randomConfessionColor() {
+  return CONFESSION_COLORS[Math.floor(Math.random() * CONFESSION_COLORS.length)];
+}
+
 /* Buttons shown under EVERY approved confession */
 function confessionButtons(confessionId) {
   return new ActionRowBuilder().addComponents(
@@ -225,64 +238,100 @@ module.exports = function confessionSystem(client) {
 
       /* ---------- APPROVE ---------- */
       if (action === "confess_approve") {
-        const ventChannelKey =
-          cfg.confessions?.ventChannelKey || "vent";
-        const vent = await client.channels.fetch(
-          getChannelId(ventChannelKey),
-        );
+        try {
+          const ventChannelKey =
+            cfg.confessions?.ventChannelKey || "vent";
+          const ventChannelId = getChannelId(ventChannelKey);
 
-        const embed = new EmbedBuilder()
-          .setTitle(
-            `Anonymous Confession (#${confession.confessionId})`
-          )
-          .setDescription(confession.content)
-          .setColor("#6D6AF8");
+          if (!ventChannelId) {
+            await interaction
+              .followUp({
+                ephemeral: true,
+                content:
+                  `❌ Vent channel \`${ventChannelKey}\` is not configured. Set it in dashboard Settings → Channels, then try Approve again.`,
+              })
+              .catch(() => {});
+            return;
+          }
 
-        if (confession.attachment) {
-          embed.setImage(confession.attachment);
-        }
+          const vent = await client.channels
+            .fetch(ventChannelId)
+            .catch(() => null);
 
-        const msg = await vent.send({
-          embeds: [embed],
-          components: [
-            confessionButtons(confession.confessionId),
-          ],
-        });
+          if (!vent?.isTextBased?.()) {
+            await interaction
+              .followUp({
+                ephemeral: true,
+                content:
+                  `❌ Could not find vent channel \`${ventChannelKey}\` (${ventChannelId}). Check the channel ID in Settings → Channels.`,
+              })
+              .catch(() => {});
+            return;
+          }
 
-        const thread = await msg.startThread({
-          name: `Confession #${confession.confessionId}`,
-          autoArchiveDuration: 1440,
-        });
-
-        confession.status = "APPROVED";
-        confession.postedMessageId = msg.id;
-        confession.threadId = thread.id;
-        confession.reviewedAt = new Date();
-        confession.modActionBy = interaction.user.id;
-        await confession.save();
-
-        client.users
-          .fetch(confession.authorId)
-          .then((u) =>
-            u.send(
-              `✅ Your confession (#${confession.confessionId}) has been approved and posted.`
+          const embed = new EmbedBuilder()
+            .setTitle(
+              `Anonymous Confession (#${confession.confessionId})`
             )
-          )
-          .catch(() => {});
+            .setDescription(confession.content)
+            .setColor(randomConfessionColor());
 
-        await interaction.editReply(
-          buildResolvedReviewPayload(confession, {
-            decision: "approved",
-            moderatorTag: interaction.user.tag,
-          }),
-        );
-        await interaction
-          .followUp({
-            ephemeral: true,
-            content: "✅ Confession approved and thread created.",
-          })
-          .catch(() => {});
-        return;
+          if (confession.attachment) {
+            embed.setImage(confession.attachment);
+          }
+
+          const msg = await vent.send({
+            embeds: [embed],
+            components: [
+              confessionButtons(confession.confessionId),
+            ],
+          });
+
+          const thread = await msg.startThread({
+            name: `Confession #${confession.confessionId}`,
+            autoArchiveDuration: 1440,
+          });
+
+          confession.status = "APPROVED";
+          confession.postedMessageId = msg.id;
+          confession.threadId = thread.id;
+          confession.reviewedAt = new Date();
+          confession.modActionBy = interaction.user.id;
+          await confession.save();
+
+          client.users
+            .fetch(confession.authorId)
+            .then((u) =>
+              u.send(
+                `✅ Your confession (#${confession.confessionId}) has been approved and posted.`
+              )
+            )
+            .catch(() => {});
+
+          await interaction.editReply(
+            buildResolvedReviewPayload(confession, {
+              decision: "approved",
+              moderatorTag: interaction.user.tag,
+            }),
+          );
+          await interaction
+            .followUp({
+              ephemeral: true,
+              content: "✅ Confession approved and thread created.",
+            })
+            .catch(() => {});
+          return;
+        } catch (err) {
+          console.error("[confessions] Approve failed:", err);
+          await interaction
+            .followUp({
+              ephemeral: true,
+              content:
+                "❌ Failed to approve this confession. Check bot logs — the confession is still pending.",
+            })
+            .catch(() => {});
+          return;
+        }
       }
 
       /* ---------- REJECT ---------- */
@@ -390,6 +439,12 @@ module.exports = function confessionSystem(client) {
           components: [row],
         });
 
+        interaction.user
+          .send(
+            `📨 Your confession (#${confessionId}) has been submitted for review. You’ll be notified once it’s approved or rejected.`
+          )
+          .catch(() => {});
+
         return interaction.reply({
           content:
             "📨 **Your confession has been submitted for review.**\nYou’ll be notified once it’s approved or rejected.",
@@ -473,7 +528,7 @@ module.exports = function confessionSystem(client) {
         const replyEmbed = new EmbedBuilder()
           .setTitle(`Anonymous User #${anonymousNumber}`)
           .setDescription(replyText)
-          .setColor("#6D6AF8");
+          .setColor(randomConfessionColor());
 
         if (attachment) {
           replyEmbed.setImage(attachment);

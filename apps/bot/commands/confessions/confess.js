@@ -99,6 +99,12 @@ module.exports = {
       components: [row],
     });
 
+    interaction.user
+      .send(
+        `📨 Your confession (#${confessionId}) has been submitted for review. You’ll be notified once it’s approved or rejected.`
+      )
+      .catch(() => {});
+
     await interaction.reply({
       content:
         "📨 Your confession has been submitted for review.",
