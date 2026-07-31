@@ -75,7 +75,11 @@ const SORT_ALLOWLIST: Partial<Record<CollectionKey, string[]>> = {
   xpBans: ["userId", "reason", "createdAt", "_id"],
 };
 
-const DEFAULT_SORT = { createdAt: -1, timestamp: -1, _id: -1 };
+const DEFAULT_SORT: Record<string, 1 | -1> = {
+  createdAt: -1,
+  timestamp: -1,
+  _id: -1,
+};
 
 function parseOptionalNumber(value: string | null): number | null {
   if (value === null || value === "") return null;
