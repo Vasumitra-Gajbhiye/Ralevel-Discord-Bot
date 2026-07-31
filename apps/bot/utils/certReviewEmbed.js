@@ -3,31 +3,48 @@ const { EmbedBuilder } = require("discord.js");
 function buildPendingReviewEmbed(app, { userTag, userId, channelName }) {
   const joinedAt = app.joinedAt ?? null;
 
+  const fields = [
+    {
+      name: "Applicant",
+      value: `${userTag} (${userId})`,
+      inline: true,
+    },
+    { name: "Type", value: `${app.type}`, inline: true },
+    { name: "Rep", value: `${app.rep ?? 0}`, inline: true },
+    {
+      name: "Joined",
+      value: joinedAt
+        ? `<t:${Math.floor(joinedAt.getTime() / 1000)}:R>`
+        : "Unknown",
+      inline: true,
+    },
+    {
+      name: "Submitted",
+      value: `<t:${Math.floor(app.createdAt.getTime() / 1000)}:F>`,
+      inline: true,
+    },
+  ];
+
+  if (app.assignedAdminId) {
+    fields.push({
+      name: "Assigned",
+      value: `<@${app.assignedAdminId}>${
+        app.assignedAdminTag ? ` (${app.assignedAdminTag})` : ""
+      }`,
+      inline: true,
+    });
+  }
+
+  fields.push({
+    name: "Application ID",
+    value: `\`${app._id}\``,
+    inline: false,
+  });
+
   return new EmbedBuilder()
     .setTitle("📨 New Certificate Application")
     .setColor("#5865F2")
-    .addFields(
-      {
-        name: "Applicant",
-        value: `${userTag} (${userId})`,
-        inline: true,
-      },
-      { name: "Type", value: `${app.type}`, inline: true },
-      { name: "Rep", value: `${app.rep ?? 0}`, inline: true },
-      {
-        name: "Joined",
-        value: joinedAt
-          ? `<t:${Math.floor(joinedAt.getTime() / 1000)}:R>`
-          : "Unknown",
-        inline: true,
-      },
-      {
-        name: "Submitted",
-        value: `<t:${Math.floor(app.createdAt.getTime() / 1000)}:F>`,
-        inline: true,
-      },
-      { name: "Application ID", value: `\`${app._id}\``, inline: false },
-    )
+    .addFields(fields)
     .setFooter({
       text: channelName
         ? `Submitted in #${channelName}`

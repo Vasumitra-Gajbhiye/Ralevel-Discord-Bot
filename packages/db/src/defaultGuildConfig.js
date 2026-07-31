@@ -568,6 +568,7 @@ function buildDefaultGuildConfig(guildId) {
     schedules: {
       finalizeHourIst: 6,
       qotdHourIst: 6,
+      certificatesHourIst: 6,
     },
     welcome: {
       title: "Welcome to r/alevel 👋",

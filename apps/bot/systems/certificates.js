@@ -32,6 +32,7 @@ const {
   buildPendingReviewEmbed,
   buildResolvedReviewPayload,
 } = require("../utils/certReviewEmbed");
+const { claimNextCertAssignee } = require("../utils/certHelpers");
 
 function memberHasCertModRole(member) {
   const cfg = getGuildConfig();
@@ -286,6 +287,13 @@ module.exports = function certificateSystem(client) {
         const rep = await getRepCount(user.id);
         const joinedAt = member?.joinedAt ?? null;
 
+        const assignee = await claimNextCertAssignee(
+          process.env.GUILD_ID,
+        ).catch((err) => {
+          console.warn("[Certificates] Failed to claim assignee:", err);
+          return null;
+        });
+
         // create application
         const app = await Certificate.create({
           userId: user.id,
@@ -295,6 +303,8 @@ module.exports = function certificateSystem(client) {
           joinedAt,
           status: "pending",
           createdAt: new Date(),
+          assignedAdminId: assignee?.id ?? null,
+          assignedAdminTag: assignee?.tag ?? null,
         });
 
         const appEmbed = buildPendingReviewEmbed(app, {
@@ -322,8 +332,20 @@ module.exports = function certificateSystem(client) {
           .fetch(getChannelId("review"))
           .catch(() => null);
         if (reviewCh) {
+          const payload = {
+            embeds: [appEmbed],
+            components: [reviewRow],
+          };
+          if (assignee?.id) {
+            payload.content = `<@${assignee.id}>`;
+            payload.allowedMentions = { users: [assignee.id] };
+          } else {
+            console.warn(
+              "[Certificates] No cert assignee available; posting review without ping.",
+            );
+          }
           const reviewMsg = await reviewCh
-            .send({ embeds: [appEmbed], components: [reviewRow] })
+            .send(payload)
             .catch(() => null);
           if (reviewMsg) {
             app.reviewMessageId = reviewMsg.id;

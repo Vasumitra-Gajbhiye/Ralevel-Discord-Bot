@@ -14,6 +14,7 @@ const ConfessionBan = require("./src/models/confessionBan");
 const ConfessionReply = require("./src/models/confessionReply");
 const ModmailTicket = require("./src/models/modmailTicket");
 const Certificate = require("./src/models/certificate");
+const CertRotation = require("./src/models/certRotation");
 const QotdRotation = require("./src/models/qotdRotation");
 const Counter = require("./src/models/counter");
 const ModLog = require("./src/models/modlog");
@@ -59,6 +60,7 @@ module.exports = {
   ConfessionReply,
   ModmailTicket,
   Certificate,
+  CertRotation,
   QotdRotation,
   Counter,
   ModLog,

@@ -32,6 +32,7 @@ export const NAV = [
     label: "Operations",
     children: [
       { href: "/ops/certificates", label: "Certificates" },
+      { href: "/ops/cert-assignees", label: "Cert assignees" },
       { href: "/ops/tasks", label: "Tasks" },
       { href: "/ops/stickies", label: "Stickies" },
       { href: "/ops/confessions", label: "Confessions" },

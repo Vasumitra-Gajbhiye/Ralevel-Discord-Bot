@@ -21,6 +21,7 @@ type CollectionKey =
   | "xpBans"
   | "helpers"
   | "qotd"
+  | "certRotation"
   | "users"
   | "polls";
 
@@ -42,6 +43,7 @@ const MODEL_MAP: Record<
     | "XpBan"
     | "HelperRole"
     | "QotdRotation"
+    | "CertRotation"
     | "User"
     | "Poll"
   >
@@ -60,6 +62,7 @@ const MODEL_MAP: Record<
   xpBans: "XpBan",
   helpers: "HelperRole",
   qotd: "QotdRotation",
+  certRotation: "CertRotation",
   users: "User",
   polls: "Poll",
 };

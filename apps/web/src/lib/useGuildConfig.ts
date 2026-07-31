@@ -28,7 +28,11 @@ export type GuildConfigData = {
     disabledChannels: { id: string; label: string }[];
     disabledCategories: { id: string; label: string }[];
   };
-  schedules: { finalizeHourIst: number; qotdHourIst: number };
+  schedules: {
+    finalizeHourIst: number;
+    qotdHourIst: number;
+    certificatesHourIst: number;
+  };
   welcome: {
     title: string;
     description: string;

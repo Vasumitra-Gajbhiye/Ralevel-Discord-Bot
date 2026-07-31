@@ -35,6 +35,14 @@ const CertificateSchema = new mongoose.Schema({
   // Review channel message reference (for in-place embed updates)
   reviewMessageId: { type: String, default: null },
   reviewChannelId: { type: String, default: null },
+
+  // Round-robin assignee + delivery reminders
+  assignedAdminId: { type: String, default: null },
+  assignedAdminTag: { type: String, default: null },
+  reminder3SentAt: { type: Date, default: null },
+  reminder7SentAt: { type: Date, default: null },
+  lastAdminReminderSentAt: { type: Date, default: null },
+  lastAdminReminderDay: { type: Number, default: null },
 });
 
 module.exports = mongoose.models["CertificateApplication"] || mongoose.model("CertificateApplication", CertificateSchema);

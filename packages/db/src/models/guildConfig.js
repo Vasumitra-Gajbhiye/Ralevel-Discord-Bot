@@ -154,6 +154,7 @@ const GuildConfigSchema = new mongoose.Schema(
     schedules: {
       finalizeHourIst: { type: Number, default: 6 },
       qotdHourIst: { type: Number, default: 6 },
+      certificatesHourIst: { type: Number, default: 6 },
     },
     welcome: {
       title: { type: String, default: "Welcome to r/alevel 👋" },
