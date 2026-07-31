@@ -35,6 +35,29 @@ function confessionButtons(confessionId) {
   );
 }
 
+function buildResolvedReviewPayload(confession, { decision, moderatorTag }) {
+  const isApproved = decision === "approved";
+  const replies = confession.allowReply ? "Yes" : "No";
+  const embed = new EmbedBuilder()
+    .setTitle(`Anonymous Confession (#${confession.confessionId})`)
+    .setDescription(confession.content)
+    .setColor(isApproved ? "#00B894" : "#ff4d4d")
+    .setFooter({
+      text: `${isApproved ? "Approved" : "Rejected"} by ${moderatorTag} · Replies allowed: ${replies}`,
+    })
+    .setTimestamp();
+
+  if (confession.attachment) {
+    embed.setImage(confession.attachment);
+  }
+
+  return {
+    content: null,
+    embeds: [embed],
+    components: [],
+  };
+}
+
 /* ================= SYSTEM ================= */
 
 module.exports = function confessionSystem(client) {
@@ -145,11 +168,19 @@ module.exports = function confessionSystem(client) {
       });
 
       if (!confession || confession.status !== "PENDING") {
-        return interaction.editReply({
+        await interaction.editReply({
           content:
             "⚠️ This confession has already been reviewed.",
+          embeds: [],
           components: [],
         });
+        await interaction
+          .followUp({
+            ephemeral: true,
+            content: "⚠️ This confession has already been reviewed.",
+          })
+          .catch(() => {});
+        return;
       }
 
       /* ---------- APPROVE ---------- */
@@ -183,19 +214,6 @@ module.exports = function confessionSystem(client) {
           autoArchiveDuration: 1440,
         });
 
-        const replyEmbed = new EmbedBuilder()
-  .setTitle("💬 Anonymous Reply")
-  .setDescription(replyText)
-  .setColor("#6D6AF8");
-
-if (attachment) {
-  replyEmbed.setImage(attachment);
-}
-
-await thread.send({
-  embeds: [replyEmbed],
-});
-
         confession.status = "APPROVED";
         confession.postedMessageId = msg.id;
         confession.threadId = thread.id;
@@ -212,12 +230,19 @@ await thread.send({
           )
           .catch(() => {});
 
-        return interaction.editReply({
-          content:
-            "✅ Confession approved and thread created.",
-          components: [],
-          embeds: [],
-        });
+        await interaction.editReply(
+          buildResolvedReviewPayload(confession, {
+            decision: "approved",
+            moderatorTag: interaction.user.tag,
+          }),
+        );
+        await interaction
+          .followUp({
+            ephemeral: true,
+            content: "✅ Confession approved and thread created.",
+          })
+          .catch(() => {});
+        return;
       }
 
       /* ---------- REJECT ---------- */
@@ -236,11 +261,19 @@ await thread.send({
           )
           .catch(() => {});
 
-        return interaction.editReply({
-          content: "❌ Confession rejected.",
-          components: [],
-          embeds: [],
-        });
+        await interaction.editReply(
+          buildResolvedReviewPayload(confession, {
+            decision: "rejected",
+            moderatorTag: interaction.user.tag,
+          }),
+        );
+        await interaction
+          .followUp({
+            ephemeral: true,
+            content: "❌ Confession rejected.",
+          })
+          .catch(() => {});
+        return;
       }
     }
 
