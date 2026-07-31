@@ -357,6 +357,7 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   "clear-warnings": false,
   close: true,
   confess: true,
+  "delete-confession": true,
   "delete-task": true,
   "delete-warning": false,
   "edit-sticky": true,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T03:38:49.423Z",
+  "generatedAt": "2026-07-31T08:27:17.504Z",
   "commands": [
     {
       "category": "reputation",
@@ -560,6 +560,24 @@
         ],
         "name": "confess",
         "description": "Submit an anonymous confession",
+        "type": 1
+      }
+    },
+    {
+      "category": "confessions",
+      "name": "delete-confession",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "id",
+            "description": "Confession ID (e.g. 2 or #2)",
+            "required": true
+          }
+        ],
+        "name": "delete-confession",
+        "description": "Delete one of your confessions by ID",
         "type": 1
       }
     },
