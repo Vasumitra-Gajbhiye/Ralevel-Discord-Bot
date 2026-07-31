@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T08:52:53.337Z",
+  "generatedAt": "2026-07-31T09:12:23.300Z",
   "commands": [
     {
       "category": "reputation",
@@ -1127,7 +1127,7 @@
           {
             "type": 3,
             "name": "message-link",
-            "description": "Discord message link or message ID (right-click message → Copy Link).",
+            "description": "Discord message link (right-click -> copy link)",
             "required": true
           },
           {
@@ -2064,7 +2064,7 @@
           {
             "type": 3,
             "name": "message-link",
-            "description": "Discord message link or message ID (right-click message → Copy Link).",
+            "description": "Discord message link (right-click -> copy link)",
             "required": true
           },
           {

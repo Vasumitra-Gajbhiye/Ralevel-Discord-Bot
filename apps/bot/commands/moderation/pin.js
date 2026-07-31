@@ -17,7 +17,7 @@ module.exports = {
       opt
         .setName("message-link")
         .setDescription(
-          "Discord message link or message ID (right-click message → Copy Link).",
+          "Discord message link (right-click -> copy link)",
         )
         .setRequired(true),
     )
