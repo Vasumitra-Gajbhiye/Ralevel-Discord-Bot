@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T08:27:17.504Z",
+  "generatedAt": "2026-07-31T08:52:53.337Z",
   "commands": [
     {
       "category": "reputation",
@@ -1613,6 +1613,32 @@
         "name": "send-cert-msg",
         "description": "Resync the certificate application panel now",
         "default_member_permissions": "32",
+        "type": 1
+      }
+    },
+    {
+      "category": "xp",
+      "name": "set-msg-count",
+      "fileDefault": "Administrator",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The user to set message count for.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "min_value": 0,
+            "type": 4,
+            "name": "amount",
+            "description": "The new message count.",
+            "required": true
+          }
+        ],
+        "name": "set-msg-count",
+        "description": "Set a user's message count to an exact amount.",
+        "default_member_permissions": "8",
         "type": 1
       }
     },

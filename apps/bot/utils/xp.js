@@ -150,6 +150,15 @@ async function applyXpChange(client, { guildId, userId, newXp }) {
   return { previousXp, newXp: clampedXp };
 }
 
+async function applyMessageCountChange({ guildId, userId, newCount }) {
+  const user = await getOrCreateUser(guildId, userId);
+  const previousCount = user.total_messages ?? 0;
+  const clamped = Math.max(0, newCount);
+  user.total_messages = clamped;
+  await user.save();
+  return { previousCount, newCount: clamped };
+}
+
 module.exports = {
   buildProgressBar,
   buildXpProfileEmbed,
@@ -160,4 +169,5 @@ module.exports = {
   getServerRank,
   getXpTotalsWithPending,
   applyXpChange,
+  applyMessageCountChange,
 };
