@@ -64,6 +64,13 @@ const ConfessionSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    anonymousRepliers: [
+      {
+        userId: { type: String, required: true },
+        number: { type: Number, required: true },
+      },
+    ],
   },
 
   { timestamps: true }

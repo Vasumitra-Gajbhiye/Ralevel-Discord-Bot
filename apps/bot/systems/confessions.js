@@ -1,4 +1,4 @@
-const { Confession, ConfessionBan } = require("@ralevel/db");
+const { Confession, ConfessionBan, ConfessionReply } = require("@ralevel/db");
 const {
   Events,
   EmbedBuilder,
@@ -56,6 +56,46 @@ function buildResolvedReviewPayload(confession, { decision, moderatorTag }) {
     embeds: [embed],
     components: [],
   };
+}
+
+async function getOrAssignAnonymousNumber(confessionId, userId) {
+  const existing = await Confession.findOne({
+    confessionId,
+    "anonymousRepliers.userId": userId,
+  });
+
+  if (existing) {
+    const entry = existing.anonymousRepliers.find((r) => r.userId === userId);
+    if (entry) return entry.number;
+  }
+
+  const confession = await Confession.findOne({ confessionId });
+  if (!confession) return null;
+
+  const number = (confession.anonymousRepliers?.length || 0) + 1;
+
+  const updated = await Confession.findOneAndUpdate(
+    {
+      confessionId,
+      anonymousRepliers: { $not: { $elemMatch: { userId } } },
+    },
+    {
+      $push: {
+        anonymousRepliers: { userId, number },
+      },
+    },
+    { new: true },
+  );
+
+  if (updated) {
+    const entry = updated.anonymousRepliers.find((r) => r.userId === userId);
+    return entry?.number ?? number;
+  }
+
+  // Race: another request assigned this user — re-fetch
+  const refetched = await Confession.findOne({ confessionId });
+  const entry = refetched?.anonymousRepliers?.find((r) => r.userId === userId);
+  return entry?.number ?? null;
 }
 
 /* ================= SYSTEM ================= */
@@ -379,24 +419,16 @@ module.exports = function confessionSystem(client) {
 
         let targetId = null;
 
-if (manualId && manualId.trim() !== "") {
-  targetId = Number(manualId);
-} else if (contextId && contextId !== "undefined") {
-  targetId = Number(contextId);
-}
+        if (manualId && manualId.trim() !== "") {
+          targetId = Number(manualId);
+        } else if (contextId && contextId !== "undefined") {
+          targetId = Number(contextId);
+        }
 
-if (!targetId || Number.isNaN(targetId)) {
-  return interaction.reply({
-    content:
-      "❌ Please provide a valid confession ID or use the Reply button under a confession.",
-    ephemeral: true,
-  });
-}
-
-        if (!targetId) {
+        if (!targetId || Number.isNaN(targetId)) {
           return interaction.reply({
             content:
-              "❌ Could not determine which confession to reply to.",
+              "❌ Please provide a valid confession ID or use the Reply button under a confession.",
             ephemeral: true,
           });
         }
@@ -413,14 +445,51 @@ if (!targetId || Number.isNaN(targetId)) {
           });
         }
 
+        if (!confession.allowReply) {
+          return interaction.reply({
+            content:
+              "❌ Replies are not allowed on this confession.",
+            ephemeral: true,
+          });
+        }
+
+        const anonymousNumber = await getOrAssignAnonymousNumber(
+          confession.confessionId,
+          interaction.user.id,
+        );
+
+        if (!anonymousNumber) {
+          return interaction.reply({
+            content:
+              "❌ Could not assign an anonymous identity for this reply. Please try again.",
+            ephemeral: true,
+          });
+        }
+
         const thread = await client.channels.fetch(
           confession.threadId
         );
 
-        await thread.send({
-          content:
-            "💬 **Anonymous Reply**\n\n" + replyText,
-          files: attachment ? [attachment] : [],
+        const replyEmbed = new EmbedBuilder()
+          .setTitle(`Anonymous User #${anonymousNumber}`)
+          .setDescription(replyText)
+          .setColor("#6D6AF8");
+
+        if (attachment) {
+          replyEmbed.setImage(attachment);
+        }
+
+        const msg = await thread.send({
+          embeds: [replyEmbed],
+        });
+
+        await ConfessionReply.create({
+          confessionId: confession.confessionId,
+          authorId: interaction.user.id,
+          anonymousNumber,
+          content: replyText,
+          attachment,
+          messageId: msg.id,
         });
 
         return interaction.reply({
