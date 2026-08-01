@@ -27,6 +27,23 @@ export declare const TaskDisplay: Model<any>;
 export declare const HelperRole: Model<any>;
 export declare const GuildConfig: Model<any>;
 export declare const DashboardAccess: Model<any>;
+export declare const ExamSession: Model<any>;
+export declare const ExamPaper: Model<any>;
+export declare const TIME_UTC_RE: RegExp;
+export declare const DATE_RE: RegExp;
+export declare function combineDateAndUtcTime(
+  dateStr: string,
+  timeUtc: string,
+): Date;
+export declare function computePaperWindow(
+  session: {
+    amStartUtc: string;
+    amEndUtc: string;
+    pmStartUtc: string;
+    pmEndUtc: string;
+  },
+  paper: { date: string; slot: "AM" | "PM" },
+): { lockAt: Date; unlockAt: Date };
 export declare function buildDefaultGuildConfig(guildId: string): Record<string, unknown>;
 export declare const DEFAULT_COMMAND_PERMISSIONS: Record<string, string[]>;
 export declare const DEFAULT_COMMAND_DISCORD_PERMISSIONS: Record<string, string>;

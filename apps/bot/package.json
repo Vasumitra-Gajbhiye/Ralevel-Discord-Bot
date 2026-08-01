@@ -24,6 +24,7 @@
     "verify:task-display": "node scripts/verify-task-display.js",
     "verify:cert-panel": "node scripts/verify-cert-panel.js",
     "verify:purge-user": "node scripts/verify-purge-user.js",
+    "verify:exam-lock": "node scripts/verify-exam-lock.js",
     "seed:guild-config": "node scripts/seed-guild-config.js",
     "deploy-commands": "node scripts/deploy-commands.js",
     "export-command-catalog": "node scripts/export-command-catalog.js"

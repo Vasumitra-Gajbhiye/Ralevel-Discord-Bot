@@ -25,10 +25,15 @@ import {
   HelperRole,
   GuildConfig,
   DashboardAccess,
+  ExamSession,
+  ExamPaper,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
+  computePaperWindow,
+  TIME_UTC_RE,
+  DATE_RE,
 } from "@ralevel/db";
 
 let connected = false;
@@ -65,8 +70,13 @@ export async function ensureDb() {
     HelperRole,
     GuildConfig,
     DashboardAccess,
+    ExamSession,
+    ExamPaper,
     buildDefaultGuildConfig,
     DEFAULT_COMMAND_PERMISSIONS,
+    computePaperWindow,
+    TIME_UTC_RE,
+    DATE_RE,
   };
 }
 
@@ -142,8 +152,13 @@ export {
   HelperRole,
   GuildConfig,
   DashboardAccess,
+  ExamSession,
+  ExamPaper,
   buildDefaultGuildConfig,
   DEFAULT_COMMAND_PERMISSIONS,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
+  computePaperWindow,
+  TIME_UTC_RE,
+  DATE_RE,
 };

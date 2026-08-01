@@ -42,6 +42,7 @@ export const NAV = [
       { href: "/ops/xp", label: "XP" },
       { href: "/ops/xp-bans", label: "XP bans" },
       { href: "/ops/polls", label: "Polls" },
+      { href: "/ops/exam-locking", label: "Exam locking" },
     ],
   },
 ] as const;

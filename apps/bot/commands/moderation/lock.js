@@ -5,6 +5,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const logModAction = require("../../utils/logModAction.js");
+const { lockChannel } = require("../../utils/channelLock.js");
 
 const generateId = require("../../utils/generateId.js");
 
@@ -32,10 +33,7 @@ module.exports = {
     const channel = interaction.options.getChannel("channel");
     const reason = interaction.options.getString("reason");
 
-    // Apply permission overwrite
-    await channel.permissionOverwrites.edit(channel.guild.roles.everyone, {
-      SendMessages: false,
-    });
+    await lockChannel(channel);
 
     const actionId = generateId();
 

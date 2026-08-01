@@ -26,6 +26,8 @@ const TaskDisplay = require("./src/models/taskDisplay");
 const HelperRole = require("./src/models/helperRole");
 const GuildConfig = require("./src/models/guildConfig");
 const DashboardAccess = require("./src/models/dashboardAccess");
+const ExamSession = require("./src/models/examSession");
+const ExamPaper = require("./src/models/examPaper");
 const {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
@@ -43,6 +45,12 @@ const {
   migrateRankLadder,
   normalizeRanksConfig,
 } = require("./src/migrateGuildConfig");
+const {
+  TIME_UTC_RE,
+  DATE_RE,
+  combineDateAndUtcTime,
+  computePaperWindow,
+} = require("./src/examWindows");
 
 module.exports = {
   connectDB,
@@ -72,6 +80,8 @@ module.exports = {
   HelperRole,
   GuildConfig,
   DashboardAccess,
+  ExamSession,
+  ExamPaper,
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
   DEFAULT_COMMAND_PERMISSIONS,
@@ -85,4 +95,8 @@ module.exports = {
   normalizeRanksIdLabels,
   migrateRankLadder,
   normalizeRanksConfig,
+  TIME_UTC_RE,
+  DATE_RE,
+  combineDateAndUtcTime,
+  computePaperWindow,
 };

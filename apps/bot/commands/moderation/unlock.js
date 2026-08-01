@@ -7,6 +7,7 @@ const {
 
 const generateId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
+const { unlockChannel } = require("../../utils/channelLock.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -32,11 +33,7 @@ module.exports = {
     const channel = interaction.options.getChannel("channel");
     const reason = interaction.options.getString("reason");
 
-    // Restore permissions
-    await channel.permissionOverwrites.edit(
-      channel.guild.roles.everyone,
-      { SendMessages: null }, // removes overwrite
-    );
+    await unlockChannel(channel);
 
     const actionId = generateId();
 
