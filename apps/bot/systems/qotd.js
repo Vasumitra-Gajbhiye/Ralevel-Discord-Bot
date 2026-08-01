@@ -83,10 +83,10 @@ module.exports = function qotdSystem(client) {
       }
 
       const message =
-        `🌅 **Question of the Day — Reminder**\n\n` +
-        `Today’s QOTD is assigned to:\n` +
+        `🌅 **Question and Song of the Day — Reminder**\n\n` +
+        `Today’s QOTD and SOTD is assigned to:\n` +
         `👉 <@${current.id}>\n\n` +
-        `Please post the Question of the Day when ready.\n\n` +
+        `Please post the Question and Song of the Day when ready.\n\n` +
         `🔔 **Next up:** <@${next.id}>\n` +
         `You’re next in rotation — please start preparing.`;
 
