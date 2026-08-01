@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-01T00:18:15.587Z",
+  "generatedAt": "2026-08-01T08:22:59.095Z",
   "commands": [
     {
       "category": "reputation",
@@ -509,26 +509,6 @@
         ],
         "name": "clear-warnings",
         "description": "Clear all warnings for a user",
-        "type": 1
-      }
-    },
-    {
-      "category": "modmail",
-      "name": "close",
-      "fileDefault": "ModerateMembers",
-      "payload": {
-        "options": [
-          {
-            "type": 3,
-            "name": "reason",
-            "description": "Optional reason shown to the user",
-            "required": false,
-            "max_length": 500
-          }
-        ],
-        "name": "close",
-        "description": "Close this modmail ticket.",
-        "default_member_permissions": "1099511627776",
         "type": 1
       }
     },

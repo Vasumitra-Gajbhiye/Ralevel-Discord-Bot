@@ -156,7 +156,7 @@ Used in: `apps/web` middleware, API routes, and Clerk components. Allowlisted em
 | `MOD_LOG_CHANNEL_ID`       | Moderation action embeds                          | For mod logs    | Mod actions not logged to channel   |
 | `LEVELUP_CHANNEL_ID`       | XP rank-up announcements                          | For XP ranks    | Level-up messages not sent          |
 | `QOTD_REMINDER_CHANNEL_ID` | QOTD daily reminder channel                       | Optional        | QOTD scheduler logs warning, skips  |
-| `TICKET_CATEGORY_ID`       | Category for modmail ticket channels              | For modmail     | Modmail cannot create ticket channels |
+| `MOD_MAIL_CHANNEL_ID`      | Forum channel for modmail posts                   | For modmail     | Modmail cannot create forum posts     |
 
 ---
 
@@ -255,14 +255,14 @@ Used in: `packages/db/src/defaultGuildConfig.js` (seed only; merged into `disabl
 
 ---
 
-### `TICKET_CATEGORY_ID`
+### `MOD_MAIL_CHANNEL_ID`
 
 |                |                                                              |
 | -------------- | ------------------------------------------------------------ |
-| **Purpose**    | Discord category ID where modmail ticket channels are created |
+| **Purpose**    | Discord forum channel ID where one modmail post is kept per user |
 | **Example**    | `1532395293599862834`                                        |
 | **Required**   | Yes (for modmail)                                            |
-| **If missing** | Users DMing the bot cannot open tickets                      |
+| **If missing** | Users DMing the bot cannot reach staff via modmail           |
 
 Used in: `apps/bot/systems/modmail.js`
 
@@ -318,7 +318,7 @@ Quick reference for which variables each feature needs:
 | Reputation              | Tier role IDs, optional `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` (legacy `STAFF_CHANNEL_IDS` merged into `DISABLED_CHANNELS`) |
 | Certificates            | `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, `ADMIN_ROLE_ID`, `SR_HELPER_ROLE_ID` |
 | Confessions             | `MOD_ACTION_CHANNEL`, `VENT_CHANNEL`                                                                  |
-| Modmail                 | `TICKET_CATEGORY_ID`, `GUILD_ID`                                                                      |
+| Modmail                 | `MOD_MAIL_CHANNEL_ID`                                                                                 |
 | Tasks                   | `GRAPHIC_CHANNEL`, `DEV_CHANNEL`, `WRITER_CHANNEL`, designer role IDs                                 |
 | Welcome                 | `WELCOME_CHANNEL`                                                                                     |
 | QOTD                    | `QOTD_REMINDER_CHANNEL_ID`                                                                            |

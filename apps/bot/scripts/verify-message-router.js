@@ -133,7 +133,7 @@ async function testSharedGuardsSkipHandlers() {
   assert(calls.modmailDm === 1, "DM messages should invoke modmail DM handler");
 }
 
-async function testModmailTicketChannelSkipsGuildHandlers() {
+async function testModmailForumThreadSkipsGuildHandlers() {
   const client = createMockClient();
   const calls = { tracker: 0, sticky: 0, reputation: 0, staffReply: 0 };
 
@@ -154,15 +154,24 @@ async function testModmailTicketChannelSkipsGuildHandlers() {
   });
 
   await client.emitMessageCreate(
-    createGuildMessage({ channelId: "modmail-ticket-1" })
+    createGuildMessage({
+      channelId: "modmail-thread-1",
+      parentId: "mod-mail-forum",
+      channel: {
+        id: "modmail-thread-1",
+        parentId: "mod-mail-forum",
+        isThread: () => true,
+        send: async () => {},
+      },
+    })
   );
 
   assert(calls.staffReply === 1, "modmail staff reply should run");
-  assert(calls.tracker === 0, "tracker should be skipped in modmail tickets");
-  assert(calls.sticky === 0, "sticky should be skipped in modmail tickets");
+  assert(calls.tracker === 0, "tracker should be skipped in modmail threads");
+  assert(calls.sticky === 0, "sticky should be skipped in modmail threads");
   assert(
     calls.reputation === 0,
-    "reputation should be skipped in modmail tickets"
+    "reputation should be skipped in modmail threads"
   );
 }
 
@@ -438,7 +447,7 @@ async function main() {
   testNoStrayMessageCreateRegistrations();
   await testSingleListenerRegistration();
   await testSharedGuardsSkipHandlers();
-  await testModmailTicketChannelSkipsGuildHandlers();
+  await testModmailForumThreadSkipsGuildHandlers();
   await testReputationSkippedInDisabledChannel();
   await testReputationSkippedInStaffChannel();
   testIsReputationDisabledHelper();

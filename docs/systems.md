@@ -22,7 +22,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Welcome | `systems/welcome.js` | `guildMemberAdd` | Canvas image |
 | Certificates | `systems/certificates.js` | Buttons/modals | MongoDB |
 | Confessions | `systems/confessions.js` | Buttons/modals | MongoDB |
-| Modmail | `systems/modmail.js` | Called by router + `/close` | MongoDB |
+| Modmail | `systems/modmail.js` | Called by router | MongoDB |
 
 ---
 
@@ -76,7 +76,7 @@ const HIERARCHY_TARGET_OPTIONS = {
 
 **File:** `systems/messageRouter.js`
 
-**Purpose:** Single `MessageCreate` listener that fans out to tracker, sticky, and reputation handlers in parallel. Also routes DMs and ticket-category messages to modmail.
+**Purpose:** Single `MessageCreate` listener that fans out to tracker, sticky, and reputation handlers in parallel. Also routes DMs and modmail forum-thread messages to modmail.
 
 **Discord events:** `MessageCreate`
 
@@ -403,21 +403,21 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **File:** `systems/modmail.js`
 
-**Purpose:** Relay between user DMs and private staff ticket channels under `TICKET_CATEGORY_ID`. Staff identity is hidden in the user DM only.
+**Purpose:** Relay between user DMs and permanent staff forum posts under `MOD_MAIL_CHANNEL_ID`. Staff identity is hidden in the user DM only. Posts are never closed or deleted.
 
-**Discord events:** Handled via `messageRouter` (`MessageCreate`); close via slash `/close`
+**Discord events:** Handled via `messageRouter` (`MessageCreate`)
 
 **Workflow:**
 
-1. User DMs the bot → create (or reuse) an open ticket channel under `TICKET_CATEGORY_ID`
-2. User messages relay into the ticket as embeds showing their identity
-3. Staff replies in the ticket relay anonymously to the user DM (label: Staff)
+1. User DMs the bot → create (or reuse) one forum post per user under `MOD_MAIL_CHANNEL_ID`
+2. User messages relay into the post as embeds showing their identity
+3. Staff replies in the post relay anonymously to the user DM (label: Staff)
 4. Messages starting with `.` stay staff-only (not relayed)
-5. `/close` marks the ticket closed, notifies the user, deletes the channel
+5. If Discord auto-archives the post, the bot unarchives it before writing
 
-**Dependencies:** `TICKET_CATEGORY_ID`, `GUILD_ID`, MongoDB (`ModmailTicket`), intents `DirectMessages` + partial `Channel`
+**Dependencies:** `MOD_MAIL_CHANNEL_ID`, MongoDB (`ModmailTicket`), intents `DirectMessages` + partial `Channel`
 
-**Related commands:** `/close`
+**Related commands:** none
 
 ---
 

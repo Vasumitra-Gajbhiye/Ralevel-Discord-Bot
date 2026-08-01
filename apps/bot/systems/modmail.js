@@ -8,15 +8,11 @@ const STAFF_EMBED_COLOR = 0x5865f2;
 const USER_EMBED_COLOR = 0x57f287;
 const NOTE_PREFIX = ".";
 
-function getTicketCategoryId() {
-  return process.env.TICKET_CATEGORY_ID || null;
+function getModMailChannelId() {
+  return process.env.MOD_MAIL_CHANNEL_ID || null;
 }
 
-function getGuildId() {
-  return process.env.GUILD_ID || null;
-}
-
-function channelNameFor(user) {
+function threadNameFor(user) {
   const raw = String(user.username || "user")
     .toLowerCase()
     .replace(/[^a-z0-9-_]/g, "")
@@ -79,55 +75,10 @@ function buildStaffRelayEmbed(message) {
   return embed;
 }
 
-async function isOpenTicketChannel(channelId) {
-  if (!channelId) return false;
-  const ticket = await ModmailTicket.findOne({
-    channelId,
-    status: "OPEN",
-  })
-    .select("_id")
-    .lean();
-  return Boolean(ticket);
-}
-
-async function findOpenTicketByUser(userId) {
-  return ModmailTicket.findOne({ userId, status: "OPEN" });
-}
-
-async function findOpenTicketByChannel(channelId) {
-  return ModmailTicket.findOne({ channelId, status: "OPEN" });
-}
-
-async function createTicketChannel(client, user) {
-  const guildId = getGuildId();
-  const categoryId = getTicketCategoryId();
-
-  if (!guildId) {
-    throw new Error("GUILD_ID is not configured");
-  }
-  if (!categoryId) {
-    throw new Error("TICKET_CATEGORY_ID is not configured");
-  }
-
-  const guild = await client.guilds.fetch(guildId);
-  const channel = await guild.channels.create({
-    name: channelNameFor(user),
-    type: ChannelType.GuildText,
-    parent: categoryId,
-    topic: `Modmail with ${user.tag} (${user.id})`,
-    reason: `Modmail ticket for ${user.tag}`,
-  });
-
-  const ticket = await ModmailTicket.create({
-    userId: user.id,
-    channelId: channel.id,
-    guildId: guild.id,
-    status: "OPEN",
-  });
-
-  const opener = new EmbedBuilder()
+function buildOpenerEmbed(user) {
+  return new EmbedBuilder()
     .setColor(STAFF_EMBED_COLOR)
-    .setTitle("New Modmail Ticket")
+    .setTitle("Modmail")
     .setDescription(
       "Messages here are relayed anonymously to the user via DM.\n" +
         `Prefix a message with \`${NOTE_PREFIX}\` to keep it staff-only.`
@@ -137,10 +88,84 @@ async function createTicketChannel(client, user) {
       { name: "User ID", value: user.id, inline: true }
     )
     .setTimestamp();
+}
 
-  await channel.send({ embeds: [opener] });
+async function ensureThreadWritable(thread) {
+  if (thread.archived) {
+    await thread.setArchived(false);
+  }
+}
 
-  return { channel, ticket };
+async function isModmailThread(threadId) {
+  if (!threadId) return false;
+  const ticket = await ModmailTicket.findOne({ threadId })
+    .select("_id")
+    .lean();
+  return Boolean(ticket);
+}
+
+async function findTicketByUser(userId) {
+  return ModmailTicket.findOne({ userId });
+}
+
+async function findTicketByThread(threadId) {
+  return ModmailTicket.findOne({ threadId });
+}
+
+async function createModmailThread(client, user) {
+  const forumId = getModMailChannelId();
+  if (!forumId) {
+    throw new Error("MOD_MAIL_CHANNEL_ID is not configured");
+  }
+
+  const forum = await client.channels.fetch(forumId);
+  if (!forum || forum.type !== ChannelType.GuildForum) {
+    throw new Error("MOD_MAIL_CHANNEL_ID must be a forum channel");
+  }
+
+  const thread = await forum.threads.create({
+    name: threadNameFor(user),
+    message: {
+      embeds: [buildOpenerEmbed(user)],
+    },
+    reason: `Modmail thread for ${user.tag}`,
+  });
+
+  const ticket = await ModmailTicket.findOneAndUpdate(
+    { userId: user.id },
+    {
+      userId: user.id,
+      threadId: thread.id,
+      guildId: forum.guildId,
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  return { thread, ticket };
+}
+
+async function resolveThreadForUser(client, user) {
+  let ticket = await findTicketByUser(user.id);
+  let thread = null;
+  let isNew = false;
+
+  if (ticket) {
+    thread = await client.channels.fetch(ticket.threadId).catch(() => null);
+    if (!thread) {
+      const created = await createModmailThread(client, user);
+      thread = created.thread;
+      ticket = created.ticket;
+      isNew = true;
+    }
+  } else {
+    const created = await createModmailThread(client, user);
+    thread = created.thread;
+    ticket = created.ticket;
+    isNew = true;
+  }
+
+  await ensureThreadWritable(thread);
+  return { thread, ticket, isNew };
 }
 
 async function handleModmailDm(client, message) {
@@ -148,34 +173,17 @@ async function handleModmailDm(client, message) {
   if (!hasRelayableContent(message)) return;
 
   try {
-    let ticket = await findOpenTicketByUser(message.author.id);
-    let channel;
-    let isNew = false;
+    const { thread, isNew } = await resolveThreadForUser(
+      client,
+      message.author
+    );
 
-    if (ticket) {
-      channel = await client.channels.fetch(ticket.channelId).catch(() => null);
-      if (!channel) {
-        ticket.status = "CLOSED";
-        ticket.closedAt = new Date();
-        ticket.closedBy = "system";
-        await ticket.save();
-        ticket = null;
-      }
-    }
-
-    if (!ticket) {
-      const created = await createTicketChannel(client, message.author);
-      channel = created.channel;
-      ticket = created.ticket;
-      isNew = true;
-    }
-
-    await channel.send({ embeds: [buildUserRelayEmbed(message)] });
+    await thread.send({ embeds: [buildUserRelayEmbed(message)] });
 
     if (isNew) {
       await message.channel
         .send(
-          "Your ticket has been created. Staff will reply here — please keep this DM open."
+          "Your message was sent to staff. They will reply here."
         )
         .catch(() => {});
     }
@@ -183,7 +191,7 @@ async function handleModmailDm(client, message) {
     console.error("[modmail] Failed to handle DM:", err);
     await message.channel
       .send(
-        "Sorry, I couldn't open a ticket right now. Please try again later."
+        "Sorry, I couldn't send your message right now. Please try again later."
       )
       .catch(() => {});
   }
@@ -192,12 +200,16 @@ async function handleModmailDm(client, message) {
 async function handleModmailStaffReply(client, message) {
   if (message.author.bot || !message.guild) return false;
 
-  const categoryId = getTicketCategoryId();
-  if (!categoryId || message.channel.parentId !== categoryId) {
+  const forumId = getModMailChannelId();
+  if (
+    !forumId ||
+    !message.channel.isThread?.() ||
+    message.channel.parentId !== forumId
+  ) {
     return false;
   }
 
-  const ticket = await findOpenTicketByChannel(message.channel.id);
+  const ticket = await findTicketByThread(message.channel.id);
   if (!ticket) return false;
 
   if (!hasRelayableContent(message)) return true;
@@ -206,6 +218,7 @@ async function handleModmailStaffReply(client, message) {
   if (content.startsWith(NOTE_PREFIX)) return true;
 
   try {
+    await ensureThreadWritable(message.channel);
     const user = await client.users.fetch(ticket.userId);
     await user.send({ embeds: [buildStaffRelayEmbed(message)] });
   } catch (err) {
@@ -225,6 +238,6 @@ module.exports = function modmailSystem(client) {
     handleModmailDm: (message) => handleModmailDm(client, message),
     handleModmailStaffReply: (message) =>
       handleModmailStaffReply(client, message),
-    isOpenTicketChannel,
+    isModmailThread,
   };
 };
