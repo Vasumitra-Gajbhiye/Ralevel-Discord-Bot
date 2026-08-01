@@ -22,7 +22,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Welcome | `systems/welcome.js` | `guildMemberAdd` | Canvas image |
 | Certificates | `systems/certificates.js` | Buttons/modals | MongoDB |
 | Confessions | `systems/confessions.js` | Buttons/modals | MongoDB |
-| Modmail | `systems/modmail.js` | Called by router | MongoDB |
+| Modmail | `systems/modmail.js` | Called by router + `/close-ticket` | MongoDB |
 
 ---
 
@@ -403,21 +403,24 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **File:** `systems/modmail.js`
 
-**Purpose:** Relay between user DMs and permanent staff forum posts under `MOD_MAIL_CHANNEL_ID`. Staff identity is hidden in the user DM only. Posts are never closed or deleted.
+**Purpose:** Intake + relay between user DMs and permanent staff forum posts under `MOD_MAIL_CHANNEL_ID`. Staff identity is hidden in the user DM only. Closed posts are archived (kept as a log), never deleted.
 
-**Discord events:** Handled via `messageRouter` (`MessageCreate`)
+**Discord events:** Handled via `messageRouter` (`MessageCreate`) and `InteractionCreate` (select menu + modal); close via slash `/close-ticket`
 
 **Workflow:**
 
-1. User DMs the bot → create (or reuse) one forum post per user under `MOD_MAIL_CHANNEL_ID`
-2. User messages relay into the post as embeds showing their identity
-3. Staff replies in the post relay anonymously to the user DM (label: Staff)
-4. Messages starting with `.` stay staff-only (not relayed)
-5. If Discord auto-archives the post, the bot unarchives it before writing
+1. User DMs the bot with no open ticket → GET SUPPORT message with category dropdown (General Query / Permission to Advertise / Report a Member)
+2. User picks a category → modal asks them to describe their problem
+3. On submit → create a new forum post (opener embed with user + category, then description message)
+4. Further user DMs while the ticket is open relay into that post as embeds
+5. Staff replies in the post relay anonymously to the user DM (label: Staff)
+6. Messages starting with `.` stay staff-only (not relayed)
+7. `/close-ticket` marks the ticket closed, DMs the user, and archives the post
+8. After close, the next DM shows the support menu again and creates a **new** post; the old post stays
 
-**Dependencies:** `MOD_MAIL_CHANNEL_ID`, MongoDB (`ModmailTicket`), intents `DirectMessages` + partial `Channel`
+**Dependencies:** `MOD_MAIL_CHANNEL_ID`, optional `BOOSTER_ROLE_ID` (mentioned in intake copy), MongoDB (`ModmailTicket`), intents `DirectMessages` + partial `Channel`
 
-**Related commands:** none
+**Related commands:** `/close-ticket`
 
 ---
 

@@ -3,6 +3,7 @@ const Counter = require("./models/counter");
 const Poll = require("./models/poll");
 const Confession = require("./models/confession");
 const Task = require("./models/task");
+const ModmailTicket = require("./models/modmailTicket");
 
 async function seedCounter(counterName, maxValue) {
   if (maxValue <= 0) return;
@@ -44,6 +45,7 @@ module.exports = async () => {
   });
 
   await seedCounters();
+  await ModmailTicket.ensureModmailIndexes();
 
   console.log("✅ MongoDB Connected");
 };
