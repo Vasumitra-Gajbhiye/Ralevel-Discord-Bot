@@ -31,10 +31,12 @@ const ExamPaper = require("./src/models/examPaper");
 const {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
+  buildDefaultModmail,
   DEFAULT_COMMAND_PERMISSIONS,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_MODMAIL_CATEGORIES,
 } = require("./src/defaultGuildConfig");
 const {
   migrateGuildConfigDocument,
@@ -84,10 +86,12 @@ module.exports = {
   ExamPaper,
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
+  buildDefaultModmail,
   DEFAULT_COMMAND_PERMISSIONS,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_MODMAIL_CATEGORIES,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
   normalizeIdLabels,

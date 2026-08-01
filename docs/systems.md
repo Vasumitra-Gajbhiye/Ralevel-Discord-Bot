@@ -403,13 +403,15 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **File:** `systems/modmail.js`
 
-**Purpose:** Intake + relay between user DMs and permanent staff forum posts under `MOD_MAIL_CHANNEL_ID`. Staff identity is hidden in the user DM only. Closed posts are archived (kept as a log), never deleted.
+**Purpose:** Intake + relay between user DMs and permanent staff forum posts. Forum channel and dropdown categories come from guild config (`modmail`), with `MOD_MAIL_CHANNEL_ID` as env fallback. Staff identity is hidden in the user DM only. Closed posts are archived (kept as a log), never deleted.
 
 **Discord events:** Handled via `messageRouter` (`MessageCreate`) and `InteractionCreate` (select menu + modal); close via slash `/close-ticket`
 
+**Dashboard:** `/settings/modmail` — pick forum channel (from Channels registry) and edit support categories.
+
 **Workflow:**
 
-1. User DMs the bot with no open ticket → GET SUPPORT message with category dropdown (General Query / Permission to Advertise / Report a Member)
+1. User DMs the bot with no open ticket → GET SUPPORT message with category dropdown (from guild config)
 2. User picks a category → modal asks them to describe their problem
 3. On submit → create a new forum post (opener embed with user + category, then description message)
 4. Further user DMs while the ticket is open relay into that post as embeds
@@ -418,7 +420,7 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 7. `/close-ticket` marks the ticket closed, DMs the user, and archives the post
 8. After close, the next DM shows the support menu again and creates a **new** post; the old post stays
 
-**Dependencies:** `MOD_MAIL_CHANNEL_ID`, optional `BOOSTER_ROLE_ID` (mentioned in intake copy), MongoDB (`ModmailTicket`), intents `DirectMessages` + partial `Channel`
+**Dependencies:** Guild config `modmail` (or env `MOD_MAIL_CHANNEL_ID`), optional booster role / `BOOSTER_ROLE_ID` (intake copy), MongoDB (`ModmailTicket`), intents `DirectMessages` + partial `Channel`
 
 **Related commands:** `/close-ticket`
 

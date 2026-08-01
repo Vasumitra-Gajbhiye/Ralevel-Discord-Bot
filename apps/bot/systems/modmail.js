@@ -9,7 +9,8 @@ const {
   TextInputBuilder,
   TextInputStyle,
 } = require("discord.js");
-const { ModmailTicket } = require("@ralevel/db");
+const { ModmailTicket, DEFAULT_MODMAIL_CATEGORIES } = require("@ralevel/db");
+const { tryGetGuildConfig, getRoleId } = require("../utils/guildConfigStore");
 
 const STAFF_EMBED_COLOR = 0x5865f2;
 const USER_EMBED_COLOR = 0x57f287;
@@ -19,18 +20,66 @@ const SELECT_CUSTOM_ID = "modmail_category";
 const MODAL_CUSTOM_ID_PREFIX = "modmail_modal:";
 const DESCRIPTION_INPUT_ID = "modmail_description";
 
-const CATEGORIES = {
-  general: "General Query",
-  advertise: "Permission to Advertise",
-  report: "Report a Member",
-};
+const FALLBACK_CATEGORIES =
+  Array.isArray(DEFAULT_MODMAIL_CATEGORIES) && DEFAULT_MODMAIL_CATEGORIES.length
+    ? DEFAULT_MODMAIL_CATEGORIES
+    : [
+        {
+          value: "general",
+          label: "General Query",
+          description: "Questions that don't fit the other options",
+        },
+        {
+          value: "advertise",
+          label: "Permission to Advertise",
+          description: "Request permission to advertise",
+        },
+        {
+          value: "report",
+          label: "Report a Member",
+          description: "Report a member for misconduct",
+        },
+      ];
 
 function getModMailChannelId() {
+  const fromConfig = tryGetGuildConfig()?.modmail?.forumChannelId;
+  if (typeof fromConfig === "string" && fromConfig.trim()) {
+    return fromConfig.trim();
+  }
   return process.env.MOD_MAIL_CHANNEL_ID || null;
 }
 
+function getModmailCategories() {
+  const raw = tryGetGuildConfig()?.modmail?.categories;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return FALLBACK_CATEGORIES.map((c) => ({ ...c }));
+  }
+
+  const cleaned = raw
+    .map((c) => ({
+      value: String(c?.value ?? "").trim(),
+      label: String(c?.label ?? "").trim(),
+      description: String(c?.description ?? "").trim(),
+    }))
+    .filter((c) => c.value && c.label)
+    .slice(0, 25);
+
+  return cleaned.length
+    ? cleaned
+    : FALLBACK_CATEGORIES.map((c) => ({ ...c }));
+}
+
+function categoryLabel(category) {
+  const match = getModmailCategories().find((c) => c.value === category);
+  return match?.label || category;
+}
+
+function isValidCategory(category) {
+  return getModmailCategories().some((c) => c.value === category);
+}
+
 function getBoosterRoleId() {
-  return process.env.BOOSTER_ROLE_ID || null;
+  return getRoleId("booster") || process.env.BOOSTER_ROLE_ID || null;
 }
 
 function threadNameFor(user) {
@@ -39,10 +88,6 @@ function threadNameFor(user) {
     .replace(/[^a-z0-9-_]/g, "")
     .slice(0, 80);
   return `modmail-${raw || user.id}`.slice(0, 100);
-}
-
-function categoryLabel(category) {
-  return CATEGORIES[category] || category;
 }
 
 function attachmentLines(message) {
@@ -151,18 +196,15 @@ function buildSupportMenuMessage() {
     .setCustomId(SELECT_CUSTOM_ID)
     .setPlaceholder("Select a support category")
     .addOptions(
-      new StringSelectMenuOptionBuilder()
-        .setLabel("General Query")
-        .setValue("general")
-        .setDescription("Questions that don't fit the other options"),
-      new StringSelectMenuOptionBuilder()
-        .setLabel("Permission to Advertise")
-        .setValue("advertise")
-        .setDescription("Request permission to advertise"),
-      new StringSelectMenuOptionBuilder()
-        .setLabel("Report a Member")
-        .setValue("report")
-        .setDescription("Report a member for misconduct")
+      getModmailCategories().map((category) => {
+        const option = new StringSelectMenuOptionBuilder()
+          .setLabel(category.label.slice(0, 100))
+          .setValue(category.value.slice(0, 100));
+        if (category.description) {
+          option.setDescription(category.description.slice(0, 100));
+        }
+        return option;
+      })
     );
 
   return {
@@ -203,12 +245,12 @@ async function closeTicketAsSystem(ticket) {
 async function createModmailThread(client, user, category, description) {
   const forumId = getModMailChannelId();
   if (!forumId) {
-    throw new Error("MOD_MAIL_CHANNEL_ID is not configured");
+    throw new Error("Modmail forum channel is not configured");
   }
 
   const forum = await client.channels.fetch(forumId);
   if (!forum || forum.type !== ChannelType.GuildForum) {
-    throw new Error("MOD_MAIL_CHANNEL_ID must be a forum channel");
+    throw new Error("Modmail forum channel must be a Discord forum channel");
   }
 
   async function createOnce() {
@@ -341,7 +383,7 @@ async function handleModmailStaffReply(client, message) {
 
 async function handleCategorySelect(interaction) {
   const category = interaction.values?.[0];
-  if (!CATEGORIES[category]) {
+  if (!isValidCategory(category)) {
     return interaction.reply({
       content: "Invalid category selected. Please try again.",
       ephemeral: true,
@@ -378,7 +420,7 @@ async function handleCategorySelect(interaction) {
 
 async function handleModalSubmit(client, interaction) {
   const category = interaction.customId.slice(MODAL_CUSTOM_ID_PREFIX.length);
-  if (!CATEGORIES[category]) {
+  if (!isValidCategory(category)) {
     return interaction.reply({
       content: "Invalid ticket category. Please start again by DMing me.",
       ephemeral: true,
@@ -429,6 +471,12 @@ async function handleModalSubmit(client, interaction) {
 }
 
 module.exports = function modmailSystem(client) {
+  if (!getModMailChannelId()) {
+    console.warn(
+      "[modmail] Forum channel is not set in guild config (or MOD_MAIL_CHANNEL_ID) — ticket creation will fail until configured."
+    );
+  }
+
   client.on(Events.InteractionCreate, async (interaction) => {
     try {
       if (

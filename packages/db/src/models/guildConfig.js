@@ -40,7 +40,17 @@ const RepTierSchema = new mongoose.Schema(
 const IdLabelSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
+    // Empty string is allowed — pickers often store id with blank label.
     label: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
+const ModmailCategorySchema = new mongoose.Schema(
+  {
+    value: { type: String, required: true },
+    label: { type: String, required: true },
+    description: { type: String, default: "" },
   },
   { _id: false },
 );
@@ -179,6 +189,10 @@ const GuildConfigSchema = new mongoose.Schema(
       modChannelKey: { type: String, default: "modAction" },
       ventChannelKey: { type: String, default: "vent" },
       approverRoleKeys: { type: [String], default: ["admin", "dcHead", "srMods"] },
+    },
+    modmail: {
+      forumChannelId: { type: String, default: "" },
+      categories: { type: [ModmailCategorySchema], default: [] },
     },
     tasks: {
       teams: { type: [TaskTeamSchema], default: [] },

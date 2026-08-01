@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const {
   buildDefaultCertPanel,
+  buildDefaultModmail,
   DEFAULT_BAN_MESSAGES,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
@@ -364,6 +365,19 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     );
   }
 
+  if (!raw.modmail || typeof raw.modmail !== "object") {
+    $set.modmail = buildDefaultModmail();
+  } else if (!Array.isArray(raw.modmail.categories) || raw.modmail.categories.length === 0) {
+    const defaults = buildDefaultModmail();
+    $set.modmail = {
+      forumChannelId:
+        typeof raw.modmail.forumChannelId === "string"
+          ? raw.modmail.forumChannelId
+          : defaults.forumChannelId,
+      categories: defaults.categories,
+    };
+  }
+
   if (!raw.moderation?.banMessages) {
     $set["moderation.banMessages"] = { ...DEFAULT_BAN_MESSAGES };
   }
@@ -521,6 +535,26 @@ function migrateGuildConfigInPlace(doc) {
       applicationChannel || process.env.APPLICATION_CHANNEL || "",
     );
     doc.markModified("certificates");
+    changed = true;
+  }
+
+  if (!doc.modmail || typeof doc.modmail !== "object") {
+    doc.modmail = buildDefaultModmail();
+    doc.markModified("modmail");
+    changed = true;
+  } else if (
+    !Array.isArray(doc.modmail.categories) ||
+    doc.modmail.categories.length === 0
+  ) {
+    const defaults = buildDefaultModmail();
+    doc.modmail = {
+      forumChannelId:
+        typeof doc.modmail.forumChannelId === "string"
+          ? doc.modmail.forumChannelId
+          : defaults.forumChannelId,
+      categories: defaults.categories,
+    };
+    doc.markModified("modmail");
     changed = true;
   }
 

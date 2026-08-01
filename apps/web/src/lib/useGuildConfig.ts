@@ -71,6 +71,14 @@ export type GuildConfigData = {
     ventChannelKey: string;
     approverRoleKeys: string[];
   };
+  modmail: {
+    forumChannelId: string;
+    categories: {
+      value: string;
+      label: string;
+      description: string;
+    }[];
+  };
   tasks: {
     teams: {
       id: string;

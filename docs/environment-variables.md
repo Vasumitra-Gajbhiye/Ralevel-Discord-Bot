@@ -156,7 +156,7 @@ Used in: `apps/web` middleware, API routes, and Clerk components. Allowlisted em
 | `MOD_LOG_CHANNEL_ID`       | Moderation action embeds                          | For mod logs    | Mod actions not logged to channel   |
 | `LEVELUP_CHANNEL_ID`       | XP rank-up announcements                          | For XP ranks    | Level-up messages not sent          |
 | `QOTD_REMINDER_CHANNEL_ID` | QOTD daily reminder channel                       | Optional        | QOTD scheduler logs warning, skips  |
-| `MOD_MAIL_CHANNEL_ID`      | Forum channel for modmail posts                   | For modmail     | Modmail cannot create forum posts     |
+| `MOD_MAIL_CHANNEL_ID`      | Fallback forum ID for modmail (prefer dashboard)  | Optional        | Needed only if guild config unset     |
 
 ---
 
@@ -259,12 +259,14 @@ Used in: `packages/db/src/defaultGuildConfig.js` (seed only; merged into `disabl
 
 |                |                                                              |
 | -------------- | ------------------------------------------------------------ |
-| **Purpose**    | Discord forum channel ID where one modmail post is kept per user |
+| **Purpose**    | Fallback Discord forum channel ID for modmail when guild config `modmail.forumChannelId` is unset |
 | **Example**    | `1532395293599862834`                                        |
-| **Required**   | Yes (for modmail)                                            |
-| **If missing** | Users DMing the bot cannot reach staff via modmail           |
+| **Required**   | No (prefer dashboard `/settings/modmail`)                    |
+| **If missing** | Users DMing the bot cannot open tickets unless forum is set in guild config |
 
-Used in: `apps/bot/systems/modmail.js`
+Preferred: set the forum channel in the web dashboard (**Settings → Modmail**), after registering it on **Settings → Channels**.
+
+Used in: `apps/bot/systems/modmail.js`, `apps/bot/commands/modmail/close-ticket.js` (env fallback only)
 
 ---
 
@@ -318,7 +320,7 @@ Quick reference for which variables each feature needs:
 | Reputation              | Tier role IDs, optional `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` (legacy `STAFF_CHANNEL_IDS` merged into `DISABLED_CHANNELS`) |
 | Certificates            | `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, `ADMIN_ROLE_ID`, `SR_HELPER_ROLE_ID` |
 | Confessions             | `MOD_ACTION_CHANNEL`, `VENT_CHANNEL`                                                                  |
-| Modmail                 | `MOD_MAIL_CHANNEL_ID`                                                                                 |
+| Modmail                 | Guild config `modmail` (fallback `MOD_MAIL_CHANNEL_ID`)                                               |
 | Tasks                   | `GRAPHIC_CHANNEL`, `DEV_CHANNEL`, `WRITER_CHANNEL`, designer role IDs                                 |
 | Welcome                 | `WELCOME_CHANNEL`                                                                                     |
 | QOTD                    | `QOTD_REMINDER_CHANNEL_ID`                                                                            |

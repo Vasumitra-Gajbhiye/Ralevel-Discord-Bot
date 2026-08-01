@@ -22,9 +22,6 @@ const ModmailTicketSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      enum: ["general", "advertise", "report"],
-      // Optional so legacy pre-v2 docs can be closed/updated without validation errors.
-      // New tickets always set category explicitly.
       default: null,
     },
 

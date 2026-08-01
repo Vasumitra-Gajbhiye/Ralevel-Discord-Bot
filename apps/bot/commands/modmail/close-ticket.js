@@ -4,6 +4,15 @@ const {
   PermissionFlagsBits,
   EmbedBuilder,
 } = require("discord.js");
+const { tryGetGuildConfig } = require("../../utils/guildConfigStore");
+
+function getModMailChannelId() {
+  const fromConfig = tryGetGuildConfig()?.modmail?.forumChannelId;
+  if (typeof fromConfig === "string" && fromConfig.trim()) {
+    return fromConfig.trim();
+  }
+  return process.env.MOD_MAIL_CHANNEL_ID || null;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,7 +42,7 @@ module.exports = {
       });
     }
 
-    const forumId = process.env.MOD_MAIL_CHANNEL_ID || null;
+    const forumId = getModMailChannelId();
     if (!forumId || interaction.channel.parentId !== forumId) {
       return interaction.reply({
         content: "This channel is not a modmail support ticket.",

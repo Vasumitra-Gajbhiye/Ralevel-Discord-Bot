@@ -15,6 +15,7 @@ export const NAV = [
       { href: "/settings/schedules", label: "Schedules" },
       { href: "/settings/certificates", label: "Certificates" },
       { href: "/settings/confessions", label: "Confessions" },
+      { href: "/settings/modmail", label: "Modmail" },
       { href: "/settings/tasks", label: "Tasks" },
       { href: "/settings/misc", label: "Polls / Sticky / Helper" },
     ],

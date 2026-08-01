@@ -487,6 +487,31 @@ function buildDefaultCertPanel(channelId = "") {
   };
 }
 
+const DEFAULT_MODMAIL_CATEGORIES = [
+  {
+    value: "general",
+    label: "General Query",
+    description: "Questions that don't fit the other options",
+  },
+  {
+    value: "advertise",
+    label: "Permission to Advertise",
+    description: "Request permission to advertise",
+  },
+  {
+    value: "report",
+    label: "Report a Member",
+    description: "Report a member for misconduct",
+  },
+];
+
+function buildDefaultModmail() {
+  return {
+    forumChannelId: env("MOD_MAIL_CHANNEL_ID") || "",
+    categories: DEFAULT_MODMAIL_CATEGORIES.map((c) => ({ ...c })),
+  };
+}
+
 function buildDefaultGuildConfig(guildId) {
   const roles = ROLE_DEFS.map(({ key, label, env: envName, fallbackEnv }) => ({
     key,
@@ -619,6 +644,7 @@ function buildDefaultGuildConfig(guildId) {
       ventChannelKey: "vent",
       approverRoleKeys: ["admin", "dcHead", "srMods"],
     },
+    modmail: buildDefaultModmail(),
     tasks: {
       teams: [
         {
@@ -662,12 +688,14 @@ function buildDefaultGuildConfig(guildId) {
 module.exports = {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
+  buildDefaultModmail,
   DEFAULT_COMMAND_PERMISSIONS,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_THANK_WORDS,
   DEFAULT_WELCOME_WORDS,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_MODMAIL_CATEGORIES,
   DEFAULT_RANK_LADDER,
   ROLE_DEFS,
   CHANNEL_DEFS,

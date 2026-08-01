@@ -50,6 +50,7 @@ const PATCHABLE = [
   "welcome",
   "certificates",
   "confessions",
+  "modmail",
   "tasks",
   "polls",
   "sticky",
