@@ -901,6 +901,8 @@ table.data th {
 .modal-panel {
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 2rem); /* matches .modal-backdrop padding: 1rem */
+  overflow-y: auto;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
