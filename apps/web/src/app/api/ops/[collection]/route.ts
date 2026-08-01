@@ -152,6 +152,7 @@ export async function GET(
         filter.$or = [
           { userId: { $regex: q, $options: "i" } },
           { userTag: { $regex: q, $options: "i" } },
+          { authorId: { $regex: q, $options: "i" } },
           { reason: { $regex: q, $options: "i" } },
           { title: { $regex: q, $options: "i" } },
           { content: { $regex: q, $options: "i" } },

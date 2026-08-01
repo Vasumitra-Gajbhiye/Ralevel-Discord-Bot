@@ -246,6 +246,15 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Discord permissions** | None |
 | **Role access** | admin, dcHead, srMods |
 
+### `/delete-note`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/delete-note.js` |
+| **Description** | Delete a specific staff note by action ID |
+| **Discord permissions** | None |
+| **Role access** | admin, dcHead, srMods |
+
 ### `/get-notes`
 
 | | |

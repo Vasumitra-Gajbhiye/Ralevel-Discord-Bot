@@ -82,6 +82,7 @@ const commands = {
   "ban-appeal-rejected": [admin, dcHead], // yellow
   "clear-warnings": [admin, dcHead],
   close: [admin, dcHead, srMods, jrMods, trialMods],
+  "delete-note": [admin, dcHead, srMods],
   "delete-warning": [admin, dcHead, srMods],
   kick: [admin, dcHead],
   "lock-status": [admin, dcHead, srMods, jrMods],

@@ -25,6 +25,8 @@ module.exports = async function logModAction({
   role = "Not Provided",
   deletedWarningId = "Not Provided",
   warningDelReason = "Not Provided",
+  deletedNoteId = "Not Provided",
+  noteDelReason = "Not Provided",
   muteDuration = "Not Provided",
   numberOfPurgeMessages = "Not Provided",
   purgeFilter = "Not Provided",
@@ -77,8 +79,10 @@ module.exports = async function logModAction({
       // targetChannel: targetChannel,
       role,
 
-      deletedWarningId,
-      warningDelReason,
+      deletedWarningId:
+        deletedWarningId !== "Not Provided" ? deletedWarningId : deletedNoteId,
+      warningDelReason:
+        warningDelReason !== "Not Provided" ? warningDelReason : noteDelReason,
       numberOfPurgeMessages,
       purgeFilter,
       purgeKeyword,
@@ -219,6 +223,30 @@ module.exports = async function logModAction({
         { name: "Warning Delete Reason", value: warningDelReason },
         { name: "Action ID", value: actionId },
         { name: "Deleted Warning Id", value: deletedWarningId }
+      )
+      .setTimestamp();
+  } else if (action === "note-delete") {
+    const noteText = String(reason || "No note provided");
+    const displayNote =
+      noteText.length > 1024 ? `${noteText.slice(0, 1021)}...` : noteText;
+    const delReason =
+      noteDelReason !== "Not Provided" ? noteDelReason : warningDelReason;
+    const deletedId =
+      deletedNoteId !== "Not Provided" ? deletedNoteId : deletedWarningId;
+
+    embed = new EmbedBuilder()
+      .setTitle(`📝 ${prettyAction}`)
+      .setColor(0x8ecae6)
+      .addFields(
+        { name: "User", value: `${userTag || "N/A"} (${userId || "N/A"})` },
+        { name: "Moderator", value: moderatorTag },
+        { name: "Note Content", value: displayNote },
+        {
+          name: "Note Delete Reason",
+          value: String(delReason || "No reason provided"),
+        },
+        { name: "Action ID", value: actionId },
+        { name: "Deleted Note Id", value: String(deletedId) }
       )
       .setTimestamp();
   } else if (action === "lock-channel") {

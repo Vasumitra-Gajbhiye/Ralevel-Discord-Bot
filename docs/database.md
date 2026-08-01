@@ -354,7 +354,7 @@ Staff notes on users (separate from warnings).
 | `actionId` | String | Unique ID |
 | `timestamp` | Date | When created |
 
-**Written by:** `/note`, read by `/get-notes`
+**Written by:** `/note`, read by `/get-notes`, deleted by `/delete-note` and the web dashboard (`/moderation/notes`)
 
 ---
 

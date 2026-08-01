@@ -10,17 +10,11 @@ type Note = {
   _id: string;
   userId?: string;
   userTag?: string;
-  moderatorTag?: string;
-  note?: string;
+  authorId?: string;
   content?: string;
-  reason?: string;
-  createdAt?: string;
+  actionId?: string;
   timestamp?: string;
 };
-
-function noteText(note: Note) {
-  return note.note || note.content || note.reason || "";
-}
 
 export default function NotesPage() {
   const {
@@ -71,8 +65,9 @@ export default function NotesPage() {
             <thead>
               <tr>
                 <th>User</th>
-                <th>Moderator</th>
+                <th>Author</th>
                 <th>Note</th>
+                <th>Action ID</th>
                 <th>When</th>
                 <th />
               </tr>
@@ -84,13 +79,12 @@ export default function NotesPage() {
                     <div>{n.userTag || "—"}</div>
                     <div className="mono muted">{n.userId}</div>
                   </td>
-                  <td>{n.moderatorTag || "—"}</td>
-                  <td>{noteText(n) || "—"}</td>
+                  <td className="mono muted">{n.authorId || "—"}</td>
+                  <td>{n.content || "—"}</td>
+                  <td className="mono muted">{n.actionId || "—"}</td>
                   <td className="mono muted">
-                    {n.createdAt || n.timestamp
-                      ? new Date(
-                          (n.createdAt || n.timestamp) as string,
-                        ).toLocaleString()
+                    {n.timestamp
+                      ? new Date(n.timestamp).toLocaleString()
                       : "—"}
                   </td>
                   <td>
@@ -123,7 +117,7 @@ export default function NotesPage() {
         title="Delete note"
         message={
           pendingDelete
-            ? `Permanently delete the note for ${pendingDelete.userTag || pendingDelete.userId || "this user"}${noteText(pendingDelete) ? `: ${noteText(pendingDelete)}` : ""}? This cannot be undone.`
+            ? `Permanently delete the note for ${pendingDelete.userTag || pendingDelete.userId || "this user"}${pendingDelete.content ? `: ${pendingDelete.content}` : ""}? This cannot be undone.`
             : ""
         }
         confirmLabel="Delete"

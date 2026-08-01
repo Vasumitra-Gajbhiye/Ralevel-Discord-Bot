@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-01T10:36:59.271Z",
+  "generatedAt": "2026-08-01T11:27:18.866Z",
   "commands": [
     {
       "category": "reputation",
@@ -578,6 +578,30 @@
         ],
         "name": "delete-confession",
         "description": "Delete one of your confessions by ID",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "delete-note",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "actionid",
+            "description": "Action ID of the note",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for deleting the note",
+            "required": true
+          }
+        ],
+        "name": "delete-note",
+        "description": "Delete a specific staff note by its action ID",
         "type": 1
       }
     },
