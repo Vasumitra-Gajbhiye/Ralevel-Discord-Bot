@@ -209,24 +209,6 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Role access** | admin, dcHead, srMods, jrMods |
 | **Hierarchy check** | Yes |
 
-### `/ban-appeal-approved`
-
-| | |
-|---|---|
-| **File** | `commands/moderation/banAppealApproved.js` |
-| **Description** | Approve ban appeal, notify, and unban |
-| **Discord permissions** | `BanMembers` |
-| **Role access** | admin, dcHead |
-
-### `/ban-appeal-rejected`
-
-| | |
-|---|---|
-| **File** | `commands/moderation/banAppealRejected.js` |
-| **Description** | Reject a user's ban appeal and notify them |
-| **Discord permissions** | `BanMembers` |
-| **Role access** | admin, dcHead |
-
 ### `/clear-warnings`
 
 | | |

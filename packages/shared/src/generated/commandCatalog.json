@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-01T11:34:24.859Z",
+  "generatedAt": "2026-08-01T13:12:10.907Z",
   "commands": [
     {
       "category": "reputation",
@@ -373,56 +373,6 @@
         ],
         "name": "ban",
         "description": "Ban a user from the server",
-        "default_member_permissions": "4",
-        "type": 1
-      }
-    },
-    {
-      "category": "moderation",
-      "name": "ban-appeal-approved",
-      "fileDefault": "BanMembers",
-      "payload": {
-        "options": [
-          {
-            "name": "user",
-            "description": "User whose appeal was approved",
-            "required": true,
-            "type": 6
-          },
-          {
-            "type": 3,
-            "name": "note",
-            "description": "Optional note to include in the DM to the user",
-            "required": false
-          }
-        ],
-        "name": "ban-appeal-approved",
-        "description": "Approve a user's ban appeal, notify them, and unban them",
-        "default_member_permissions": "4",
-        "type": 1
-      }
-    },
-    {
-      "category": "moderation",
-      "name": "ban-appeal-rejected",
-      "fileDefault": "BanMembers",
-      "payload": {
-        "options": [
-          {
-            "name": "user",
-            "description": "User whose appeal was rejected",
-            "required": true,
-            "type": 6
-          },
-          {
-            "type": 3,
-            "name": "reason",
-            "description": "Reason for rejection to send to the user",
-            "required": true
-          }
-        ],
-        "name": "ban-appeal-rejected",
-        "description": "Reject a user's ban appeal and notify them",
         "default_member_permissions": "4",
         "type": 1
       }

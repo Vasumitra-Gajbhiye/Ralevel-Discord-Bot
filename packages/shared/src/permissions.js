@@ -78,8 +78,6 @@ const commands = {
   announce: [admin, generalStaff],
   audit: [admin, generalStaff], //yellow
   ban: [admin, dcHead, srMods, jrMods],
-  "ban-appeal-approved": [admin, dcHead], // yellow
-  "ban-appeal-rejected": [admin, dcHead], // yellow
   "clear-warnings": [admin, dcHead],
   close: [admin, dcHead, srMods, jrMods, trialMods],
   "delete-note": [admin, dcHead, srMods],

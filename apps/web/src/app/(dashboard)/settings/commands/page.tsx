@@ -14,11 +14,6 @@ import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
 import { isDraftDirty, useUnsavedChanges } from "@/lib/unsaved-changes";
 
-const BAN_APPEAL_COMMANDS = new Set([
-  "ban-appeal-approved",
-  "ban-appeal-rejected",
-]);
-
 const DESCRIPTION_PREVIEW_LENGTH = 80;
 
 type CatalogCommand = {
@@ -49,7 +44,7 @@ function buildPermissionsToSave(
   }
 
   for (const key of Object.keys(merged)) {
-    if (!catalogSet.has(key) && !BAN_APPEAL_COMMANDS.has(key)) {
+    if (!catalogSet.has(key)) {
       delete merged[key];
     }
   }
@@ -71,7 +66,7 @@ function buildEphemeralToSave(
   }
 
   for (const key of Object.keys(merged)) {
-    if (!catalogSet.has(key) && !BAN_APPEAL_COMMANDS.has(key)) {
+    if (!catalogSet.has(key)) {
       delete merged[key];
     }
   }
@@ -219,7 +214,7 @@ export default function CommandsPage() {
   }, [loadCatalog]);
 
   const editableCommands = useMemo(() => {
-    return catalog.filter((cmd) => !BAN_APPEAL_COMMANDS.has(cmd.name));
+    return catalog;
   }, [catalog]);
 
   const editingCommand = useMemo(() => {

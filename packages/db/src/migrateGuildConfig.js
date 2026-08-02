@@ -17,10 +17,7 @@ const CATALOG_PATH = path.resolve(
   "../../shared/src/generated/commandCatalog.json",
 );
 
-const PRESERVED_ORPHAN_COMMAND_KEYS = new Set([
-  "ban-appeal-approved",
-  "ban-appeal-rejected",
-]);
+const PRESERVED_ORPHAN_COMMAND_KEYS = new Set([]);
 
 const DEFAULT_BAN_APPEAL_APPROVER_ROLE_KEYS = ["admin", "dcHead"];
 
