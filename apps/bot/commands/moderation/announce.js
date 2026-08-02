@@ -214,10 +214,19 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  AttachmentBuilder,
 } = require("discord.js");
 
 const generateId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
+
+/** Safe filename for rehosting slash-command attachments onto the channel message. */
+function safeAttachmentName(attachment, fallbackBase) {
+  const raw = attachment?.name || "";
+  const extMatch = raw.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = extMatch ? extMatch[1].toLowerCase() : "png";
+  return `${fallbackBase}.${ext}`;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -298,6 +307,20 @@ module.exports = {
     const buttonLabel = interaction.options.getString("button-label");
     const buttonUrl = interaction.options.getString("button-url");
 
+    // Rehost slash attachments onto the channel message so embed media URLs stay permanent.
+    const thumbnailName = thumbnailAttachment
+      ? safeAttachmentName(thumbnailAttachment, "announce-thumbnail")
+      : null;
+    const imageName = imageAttachment
+      ? safeAttachmentName(imageAttachment, "announce-image")
+      : null;
+    const thumbnailFile = thumbnailAttachment
+      ? new AttachmentBuilder(thumbnailAttachment.url, { name: thumbnailName })
+      : null;
+    const imageFile = imageAttachment
+      ? new AttachmentBuilder(imageAttachment.url, { name: imageName })
+      : null;
+
     let pingParts = [];
     if (pingRole) pingParts.push(`<@&${pingRole.id}>`);
     if (pingEveryone) pingParts.push("@everyone");
@@ -335,13 +358,13 @@ module.exports = {
         // Only add Title, Thumbnails, and Timestamps to the FIRST embed
         if (isFirst) {
           embed.setTitle(`${title}`);
-          if (thumbnailAttachment) embed.setThumbnail(thumbnailAttachment.url);
+          if (thumbnailFile) embed.setThumbnail(`attachment://${thumbnailName}`);
           // If there's only one chunk, we can add the image and footer here too
           if (isLast) {
             embed
               .setFooter({ text: "Official r/alevel Announcement" })
               .setTimestamp();
-            if (imageAttachment) embed.setImage(imageAttachment.url);
+            if (imageFile) embed.setImage(`attachment://${imageName}`);
           }
         }
 
@@ -350,7 +373,7 @@ module.exports = {
           embed
             .setFooter({ text: "Official r/alevel Announcement" })
             .setTimestamp();
-          if (imageAttachment) embed.setImage(imageAttachment.url);
+          if (imageFile) embed.setImage(`attachment://${imageName}`);
         }
 
         // Attach buttons only to the LAST chunk
@@ -366,11 +389,17 @@ module.exports = {
           );
         }
 
+        // Rehost media on the messages that reference them (first = thumbnail, last = image).
+        const files = [];
+        if (isFirst && thumbnailFile) files.push(thumbnailFile);
+        if (isLast && imageFile) files.push(imageFile);
+
         // Send the message
         await channel.send({
           content: isFirst && pingText ? pingText : null, // Only ping on the first message
           embeds: [embed],
           components: components.length > 0 ? components : [],
+          files,
         });
       }
     } catch (error) {
