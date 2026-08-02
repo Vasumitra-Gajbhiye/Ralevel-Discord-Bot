@@ -16,12 +16,32 @@ const DELETE_MESSAGE_SECONDS = {
   "7d": 604800,
 };
 
+const SNOWFLAKE_RE = /^\d{17,20}$/;
+
+function formatBanError(err) {
+  const code = err?.code ?? err?.rawError?.code;
+  const message = err?.message || String(err);
+  if (code != null) return `${message} (code ${code})`;
+  return message;
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ban")
-    .setDescription("Ban a user from the server")
+    .setDescription("Ban a user from the server (works even if they left)")
     .addUserOption((option) =>
-      option.setName("user").setDescription("User to ban").setRequired(true),
+      option
+        .setName("user")
+        .setDescription("User to ban (pick from list, or leave empty and use userid)")
+        .setRequired(false),
+    )
+    .addStringOption((option) =>
+      option
+        .setName("userid")
+        .setDescription(
+          "Discord user ID to ban — use this when they are not in the server",
+        )
+        .setRequired(false),
     )
     .addStringOption((option) =>
       option
@@ -29,14 +49,12 @@ module.exports = {
         .setDescription("Reason for ban")
         .setRequired(true),
     )
-    // NEW: Appeal option
     .addBooleanOption((option) =>
       option
         .setName("appealable")
         .setDescription("Is this ban appealable?")
         .setRequired(true),
     )
-    // NEW: Message deletion option
     .addStringOption((option) =>
       option
         .setName("deletemsgs")
@@ -54,51 +72,102 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    // Use getUser so users not currently in the guild can still be banned by ID
-    const user = interaction.options.getUser("user");
+    const resolvedUser = interaction.options.getUser("user");
+    const rawUserValue = interaction.options.get("user")?.value;
+    const useridOption = interaction.options.getString("userid")?.trim();
     const reason = interaction.options.getString("reason");
     const appealable = interaction.options.getBoolean("appealable");
     const deleteMsgs = interaction.options.getString("deletemsgs");
 
-    if (!user)
-      return interaction.editReply({
-        content: "❌ User not found.",
-        ephemeral: true,
-      });
+    const fromUserOption =
+      resolvedUser?.id ??
+      (typeof rawUserValue === "string" && SNOWFLAKE_RE.test(rawUserValue)
+        ? rawUserValue
+        : null);
+    const fromUserIdOption =
+      useridOption && SNOWFLAKE_RE.test(useridOption) ? useridOption : null;
 
+    if (!fromUserOption && !fromUserIdOption) {
+      if (useridOption && !SNOWFLAKE_RE.test(useridOption)) {
+        return interaction.editReply({
+          content:
+            "❌ Invalid userid. Paste a Discord snowflake ID (17–20 digits).",
+        });
+      }
+      return interaction.editReply({
+        content:
+          "❌ Provide either **user** or **userid**. Use **userid** when the person is not in the server.",
+      });
+    }
+
+    if (
+      fromUserOption &&
+      fromUserIdOption &&
+      fromUserOption !== fromUserIdOption
+    ) {
+      return interaction.editReply({
+        content:
+          "❌ **user** and **userid** do not match. Provide only one, or make sure both refer to the same account.",
+      });
+    }
+
+    const targetId = fromUserOption || fromUserIdOption;
     const deleteSeconds = DELETE_MESSAGE_SECONDS[deleteMsgs];
 
+    let user = resolvedUser;
+    if (!user || user.id !== targetId) {
+      try {
+        user = await interaction.client.users.fetch(targetId);
+      } catch {
+        user = null;
+      }
+    }
+
+    const userTag = user?.tag ?? `UserID: ${targetId}`;
+
     // DM user (may fail for non-members with no mutual servers)
-    try {
-      const banMessages = {
-        ...DEFAULT_BAN_MESSAGES,
-        ...getGuildConfig().moderation?.banMessages,
-      };
-      const template = appealable
-        ? banMessages.banAppealable
-        : banMessages.banNotAppealable;
+    if (user) {
+      try {
+        const banMessages = {
+          ...DEFAULT_BAN_MESSAGES,
+          ...getGuildConfig().moderation?.banMessages,
+        };
+        const template = appealable
+          ? banMessages.banAppealable
+          : banMessages.banNotAppealable;
 
-      const message = renderMessageTemplate(template, {
-        reason,
-        serverName: interaction.guild.name,
-        userTag: user.tag,
-        userId: user.id,
-        appealUrl: banMessages.appealUrl,
-      });
+        const message = renderMessageTemplate(template, {
+          reason,
+          serverName: interaction.guild.name,
+          userTag,
+          userId: targetId,
+          appealUrl: banMessages.appealUrl,
+        });
 
-      await user.send(message);
-    } catch {}
+        await user.send(message);
+      } catch {}
+    }
 
     // Ban by user ID — works even if they are not in the server
     try {
-      await interaction.guild.members.ban(user.id, {
+      await interaction.guild.bans.create(targetId, {
         reason,
         deleteMessageSeconds: deleteSeconds,
       });
-    } catch {
+    } catch (err) {
+      console.error("[ban] bans.create failed:", err);
       return interaction.editReply({
-        content: "❌ I do not have permission to ban this user.",
-        ephemeral: true,
+        content: `❌ Failed to ban this user: ${formatBanError(err)}`,
+      });
+    }
+
+    try {
+      await interaction.guild.bans.fetch(targetId);
+    } catch (err) {
+      console.error("[ban] bans.fetch verify failed after create:", err);
+      return interaction.editReply({
+        content:
+          "❌ Ban API returned success, but the user is not on the ban list. Check bot **Ban Members** permission and try again.",
       });
     }
 
@@ -106,8 +175,8 @@ module.exports = {
     const actionId = generateActionId();
     await logModAction({
       interaction,
-      userId: user.id,
-      userTag: user.tag,
+      userId: targetId,
+      userTag,
       moderatorTag: interaction.user.tag,
       moderatorId: interaction.user.id,
       action: "ban",
@@ -121,7 +190,7 @@ module.exports = {
       .setTitle("🔨 User Banned")
       .setColor("#ff0000")
       .addFields(
-        { name: "User", value: `${user.tag} (${user.id})` },
+        { name: "User", value: `${userTag} (${targetId})` },
         { name: "Moderator", value: interaction.user.tag },
         { name: "Reason", value: reason },
         { name: "Appealable?", value: appealable ? "Yes" : "No" },
