@@ -32,6 +32,7 @@ export type GuildConfigData = {
     finalizeHourIst: number;
     qotdHourIst: number;
     certificatesHourIst: number;
+    certificatesForfeitHourIst: number;
   };
   welcome: {
     title: string;

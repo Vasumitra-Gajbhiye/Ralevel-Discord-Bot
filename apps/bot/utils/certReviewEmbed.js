@@ -55,14 +55,25 @@ function buildPendingReviewEmbed(app, { userTag, userId, channelName }) {
 function buildResolvedReviewEmbed(app, { decision, moderatorTag, reason }) {
   const joinedAt = app.joinedAt ?? null;
   const isApproved = decision === "approved";
+  const isForfeited = decision === "forfeited";
+
+  let title = "❌ Certificate Application — Rejected";
+  let color = "#ff4d4d";
+  let statusLabel = "Rejected";
+
+  if (isApproved) {
+    title = "✅ Certificate Application — Approved";
+    color = "#00B894";
+    statusLabel = "Approved";
+  } else if (isForfeited) {
+    title = "⛔ Certificate Application — Forfeited";
+    color = "#ff4d4d";
+    statusLabel = "Forfeited";
+  }
 
   const embed = new EmbedBuilder()
-    .setTitle(
-      isApproved
-        ? "✅ Certificate Application — Approved"
-        : "❌ Certificate Application — Rejected",
-    )
-    .setColor(isApproved ? "#00B894" : "#ff4d4d")
+    .setTitle(title)
+    .setColor(color)
     .addFields(
       {
         name: "Applicant",
@@ -86,7 +97,7 @@ function buildResolvedReviewEmbed(app, { decision, moderatorTag, reason }) {
       { name: "Application ID", value: `\`${app._id}\``, inline: false },
       {
         name: "Status",
-        value: isApproved ? "Approved" : "Rejected",
+        value: statusLabel,
         inline: true,
       },
       { name: "Moderator", value: moderatorTag, inline: true },

@@ -10,6 +10,7 @@ const {
   getChannelId,
   resolveRoleKeys,
 } = require("../../utils/guildConfigStore");
+const { clearForfeitSchedule } = require("../../utils/certHelpers");
 
 function memberHasCertModRole(member) {
   const cfg = getGuildConfig();
@@ -80,6 +81,7 @@ module.exports = {
         });
       }
 
+      const clearedForfeit = clearForfeitSchedule(app);
       app.status = "completed and delivered";
       app.certId = certId;
       app.certLink = certLink;
@@ -219,7 +221,11 @@ module.exports = {
       } catch {}
 
       return interaction.editReply({
-        content: "✅ Certificate marked delivered and user notified via DM!",
+        content:
+          "✅ Certificate marked delivered and user notified via DM!" +
+          (clearedForfeit
+            ? " Scheduled forfeit was cancelled because the application progressed."
+            : ""),
       });
     } catch (err) {
       console.error("❌ Database error:", err);

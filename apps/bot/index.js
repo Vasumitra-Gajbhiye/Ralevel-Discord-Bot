@@ -9,6 +9,7 @@ const loadCommands = require("./systems/commands.js");
 const reputationSystem = require("./systems/reputation.js");
 const certificateSystem = require("./systems/certificates.js");
 const certRemindersSystem = require("./systems/certReminders");
+const certForfeitSweeperSystem = require("./systems/certForfeitSweeper");
 const stickySystem = require("./systems/sticky");
 const qotdSystem = require("./systems/qotd");
 const welcomeSystem = require("./systems/welcome");
@@ -48,6 +49,7 @@ async function start() {
   const handleReputation = reputationSystem(client);
   certificateSystem(client);
   certRemindersSystem(client);
+  certForfeitSweeperSystem(client);
   const handleSticky = stickySystem(client);
   qotdSystem(client);
   welcomeSystem(client);

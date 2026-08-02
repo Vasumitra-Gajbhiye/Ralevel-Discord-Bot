@@ -137,8 +137,9 @@ module.exports = function certRemindersSystem(client) {
       const adminRoleId = getRoleId("admin");
       const apps = await Certificate.find({
         status: {
-          $nin: ["rejected", "completed and delivered"],
+          $nin: ["rejected", "completed and delivered", "forfeited"],
         },
+        forfeitAt: null,
       });
 
       console.log(

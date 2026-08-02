@@ -8,7 +8,14 @@ const CertificateSchema = new mongoose.Schema({
 
   status: { 
     type: String, 
-    enum: ["pending", "approved", "rejected", "details submitted", "completed and delivered"], 
+    enum: [
+      "pending",
+      "approved",
+      "rejected",
+      "details submitted",
+      "completed and delivered",
+      "forfeited",
+    ], 
     default: "pending" 
   },
 
@@ -43,6 +50,14 @@ const CertificateSchema = new mongoose.Schema({
   reminder7SentAt: { type: Date, default: null },
   lastAdminReminderSentAt: { type: Date, default: null },
   lastAdminReminderDay: { type: Number, default: null },
+
+  // Scheduled forfeit (status stays approved / details submitted until executed)
+  forfeitAt: { type: Date, default: null },
+  forfeitReason: { type: String, default: "" },
+  forfeitAction: { type: String, default: "" },
+  forfeitScheduledAt: { type: Date, default: null },
+  forfeitModeratorId: { type: String, default: null },
+  forfeitDays: { type: Number, default: null },
 });
 
 module.exports = mongoose.models["CertificateApplication"] || mongoose.model("CertificateApplication", CertificateSchema);

@@ -13,6 +13,8 @@ const QOTD_HOUR_HELP =
   "The hour (IST, 24-hour clock) when the Question of the Day reminder is sent.";
 const CERT_HOUR_HELP =
   "The hour (IST, 24-hour clock) when undelivered certificate reminders are sent (day 3/7 assignee pings, day 10+ admin role escalations).";
+const CERT_FORFEIT_HOUR_HELP =
+  "The hour (IST, 24-hour clock) when scheduled certificate forfeits are executed. Applicants see the deadline in GMT in their DM.";
 
 export default function SchedulesPage() {
   const { config, loading, error, saving, status, save } = useGuildConfig();
@@ -24,6 +26,8 @@ export default function SchedulesPage() {
         ? {
             ...config.schedules,
             certificatesHourIst: config.schedules.certificatesHourIst ?? 6,
+            certificatesForfeitHourIst:
+              config.schedules.certificatesForfeitHourIst ?? 6,
           }
         : undefined,
     [config?.schedules],
@@ -52,7 +56,7 @@ export default function SchedulesPage() {
     <>
       <PageHeader
         title="Schedules"
-        description="Daily finalize, QOTD, and certificate reminder hours (IST, 0–23)."
+        description="Daily finalize, QOTD, certificate reminder, and forfeit hours (IST, 0–23)."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -109,6 +113,24 @@ export default function SchedulesPage() {
                 setDraft({
                   ...schedules,
                   certificatesHourIst: Number(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+          <div className="field">
+            <label className="label-with-help">
+              Certificate forfeit hour (IST)
+              <InfoHelpIcon content={CERT_FORFEIT_HOUR_HELP} />
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={23}
+              value={schedules.certificatesForfeitHourIst}
+              onChange={(e) =>
+                setDraft({
+                  ...schedules,
+                  certificatesForfeitHourIst: Number(e.target.value) || 0,
                 })
               }
             />

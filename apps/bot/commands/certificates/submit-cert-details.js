@@ -11,6 +11,7 @@ const {
   getChannelId,
   resolveRoleKeys,
 } = require("../../utils/guildConfigStore");
+const { clearForfeitSchedule } = require("../../utils/certHelpers");
 
 function memberHasCertModRole(member) {
   const cfg = getGuildConfig();
@@ -77,7 +78,8 @@ module.exports = {
         });
       }
 
-      // Save details
+      // Save details — advancing status clears any scheduled forfeit
+      const clearedForfeit = clearForfeitSchedule(app);
       app.legalName = legalName;
       app.email = email;
       app.status = "details submitted";
@@ -231,7 +233,11 @@ module.exports = {
       }
 
       await interaction.editReply({
-        content: "✅ Details saved and user notified.",
+        content:
+          "✅ Details saved and user notified." +
+          (clearedForfeit
+            ? " Scheduled forfeit was cancelled because the application progressed."
+            : ""),
       });
     } catch (err) {
       console.error("[submit-cert-details] ERROR:", err);

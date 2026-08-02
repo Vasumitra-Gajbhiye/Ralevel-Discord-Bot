@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-01T13:12:10.907Z",
+  "generatedAt": "2026-08-02T05:22:18.381Z",
   "commands": [
     {
       "category": "reputation",
@@ -373,6 +373,25 @@
         ],
         "name": "ban",
         "description": "Ban a user from the server",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "cancel-cert-forfeit",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "applicationid",
+            "description": "The application ID with a scheduled forfeit",
+            "required": true
+          }
+        ],
+        "name": "cancel-cert-forfeit",
+        "description": "Cancel a scheduled certificate forfeit",
         "default_member_permissions": "4",
         "type": 1
       }
@@ -813,6 +832,18 @@
       }
     },
     {
+      "category": "certificates",
+      "name": "list-cert-forfeits",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [],
+        "name": "list-cert-forfeits",
+        "description": "List certificate applications with a scheduled forfeit",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
       "category": "reputation",
       "name": "list-rep-ban",
       "fileDefault": "ManageGuild",
@@ -911,6 +942,45 @@
         ],
         "name": "mark-cert-delivered",
         "description": "Mark a certificate as delivered (Mods/Admin only)",
+        "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "certificates",
+      "name": "mark-cert-finish",
+      "fileDefault": "BanMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "applicationid",
+            "description": "The application ID to schedule for forfeit",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Why the certificate is being forfeited",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "action",
+            "description": "Optional ask — e.g. submit evidence or name/email within the grace period",
+            "required": false
+          },
+          {
+            "max_value": 30,
+            "min_value": 1,
+            "type": 4,
+            "name": "days",
+            "description": "Days until forfeit (default 3)",
+            "required": false
+          }
+        ],
+        "name": "mark-cert-finish",
+        "description": "Warn an applicant that their certificate will be forfeited after a grace period",
         "default_member_permissions": "4",
         "type": 1
       }

@@ -67,6 +67,8 @@ r-alevel bot code/
 │   ├── polls.js             # Poll vote/view button handlers
 │   ├── welcome.js           # Welcome card on join
 │   ├── certificates.js      # Certificate button/modal flow
+│   ├── certReminders.js     # Undelivered cert daily reminders
+│   ├── certForfeitSweeper.js # Scheduled cert forfeit executor
 │   └── confessions.js       # Confession approval flow
 │
 ├── models/                  # 18 Mongoose schemas

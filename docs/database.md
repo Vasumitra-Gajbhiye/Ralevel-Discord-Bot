@@ -253,9 +253,9 @@ Audit trail for sticky moderation actions.
 | `userId` | String | Applicant Discord ID |
 | `userTag` | String | Applicant username |
 | `type` | String | Certificate type requested |
-| `status` | String | `pending` → `approved` → `details submitted` → `completed and delivered` (or `rejected`) |
-| `reason` | String | Application reason |
-| `moderatorId` | String | Approving/rejecting mod |
+| `status` | String | `pending` → `approved` → `details submitted` → `completed and delivered` (or `rejected` / `forfeited`) |
+| `reason` | String | Application / rejection / forfeit reason |
+| `moderatorId` | String | Approving/rejecting/forfeiting mod |
 | `legalName` | String | Name for certificate |
 | `email` | String | Delivery email |
 | `certLink` | String | Link to delivered certificate |
@@ -263,8 +263,13 @@ Audit trail for sticky moderation actions.
 | `rep` | Number | Applicant rep at time of application |
 | `joinedAt` | Date | Applicant join date |
 | `createdAt` / `resolvedAt` / `deliveredAt` | Date | Workflow timestamps |
+| `forfeitAt` | Date | Scheduled forfeit deadline (UTC); null when not scheduled |
+| `forfeitReason` / `forfeitAction` | String | Warning reason and optional ask-to-do message |
+| `forfeitScheduledAt` | Date | When the forfeit was scheduled |
+| `forfeitModeratorId` | String | Who scheduled the forfeit |
+| `forfeitDays` | Number | Grace period in days used when scheduling |
 
-**Written by:** `systems/certificates.js`, certificate commands
+**Written by:** `systems/certificates.js`, `systems/certForfeitSweeper.js`, certificate commands
 
 ---
 

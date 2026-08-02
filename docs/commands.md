@@ -95,7 +95,36 @@ Three layers apply before a command executes:
 | **Description** | Mark a certificate as delivered |
 | **Discord permissions** | `BanMembers` |
 | **Role access** | admin |
-| **Note** | Bug: uses `REVIEW_CHANNEL` instead of `CERT_UPDATES_CHANNEL` for updates |
+| **Note** | Clears any scheduled forfeit when status advances |
+
+### `/mark-cert-finish`
+
+| | |
+|---|---|
+| **File** | `commands/certificates/mark-cert-finish.js` |
+| **Description** | Schedule a certificate forfeit after a grace period (DM warns the applicant with a GMT deadline) |
+| **Discord permissions** | `BanMembers` |
+| **Role access** | admin (+ cert mod role check) |
+| **Options** | `applicationid`, `reason`, optional `action`, optional `days` (default 3) |
+| **Eligible statuses** | `approved`, `details submitted` |
+
+### `/cancel-cert-forfeit`
+
+| | |
+|---|---|
+| **File** | `commands/certificates/cancel-cert-forfeit.js` |
+| **Description** | Cancel a scheduled certificate forfeit |
+| **Discord permissions** | `BanMembers` |
+| **Role access** | admin (+ cert mod role check) |
+
+### `/list-cert-forfeits`
+
+| | |
+|---|---|
+| **File** | `commands/certificates/list-cert-forfeits.js` |
+| **Description** | List applications with a scheduled forfeit (soonest first) |
+| **Discord permissions** | `BanMembers` |
+| **Role access** | admin (+ cert mod role check) |
 
 ### `/reject-certificate`
 
@@ -125,6 +154,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Description** | Submit certificate delivery details |
 | **Discord permissions** | `BanMembers` |
 | **Role access** | admin (+ in-command `ADMIN_ROLE_ID` check) |
+| **Note** | Clears any scheduled forfeit when status advances |
 
 ---
 

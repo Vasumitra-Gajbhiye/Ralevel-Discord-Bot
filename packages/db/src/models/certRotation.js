@@ -28,6 +28,12 @@ const CertRotationSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Stored as YYYY-MM-DD in IST — once-per-day forfeit sweeper guard
+    lastForfeitDate: {
+      type: String,
+      default: null,
+    },
+
     enabled: {
       type: Boolean,
       default: true,

@@ -23,6 +23,7 @@ const STATUSES = [
   "rejected",
   "details submitted",
   "completed and delivered",
+  "forfeited",
 ];
 
 export default function OpsCertificatesPage() {

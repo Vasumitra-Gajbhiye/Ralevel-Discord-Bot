@@ -21,6 +21,8 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Polls | `systems/polls.js`, `utils/applyPollVote.js`, `utils/pollSweeper.js` | Buttons + adaptive sweeper | MongoDB |
 | Welcome | `systems/welcome.js` | `guildMemberAdd` | Canvas image |
 | Certificates | `systems/certificates.js` | Buttons/modals | MongoDB |
+| Cert reminders | `systems/certReminders.js` | 5 min interval | MongoDB |
+| Cert forfeit sweeper | `systems/certForfeitSweeper.js` | 5 min interval | MongoDB |
 | Confessions | `systems/confessions.js` | Buttons/modals | MongoDB |
 | Modmail | `systems/modmail.js` | Called by router + `/close-ticket` | MongoDB |
 
@@ -31,7 +33,9 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Job | Interval | Condition | Handler |
 |-----|----------|-----------|---------|
 | XP flush | 90s + 10s on startup | Redis lock absent; resumes orphan drains | `xpFlushSystem.js` |
-| QOTD reminder | 5 min + 10s on startup | ≥ 6:00 AM IST, not sent today; skips MongoDB before cutoff | `qotd.js` |
+| QOTD reminder | 5 min + 10s on startup | ≥ `qotdHourIst` IST, not sent today | `qotd.js` |
+| Cert delivery reminders | 5 min + 15s on startup | ≥ `certificatesHourIst` IST, not sent today; skips forfeited / forfeit-scheduled | `certReminders.js` |
+| Cert forfeit sweeper | 5 min + 20s on startup | ≥ `certificatesForfeitHourIst` IST, not run today; `forfeitAt <= now` | `certForfeitSweeper.js` |
 | Poll deadline sweeper | Adaptive (5 min idle cap) + 10s on startup | `deadline <= now` | `utils/pollSweeper.js` |
 | Sticky `lastMessageId` flush | Debounced 5s | After sticky repost | `sticky.js` |
 | Sticky shutdown flush | `SIGINT` / `SIGTERM` | Process exit | `sticky.js` |
@@ -364,14 +368,18 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 **Workflow:**
 
 1. User clicks Apply button in `APPLICATION_CHANNEL`
-2. Modal collects certificate type and reason
-3. Creates `CertificateApplication` in MongoDB (status: `pending`)
-4. Posts review embed to `REVIEW_CHANNEL` with Approve/Reject buttons
-5. Admin approves → status `approved`, posts to `CERT_UPDATES_CHANNEL`
-6. User submits details via `/submit-cert-details` → status `details submitted`
-7. Admin marks delivered via `/mark-cert-delivered` → status `completed and delivered`
+2. Creates `CertificateApplication` in MongoDB (status: `pending`)
+3. Posts review embed to `REVIEW_CHANNEL` with Approve/Reject buttons
+4. Admin approves → status `approved`, DMs applicant (or `CERT_UPDATES_CHANNEL` fallback)
+5. Admin records details via `/submit-cert-details` → status `details submitted`
+6. Admin marks delivered via `/mark-cert-delivered` → status `completed and delivered`
+7. Or admin schedules forfeit via `/mark-cert-finish` → after N days at `certificatesForfeitHourIst`, status becomes `forfeited` (auto-cancelled if the app progresses or via `/cancel-cert-forfeit`)
 
-**Dependencies:** `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, `ADMIN_ROLE_ID`, `SR_HELPER_ROLE_ID`, MongoDB (`CertificateApplication`)
+**Related systems:**
+- `systems/certReminders.js` — daily IST reminders for undelivered apps (skips forfeited / forfeit-scheduled)
+- `systems/certForfeitSweeper.js` — daily IST job that executes due forfeits
+
+**Dependencies:** `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, MongoDB (`CertificateApplication`, `CertRotation`), GuildConfig `schedules.certificatesHourIst` / `certificatesForfeitHourIst`
 
 **Related commands:** See [Commands — Certificates](commands.md#certificates)
 
