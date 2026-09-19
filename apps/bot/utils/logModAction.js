@@ -21,7 +21,7 @@ module.exports = async function logModAction({
   thumbnail = "Not Provided",
   button = "Not Provided",
   ping = "Not Provided",
-  // targetChannel = "Not Provided",
+  targetChannel = "Not Provided",
   role = "Not Provided",
   deletedWarningId = "Not Provided",
   warningDelReason = "Not Provided",
@@ -54,6 +54,11 @@ module.exports = async function logModAction({
     return;
   }
 
+  const resolvedTargetTag =
+    targetTag !== "Not Provided" ? targetTag : userTag;
+  const resolvedTargetChannel =
+    targetChannel !== "Not Provided" ? targetChannel : channelId;
+
   // 1. Save to DB
   try {
     const doc = await ModLog.create({
@@ -61,7 +66,7 @@ module.exports = async function logModAction({
       moderatorId: moderatorId,
       moderatorTag: moderatorTag,
       action: action,
-      targetTag: targetTag,
+      targetTag: resolvedTargetTag,
       reason: reason || "No reason provided",
       actionId: actionId,
 
@@ -76,7 +81,7 @@ module.exports = async function logModAction({
       button: button,
       ping: ping,
 
-      // targetChannel: targetChannel,
+      targetChannel: resolvedTargetChannel,
       role,
 
       deletedWarningId:

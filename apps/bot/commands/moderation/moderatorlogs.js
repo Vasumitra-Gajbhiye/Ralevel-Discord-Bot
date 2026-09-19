@@ -36,6 +36,27 @@ function truncateReason(reason) {
   return normalized.slice(0, 197) + "...";
 }
 
+const SNOWFLAKE_RE = /^\d{17,20}$/;
+const MISSING_VALUES = new Set(["", "Not Provided", "N/A", "null", "undefined"]);
+
+function isPresent(value) {
+  return value != null && !MISSING_VALUES.has(String(value));
+}
+
+function formatTarget(log) {
+  if (isPresent(log.targetTag)) return log.targetTag;
+  if (SNOWFLAKE_RE.test(String(log.userId || ""))) return `<@${log.userId}>`;
+  return "—";
+}
+
+function formatChannel(log) {
+  const channelId = isPresent(log.targetChannel)
+    ? log.targetChannel
+    : log.channelId;
+  if (SNOWFLAKE_RE.test(String(channelId || ""))) return `<#${channelId}>`;
+  return "—";
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("moderator-logs")
@@ -85,14 +106,13 @@ module.exports = {
       }
 
       const lines = docs.map((log) => {
-        const channel = log.targetChannel ? `<#${log.targetChannel}>` : "—";
         const emoji = ACTION_EMOJIS[log.action] || "📘";
         const reason = truncateReason(log.reason);
 
         return (
           `${emoji} **${log.action.toUpperCase()}**\n` +
-          `**Target:** ${log.targetTag}\n` +
-          `**Channel:** ${channel}\n` +
+          `**Target:** ${formatTarget(log)}\n` +
+          `**Channel:** ${formatChannel(log)}\n` +
           `**ID:** \`${log.actionId}\`\n` +
           `**Reason:** ${reason}\n` +
           `**At:** <t:${Math.floor(new Date(log.timestamp).getTime() / 1000)}:F>`
