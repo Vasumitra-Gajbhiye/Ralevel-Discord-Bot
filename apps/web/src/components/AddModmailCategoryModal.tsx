@@ -7,6 +7,7 @@ export type ModmailCategoryDraft = {
   value: string;
   label: string;
   description: string;
+  routeToAdmin: boolean;
 };
 
 type AddModmailCategoryModalProps = {
@@ -20,6 +21,7 @@ const emptyForm: ModmailCategoryDraft = {
   value: "",
   label: "",
   description: "",
+  routeToAdmin: false,
 };
 
 const VALUE_HELP =
@@ -73,7 +75,10 @@ export function AddModmailCategoryModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onCancel]);
 
-  function updateField(field: keyof ModmailCategoryDraft, value: string) {
+  function updateField(
+    field: "value" | "label" | "description",
+    value: string,
+  ) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setError(null);
   }
@@ -106,7 +111,12 @@ export function AddModmailCategoryModal({
       return;
     }
 
-    onAdd({ value, label, description });
+    onAdd({
+      value,
+      label,
+      description,
+      routeToAdmin: Boolean(form.routeToAdmin),
+    });
   }
 
   if (!open) return null;
@@ -168,6 +178,24 @@ export function AddModmailCategoryModal({
               maxLength={MAX_DESCRIPTION_LEN}
             />
           </div>
+          <label
+            htmlFor="add-modmail-route-admin"
+            style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}
+          >
+            <input
+              id="add-modmail-route-admin"
+              type="checkbox"
+              checked={form.routeToAdmin}
+              onChange={(e) => {
+                setForm((prev) => ({
+                  ...prev,
+                  routeToAdmin: e.target.checked,
+                }));
+                setError(null);
+              }}
+            />
+            Route to admin modmail
+          </label>
 
           {error ? <p className="modal-error">{error}</p> : null}
 

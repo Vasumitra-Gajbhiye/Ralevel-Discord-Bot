@@ -26,16 +26,19 @@ const DEFAULT_CATEGORIES: ModmailCategory[] = [
     value: "general",
     label: "General Query",
     description: "Questions that don't fit the other options",
+    routeToAdmin: false,
   },
   {
     value: "advertise",
     label: "Permission to Advertise",
     description: "Request permission to advertise",
+    routeToAdmin: false,
   },
   {
     value: "report",
     label: "Report a Member",
     description: "Report a member for misconduct",
+    routeToAdmin: false,
   },
 ];
 
@@ -44,11 +47,16 @@ function normalizeModmail(modmail: ModmailConfig | undefined): ModmailConfig | n
   return {
     forumChannelId:
       typeof modmail.forumChannelId === "string" ? modmail.forumChannelId : "",
+    adminForumChannelId:
+      typeof modmail.adminForumChannelId === "string"
+        ? modmail.adminForumChannelId
+        : "",
     categories: Array.isArray(modmail.categories)
       ? modmail.categories.map((c) => ({
           value: String(c?.value ?? ""),
           label: String(c?.label ?? ""),
           description: String(c?.description ?? ""),
+          routeToAdmin: Boolean(c?.routeToAdmin),
         }))
       : DEFAULT_CATEGORIES.map((c) => ({ ...c })),
   };
@@ -65,6 +73,12 @@ function channelLabelForId(
 function validateModmail(modmail: ModmailConfig): string | null {
   if (!modmail.forumChannelId.trim()) {
     return "Select a modmail forum channel before saving.";
+  }
+  if (
+    modmail.categories.some((category) => category.routeToAdmin) &&
+    !modmail.adminForumChannelId.trim()
+  ) {
+    return "Select an admin modmail forum before routing any category there.";
   }
   if (!modmail.categories.length) {
     return "Add at least one support category.";
@@ -122,6 +136,16 @@ export default function ModmailSettingsPage() {
     ];
   }, [modmail?.forumChannelId, channels]);
 
+  const adminForumChannelSelected = useMemo(() => {
+    if (!modmail?.adminForumChannelId) return [];
+    return [
+      {
+        id: modmail.adminForumChannelId,
+        label: channelLabelForId(modmail.adminForumChannelId, channels),
+      },
+    ];
+  }, [modmail?.adminForumChannelId, channels]);
+
   const isDirty = useMemo(
     () =>
       draft !== null && JSON.stringify(draft) !== JSON.stringify(savedModmail),
@@ -157,10 +181,12 @@ export default function ModmailSettingsPage() {
 
     const cleaned: ModmailConfig = {
       forumChannelId: modmail.forumChannelId.trim(),
+      adminForumChannelId: modmail.adminForumChannelId.trim(),
       categories: modmail.categories.map((c) => ({
         value: c.value.trim(),
         label: c.label.trim(),
         description: (c.description || "").trim(),
+        routeToAdmin: Boolean(c.routeToAdmin),
       })),
     };
 
@@ -180,7 +206,7 @@ export default function ModmailSettingsPage() {
     <>
       <PageHeader
         title="Modmail settings"
-        description="Forum channel and support dropdown categories for DM tickets."
+        description="Forum channels and support dropdown categories for DM tickets."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -189,10 +215,10 @@ export default function ModmailSettingsPage() {
 
       <div className="stack">
         <div className="card stack">
-          <h3 style={{ margin: 0, fontSize: "1rem" }}>Forum channel</h3>
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>Forum channels</h3>
           <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-            Add the Discord forum channel on the Channels page first, then select
-            it here. New tickets are posted as threads in this forum.
+            Add Discord forum channels on the Channels page first, then select
+            them here. New tickets are posted as threads in the matching forum.
           </p>
           <div className="field">
             <label>Modmail forum</label>
@@ -206,6 +232,24 @@ export default function ModmailSettingsPage() {
               }
               onChange={(selected) =>
                 updateModmail({ forumChannelId: selected[0]?.id ?? "" })
+              }
+            />
+          </div>
+          <div className="field">
+            <label>Admin modmail forum</label>
+            <p className="muted" style={{ margin: "0 0 0.35rem", fontSize: "0.85rem" }}>
+              Used only for categories with Route to admin modmail turned on.
+            </p>
+            <ChannelIdPicker
+              channels={channels}
+              selected={adminForumChannelSelected}
+              maxItems={1}
+              emptyLinkLabel="Add channels"
+              removeConfirmMessage={(item) =>
+                `Remove "${item.label || item.id}" as the admin modmail forum? Changes apply after you save.`
+              }
+              onChange={(selected) =>
+                updateModmail({ adminForumChannelId: selected[0]?.id ?? "" })
               }
             />
           </div>
@@ -277,7 +321,21 @@ export default function ModmailSettingsPage() {
                     }
                   />
                 </div>
-                <div className="row" style={{ justifyContent: "flex-end" }}>
+                <div className="row" style={{ justifyContent: "space-between" }}>
+                  <label
+                    style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(category.routeToAdmin)}
+                      onChange={(e) =>
+                        updateCategory(index, {
+                          routeToAdmin: e.target.checked,
+                        })
+                      }
+                    />
+                    Route to admin modmail
+                  </label>
                   <button
                     type="button"
                     className="btn danger"

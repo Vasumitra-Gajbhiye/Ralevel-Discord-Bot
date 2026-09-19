@@ -11,7 +11,8 @@ Install the following before you begin:
 | **Git** | Latest | Clone and manage the repository |
 | **Node.js** | 20 LTS (matches Dockerfile) | Runtime |
 | **pnpm** | 9+ (via Corepack) | Monorepo package manager |
-| **Redis** | 6+ | Required at startup — message counters and finalize locks |
+| **Redis** | 7+ (via OrbStack/Docker, or Homebrew) | Required at startup — message counters and finalize locks |
+| **OrbStack** (or Docker Desktop) | Latest | Preferred way to run local Redis (`pnpm redis:up`) |
 | **MongoDB Atlas account** | Free tier OK | Persistent data storage |
 
 You also need:
@@ -55,20 +56,30 @@ if (!process.env.REDIS_URL) {
 }
 ```
 
-### macOS (Homebrew)
+### OrbStack / Docker (recommended)
+
+Same pattern as other local services: a compose file, port mapped to localhost.
+
+```bash
+pnpm redis:up
+```
+
+That starts Redis 7 on `127.0.0.1:6379`. Stop it with `pnpm redis:down`.
+
+Default local URL (already in `.env.example`):
+
+```
+REDIS_URL=redis://127.0.0.1:6379
+```
+
+### Alternative: Homebrew (macOS)
 
 ```bash
 brew install redis
 brew services start redis
 ```
 
-Default local URL:
-
-```
-REDIS_URL=redis://127.0.0.1:6379
-```
-
-### Linux
+### Alternative: apt (Linux)
 
 ```bash
 sudo apt install redis-server
@@ -78,7 +89,7 @@ sudo systemctl start redis
 ### Verify Redis is running
 
 ```bash
-redis-cli ping
+docker compose -f docker-compose.dev.yml exec redis redis-cli ping
 # Expected: PONG
 ```
 

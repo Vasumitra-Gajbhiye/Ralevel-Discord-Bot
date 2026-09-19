@@ -22,9 +22,9 @@ Error: REDIS_URL is required
 **Fix:**
 
 1. Set `REDIS_URL` in your environment
-2. Local: `REDIS_URL=redis://127.0.0.1:6379` (start Redis first)
+2. Local: `REDIS_URL=redis://127.0.0.1:6379` and `pnpm redis:up` (OrbStack/Docker)
 3. Production: use Coolify Redis internal URL
-4. Verify: `redis-cli ping` → `PONG`
+4. Verify: `docker compose -f docker-compose.dev.yml exec redis redis-cli ping` → `PONG`
 
 ---
 

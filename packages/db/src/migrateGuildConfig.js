@@ -314,6 +314,29 @@ function normalizeRanksConfig(roles, ranks) {
   };
 }
 
+function resolveAdminForumChannelId(existing) {
+  if (typeof existing === "string" && existing.trim()) {
+    return existing.trim();
+  }
+  return (process.env.ADMIN_MOD_MAIL_CHANNEL_ID || "").trim();
+}
+
+function categoriesWithRouteToAdmin(categories) {
+  if (!Array.isArray(categories)) {
+    return { categories, changed: false };
+  }
+
+  let changed = false;
+  const next = categories.map((category) => {
+    if (!category || typeof category !== "object") return category;
+    if (typeof category.routeToAdmin === "boolean") return category;
+    changed = true;
+    return { ...category, routeToAdmin: false };
+  });
+
+  return { categories: next, changed };
+}
+
 /**
  * Migrates legacy GuildConfig documents (fixed channel maps) to array format.
  * Uses collection-level updates so legacy BSON shapes are not lost on read.
@@ -372,8 +395,24 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
         typeof raw.modmail.forumChannelId === "string"
           ? raw.modmail.forumChannelId
           : defaults.forumChannelId,
+      adminForumChannelId: resolveAdminForumChannelId(
+        raw.modmail.adminForumChannelId,
+      ),
       categories: defaults.categories,
     };
+  } else {
+    const adminForumChannelId = resolveAdminForumChannelId(
+      raw.modmail.adminForumChannelId,
+    );
+    const { categories, changed: categoriesChanged } = categoriesWithRouteToAdmin(
+      raw.modmail.categories,
+    );
+    if (raw.modmail.adminForumChannelId !== adminForumChannelId) {
+      $set["modmail.adminForumChannelId"] = adminForumChannelId;
+    }
+    if (categoriesChanged) {
+      $set["modmail.categories"] = categories;
+    }
   }
 
   if (!raw.moderation?.banMessages) {
@@ -558,10 +597,33 @@ function migrateGuildConfigInPlace(doc) {
         typeof doc.modmail.forumChannelId === "string"
           ? doc.modmail.forumChannelId
           : defaults.forumChannelId,
+      adminForumChannelId: resolveAdminForumChannelId(
+        doc.modmail.adminForumChannelId,
+      ),
       categories: defaults.categories,
     };
     doc.markModified("modmail");
     changed = true;
+  } else {
+    let modmailChanged = false;
+    const adminForumChannelId = resolveAdminForumChannelId(
+      doc.modmail.adminForumChannelId,
+    );
+    if (doc.modmail.adminForumChannelId !== adminForumChannelId) {
+      doc.modmail.adminForumChannelId = adminForumChannelId;
+      modmailChanged = true;
+    }
+    for (const category of doc.modmail.categories) {
+      if (!category || typeof category !== "object") continue;
+      if (typeof category.routeToAdmin !== "boolean") {
+        category.routeToAdmin = false;
+        modmailChanged = true;
+      }
+    }
+    if (modmailChanged) {
+      doc.markModified("modmail");
+      changed = true;
+    }
   }
 
   if (!Array.isArray(doc.moderation?.banAppealApproverRoleKeys)) {

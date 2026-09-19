@@ -412,25 +412,25 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **File:** `systems/modmail.js`
 
-**Purpose:** Intake + relay between user DMs and permanent staff forum posts. Forum channel and dropdown categories come from guild config (`modmail`), with `MOD_MAIL_CHANNEL_ID` as env fallback. Staff identity is hidden in the user DM only. Closed posts are archived (kept as a log), never deleted.
+**Purpose:** Intake + relay between user DMs and permanent staff forum posts. Forum channels and dropdown categories come from guild config (`modmail`), with `MOD_MAIL_CHANNEL_ID` / `ADMIN_MOD_MAIL_CHANNEL_ID` as env fallbacks. Categories can be toggled to the admin forum. Staff identity is hidden in the user DM only. Closed posts are archived (kept as a log), never deleted.
 
 **Discord events:** Handled via `messageRouter` (`MessageCreate`) and `InteractionCreate` (select menu + modal); close via slash `/close-ticket`; blacklist via `/ban-user-modmail`, `/unban-user-modmail`, `/list-modmail-ban`
 
-**Dashboard:** `/settings/modmail` — pick forum channel (from Channels registry) and edit support categories.
+**Dashboard:** `/settings/modmail` — pick the normal and admin forum channels (from Channels registry) and edit support categories, including whether each category routes to admin modmail.
 
 **Workflow:**
 
 1. User DMs the bot with no open ticket → if they are on the modmail blacklist, they get a "Banned from Modmail" embed with the stored reason and no category dropdown; otherwise GET SUPPORT with category dropdown (from guild config)
 2. User picks a category → modal asks them to describe their problem (blacklist is checked again here and on modal submit)
-3. On submit → create a new forum post (opener embed with user + category, then description message), and DM the user a confirmation that quotes their explanation
-4. Further user DMs while the ticket is open relay into that post as embeds
+3. On submit → create a new forum post in the normal modmail forum, or the admin forum if that category has **Route to admin modmail** enabled (opener embed with user + category, then description message), and DM the user a confirmation that quotes their explanation. Admin-routed tickets never fall back to the normal forum.
+4. Further user DMs while the ticket is open relay into that post as embeds (one open ticket per user, in either forum)
 5. Staff replies in the post relay anonymously to the user DM (label: Staff)
 6. Messages starting with `.` stay staff-only (not relayed)
-7. `/close-ticket` marks the ticket closed, DMs the user, and archives the post
+7. `/close-ticket` marks the ticket closed, DMs the user, and archives the post (works in both forums)
 8. `/ban-user-modmail` upserts a `ModmailBan` with a required reason, DMs the user, and auto-closes + archives any open ticket
 9. After close, the next DM shows the support menu again (or the ban notice) and creates a **new** post only if they are not banned; the old post stays
 
-**Dependencies:** Guild config `modmail` (or env `MOD_MAIL_CHANNEL_ID`), optional booster role / `BOOSTER_ROLE_ID` (intake copy), MongoDB (`ModmailTicket`, `ModmailBan`), intents `DirectMessages` + partial `Channel`
+**Dependencies:** Guild config `modmail` (or env `MOD_MAIL_CHANNEL_ID` / `ADMIN_MOD_MAIL_CHANNEL_ID`), optional booster role / `BOOSTER_ROLE_ID` (intake copy), MongoDB (`ModmailTicket`, `ModmailBan`), intents `DirectMessages` + partial `Channel`
 
 **Related commands:** `/close-ticket`, `/ban-user-modmail`, `/unban-user-modmail`, `/list-modmail-ban`
 

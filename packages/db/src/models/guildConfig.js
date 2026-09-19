@@ -54,6 +54,7 @@ const ModmailCategorySchema = new mongoose.Schema(
     value: { type: String, required: true },
     label: { type: String, required: true },
     description: { type: String, default: "" },
+    routeToAdmin: { type: Boolean, default: false },
   },
   { _id: false },
 );
@@ -196,6 +197,7 @@ const GuildConfigSchema = new mongoose.Schema(
     },
     modmail: {
       forumChannelId: { type: String, default: "" },
+      adminForumChannelId: { type: String, default: "" },
       categories: { type: [ModmailCategorySchema], default: [] },
     },
     tasks: {

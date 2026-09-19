@@ -78,7 +78,7 @@ redis://<service-name>:6379
 ### Local development equivalent
 
 ```bash
-brew install redis && brew services start redis
+pnpm redis:up
 REDIS_URL=redis://127.0.0.1:6379
 ```
 

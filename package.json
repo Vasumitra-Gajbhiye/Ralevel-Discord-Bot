@@ -10,6 +10,8 @@
     "lint": "turbo run lint",
     "dev:bot": "turbo run dev --filter=@ralevel/bot",
     "dev:web": "turbo run dev --filter=@ralevel/web",
+    "redis:up": "docker compose -f docker-compose.dev.yml up -d",
+    "redis:down": "docker compose -f docker-compose.dev.yml down",
     "start:bot": "turbo run start --filter=@ralevel/bot",
     "build:web": "turbo run build --filter=@ralevel/web",
     "export-command-catalog": "pnpm --filter @ralevel/bot export-command-catalog",

@@ -74,10 +74,12 @@ export type GuildConfigData = {
   };
   modmail: {
     forumChannelId: string;
+    adminForumChannelId: string;
     categories: {
       value: string;
       label: string;
       description: string;
+      routeToAdmin: boolean;
     }[];
   };
   tasks: {

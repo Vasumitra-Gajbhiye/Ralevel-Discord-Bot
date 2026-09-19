@@ -17,10 +17,19 @@ const {
   DEFAULT_MODMAIL_CATEGORIES,
 } = require("@ralevel/db");
 const { tryGetGuildConfig } = require("../utils/guildConfigStore");
+const { createBoundedSet } = require("../utils/boundedSet");
 
 const STAFF_EMBED_COLOR = 0x5865f2;
 const USER_EMBED_COLOR = 0x57f287;
 const NOTE_PREFIX = ".";
+const PROCESSED_MESSAGE_CACHE_SIZE = 10_000;
+const processedMessageIds = createBoundedSet(PROCESSED_MESSAGE_CACHE_SIZE);
+
+function markMessageProcessed(messageId) {
+  if (!messageId || processedMessageIds.has(messageId)) return false;
+  processedMessageIds.add(messageId);
+  return true;
+}
 
 const SELECT_CUSTOM_ID = "modmail_category";
 const MODAL_CUSTOM_ID_PREFIX = "modmail_modal:";
@@ -34,16 +43,19 @@ const FALLBACK_CATEGORIES =
           value: "general",
           label: "General Query",
           description: "Questions that don't fit the other options",
+          routeToAdmin: false,
         },
         {
           value: "advertise",
           label: "Permission to Advertise",
           description: "Request permission to advertise",
+          routeToAdmin: false,
         },
         {
           value: "report",
           label: "Report a Member",
           description: "Report a member for misconduct",
+          routeToAdmin: false,
         },
       ];
 
@@ -55,24 +67,46 @@ function getModMailChannelId() {
   return process.env.MOD_MAIL_CHANNEL_ID || null;
 }
 
+function getAdminModMailChannelId() {
+  const fromConfig = tryGetGuildConfig()?.modmail?.adminForumChannelId;
+  if (typeof fromConfig === "string" && fromConfig.trim()) {
+    return fromConfig.trim();
+  }
+  return process.env.ADMIN_MOD_MAIL_CHANNEL_ID || null;
+}
+
+function isModmailForumParent(parentId) {
+  if (!parentId) return false;
+  const normalId = getModMailChannelId();
+  const adminId = getAdminModMailChannelId();
+  return parentId === normalId || parentId === adminId;
+}
+
+function normalizeCategory(category) {
+  return {
+    value: String(category?.value ?? "").trim(),
+    label: String(category?.label ?? "").trim(),
+    description: String(category?.description ?? "").trim(),
+    routeToAdmin: Boolean(category?.routeToAdmin),
+  };
+}
+
 function getModmailCategories() {
   const raw = tryGetGuildConfig()?.modmail?.categories;
   if (!Array.isArray(raw) || raw.length === 0) {
-    return FALLBACK_CATEGORIES.map((c) => ({ ...c }));
+    return FALLBACK_CATEGORIES.map(normalizeCategory);
   }
 
   const cleaned = raw
-    .map((c) => ({
-      value: String(c?.value ?? "").trim(),
-      label: String(c?.label ?? "").trim(),
-      description: String(c?.description ?? "").trim(),
-    }))
+    .map(normalizeCategory)
     .filter((c) => c.value && c.label)
     .slice(0, 25);
 
-  return cleaned.length
-    ? cleaned
-    : FALLBACK_CATEGORIES.map((c) => ({ ...c }));
+  return cleaned.length ? cleaned : FALLBACK_CATEGORIES.map(normalizeCategory);
+}
+
+function findCategory(value) {
+  return getModmailCategories().find((c) => c.value === value) || null;
 }
 
 function categoryLabel(category) {
@@ -423,12 +457,21 @@ function buildRelayReplyOptions(replyToMessageId) {
 async function saveMessageLink({ threadId, dmMessageId, threadMessageId }) {
   if (!threadId || !dmMessageId || !threadMessageId) return;
   try {
-    await ModmailMessageLink.create({
-      threadId,
-      dmMessageId,
-      threadMessageId,
-    });
+    await ModmailMessageLink.updateOne(
+      { dmMessageId },
+      {
+        $setOnInsert: {
+          threadId,
+          dmMessageId,
+          threadMessageId,
+        },
+      },
+      { upsert: true }
+    );
   } catch (err) {
+    // Duplicate Discord deliveries (or a racing second process) can hit
+    // unique dmMessageId / threadMessageId. The first write already linked them.
+    if (err?.code === 11000) return;
     console.error("[modmail] Failed to save message link:", err);
   }
 }
@@ -735,14 +778,26 @@ async function closeOpenTicket(ticket, { closedBy, thread, archiveReason } = {})
 
 
 async function createModmailThread(client, user, category, description) {
-  const forumId = getModMailChannelId();
+  const categoryConfig = findCategory(category);
+  const routeToAdmin = Boolean(categoryConfig?.routeToAdmin);
+  const forumId = routeToAdmin
+    ? getAdminModMailChannelId()
+    : getModMailChannelId();
   if (!forumId) {
-    throw new Error("Modmail forum channel is not configured");
+    throw new Error(
+      routeToAdmin
+        ? "Admin modmail forum channel is not configured"
+        : "Modmail forum channel is not configured"
+    );
   }
 
   const forum = await client.channels.fetch(forumId);
   if (!forum || forum.type !== ChannelType.GuildForum) {
-    throw new Error("Modmail forum channel must be a Discord forum channel");
+    throw new Error(
+      routeToAdmin
+        ? "Admin modmail forum channel must be a Discord forum channel"
+        : "Modmail forum channel must be a Discord forum channel"
+    );
   }
 
   async function createOnce() {
@@ -813,6 +868,7 @@ async function handleModmailDm(client, message) {
         ticket = null;
       } else {
         if (!hasRelayableContent(message)) return;
+        if (!markMessageProcessed(message.id)) return;
         await ensureThreadWritable(thread);
         const replyToMessageId = await resolveReplyMessageId(
           referencedMessageId(message),
@@ -835,6 +891,7 @@ async function handleModmailDm(client, message) {
 
     const ban = await findModmailBan(message.author.id);
     if (ban) {
+      if (!markMessageProcessed(message.id)) return;
       await message.channel.send({
         embeds: [buildBannedFromModmailEmbed(ban.reason)],
       });
@@ -842,6 +899,7 @@ async function handleModmailDm(client, message) {
     }
 
     // No open ticket — show intake menu (any non-bot DM triggers it)
+    if (!markMessageProcessed(message.id)) return;
     await sendSupportMenu(message.channel);
   } catch (err) {
     console.error("[modmail] Failed to handle DM:", err);
@@ -856,11 +914,9 @@ async function handleModmailDm(client, message) {
 async function handleModmailStaffReply(client, message) {
   if (message.author.bot || !message.guild) return false;
 
-  const forumId = getModMailChannelId();
   if (
-    !forumId ||
     !message.channel.isThread?.() ||
-    message.channel.parentId !== forumId
+    !isModmailForumParent(message.channel.parentId)
   ) {
     return false;
   }
@@ -880,6 +936,7 @@ async function handleModmailStaffReply(client, message) {
 
   const content = message.content?.trim() || "";
   if (content.startsWith(NOTE_PREFIX)) return true;
+  if (!markMessageProcessed(message.id)) return true;
 
   try {
     await ensureThreadWritable(message.channel);
@@ -1024,9 +1081,12 @@ async function handleModalSubmit(client, interaction) {
     }
   } catch (err) {
     console.error("[modmail] Failed to create ticket from modal:", err);
+    const adminUnavailable =
+      typeof err?.message === "string" && err.message.includes("Admin modmail");
     await interaction.editReply({
-      content:
-        "Sorry, I couldn't open your ticket right now. Please try again later.",
+      content: adminUnavailable
+        ? "This support category isn't available right now. Please try a different option or try again later."
+        : "Sorry, I couldn't open your ticket right now. Please try again later.",
     });
   }
 }
@@ -1035,6 +1095,14 @@ function modmailSystem(client) {
   if (!getModMailChannelId()) {
     console.warn(
       "[modmail] Forum channel is not set in guild config (or MOD_MAIL_CHANNEL_ID) — ticket creation will fail until configured."
+    );
+  }
+  if (
+    getModmailCategories().some((c) => c.routeToAdmin) &&
+    !getAdminModMailChannelId()
+  ) {
+    console.warn(
+      "[modmail] Admin forum is not set in guild config (or ADMIN_MOD_MAIL_CHANNEL_ID) — categories routed to admin will fail until configured."
     );
   }
 
@@ -1088,5 +1156,6 @@ modmailSystem.referencedMessageId = referencedMessageId;
 modmailSystem.counterpartMessageId = counterpartMessageId;
 modmailSystem.buildRelayReplyOptions = buildRelayReplyOptions;
 modmailSystem.resolveReplyMessageId = resolveReplyMessageId;
+modmailSystem.isModmailForumParent = isModmailForumParent;
 
 module.exports = modmailSystem;

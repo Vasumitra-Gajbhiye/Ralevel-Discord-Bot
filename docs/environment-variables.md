@@ -62,7 +62,7 @@ Used in: `database.js`, verification scripts, migration scripts
 |                       |                                                                |
 | --------------------- | -------------------------------------------------------------- |
 | **Purpose**           | Redis connection for pending XP counters and flush locks |
-| **Example (local)**   | `redis://127.0.0.1:6379`                                       |
+| **Example (local)**   | `redis://127.0.0.1:6379` (`pnpm redis:up` via OrbStack/Docker) |
 | **Example (Coolify)** | `redis://redis:6379` (internal service URL)                    |
 | **Required**          | Yes                                                            |
 | **If missing**        | Process throws `REDIS_URL is required` on import of `redis.js` |
@@ -157,6 +157,7 @@ Used in: `apps/web` middleware, API routes, and Clerk components. Allowlisted em
 | `LEVELUP_CHANNEL_ID`       | XP rank-up announcements                          | For XP ranks    | Level-up messages not sent          |
 | `QOTD_REMINDER_CHANNEL_ID` | QOTD daily reminder channel                       | Optional        | QOTD scheduler logs warning, skips  |
 | `MOD_MAIL_CHANNEL_ID`      | Fallback forum ID for modmail (prefer dashboard)  | Optional        | Needed only if guild config unset     |
+| `ADMIN_MOD_MAIL_CHANNEL_ID`| Fallback forum ID for admin modmail               | Optional        | Needed only if guild config unset     |
 
 ---
 
@@ -270,6 +271,21 @@ Used in: `apps/bot/systems/modmail.js`, `apps/bot/commands/modmail/close-ticket.
 
 ---
 
+### `ADMIN_MOD_MAIL_CHANNEL_ID`
+
+|                |                                                              |
+| -------------- | ------------------------------------------------------------ |
+| **Purpose**    | Fallback Discord forum channel ID for admin modmail when guild config `modmail.adminForumChannelId` is unset |
+| **Example**    | `1532395293599862834`                                        |
+| **Required**   | No (prefer dashboard `/settings/modmail`)                    |
+| **If missing** | Categories with **Route to admin modmail** cannot open tickets unless the admin forum is set in guild config |
+
+Preferred: set the admin forum channel in the web dashboard (**Settings → Modmail**), after registering it on **Settings → Channels**. Categories only use this forum when their admin toggle is on.
+
+Used in: `apps/bot/systems/modmail.js`, `apps/bot/commands/modmail/close-ticket.js` (env fallback only)
+
+---
+
 ### `MOD_ROLES`
 
 |                |                                                              |
@@ -320,7 +336,7 @@ Quick reference for which variables each feature needs:
 | Reputation              | Tier role IDs, optional `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` (legacy `STAFF_CHANNEL_IDS` merged into `DISABLED_CHANNELS`) |
 | Certificates            | `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, `ADMIN_ROLE_ID`, `SR_HELPER_ROLE_ID` |
 | Confessions             | `MOD_ACTION_CHANNEL`, `VENT_CHANNEL`                                                                  |
-| Modmail                 | Guild config `modmail` (fallback `MOD_MAIL_CHANNEL_ID`)                                               |
+| Modmail                 | Guild config `modmail` (fallback `MOD_MAIL_CHANNEL_ID`, `ADMIN_MOD_MAIL_CHANNEL_ID`)                  |
 | Tasks                   | `GRAPHIC_CHANNEL`, `DEV_CHANNEL`, `WRITER_CHANNEL`, designer role IDs                                 |
 | Welcome                 | `WELCOME_CHANNEL`                                                                                     |
 | QOTD                    | `QOTD_REMINDER_CHANNEL_ID`                                                                            |

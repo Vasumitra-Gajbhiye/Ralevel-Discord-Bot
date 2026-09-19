@@ -515,22 +515,26 @@ const DEFAULT_MODMAIL_CATEGORIES = [
     value: "general",
     label: "General Query",
     description: "Questions that don't fit the other options",
+    routeToAdmin: false,
   },
   {
     value: "advertise",
     label: "Permission to Advertise",
     description: "Request permission to advertise",
+    routeToAdmin: false,
   },
   {
     value: "report",
     label: "Report a Member",
     description: "Report a member for misconduct",
+    routeToAdmin: false,
   },
 ];
 
 function buildDefaultModmail() {
   return {
     forumChannelId: env("MOD_MAIL_CHANNEL_ID") || "",
+    adminForumChannelId: env("ADMIN_MOD_MAIL_CHANNEL_ID") || "",
     categories: DEFAULT_MODMAIL_CATEGORIES.map((c) => ({ ...c })),
   };
 }
