@@ -44,21 +44,20 @@ module.exports = {
       });
     }
 
+    const reason = interaction.options.getString("reason");
+
+    await interaction.deferReply({ ephemeral: true });
+
     const ticket = await ModmailTicket.findOne({
       threadId: interaction.channel.id,
       status: "OPEN",
     });
 
     if (!ticket) {
-      return interaction.reply({
+      return interaction.editReply({
         content: "This post is not an open modmail ticket.",
-        ephemeral: true,
       });
     }
-
-    const reason = interaction.options.getString("reason");
-
-    await interaction.deferReply({ ephemeral: true });
 
     const { archiveError } = await closeOpenTicket(ticket, {
       closedBy: interaction.user.id,

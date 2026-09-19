@@ -71,6 +71,19 @@ async function start() {
   await client.login(process.env.TOKEN);
 }
 
+function shutdown(signal) {
+  console.log(`[bot] ${signal} received, destroying Discord client`);
+  try {
+    client.destroy();
+  } catch (err) {
+    console.error("[bot] Failed to destroy Discord client:", err);
+  }
+  process.exit(0);
+}
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+
 start().catch((err) => {
   console.error("Failed to start bot:", err);
   process.exit(1);

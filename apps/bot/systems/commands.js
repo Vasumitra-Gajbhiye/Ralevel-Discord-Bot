@@ -203,6 +203,15 @@ module.exports = (client) => {
 
       await command.execute(interaction);
     } catch (error) {
+      // Another still-connected process (common during nodemon restart) or an
+      // expired token. Discord already finished this interaction.
+      if (error?.code === 10062) {
+        console.warn(
+          `[WARN] /${interaction.commandName} interaction was already acknowledged or expired.`,
+        );
+        return;
+      }
+
       const deployedName = interaction.commandName;
       const label =
         deployedName === canonicalName
