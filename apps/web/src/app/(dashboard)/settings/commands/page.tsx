@@ -457,7 +457,7 @@ export default function CommandsPage() {
             <tbody>
               {editableCommands
                 .slice()
-                .sort((a, b) => a.name.localeCompare(b.name))
+                .sort((a, b) => a.effectiveName.localeCompare(b.effectiveName))
                 .map((command) => {
                   const cmd = command.name;
                   const isEphemeral = ephemeral[cmd] ?? false;

@@ -89,13 +89,17 @@ export default function CommandVisibilityPage() {
 
   const filteredCommands = useMemo(() => {
     const query = filter.trim().toLowerCase();
-    if (!query) return catalog;
-    return catalog.filter(
-      (command) =>
-        command.name.toLowerCase().includes(query) ||
-        command.effectiveName.toLowerCase().includes(query) ||
-        command.category.toLowerCase().includes(query),
-    );
+    const commands = query
+      ? catalog.filter(
+          (command) =>
+            command.name.toLowerCase().includes(query) ||
+            command.effectiveName.toLowerCase().includes(query) ||
+            command.category.toLowerCase().includes(query),
+        )
+      : catalog;
+    return commands
+      .slice()
+      .sort((a, b) => a.effectiveName.localeCompare(b.effectiveName));
   }, [catalog, filter]);
 
   function setCommandPermission(commandName: string, value: string) {
