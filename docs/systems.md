@@ -295,12 +295,13 @@ xpGained = isBooster ? messageCount * boosterMultiplier : messageCount
 
 **Internal flow:**
 
-1. Short-circuit if IST hour &lt; 6 (no MongoDB query before cutoff)
+1. Short-circuit if IST hour &lt; `qotdHourIst` (no MongoDB query before cutoff)
 2. Load active `QotdRotation` from in-memory cache (30 min TTL) or MongoDB on cache miss
-3. If reminder not sent today (`lastReminderDate`), send to `QOTD_REMINDER_CHANNEL_ID`
-4. Advance `currentIndex`, save to MongoDB, refresh cache
+3. If reminder not sent today (`lastReminderDate`), render `GuildConfig.qotd.reminderTemplate` (placeholders `{currentMention}`, `{nextMention}`, `{date}`, etc.) and send to the `qotdReminder` channel
+4. Skip without advancing rotation if the rendered body is empty or over Discord’s 2000-character limit
+5. Advance `currentIndex`, save to MongoDB, refresh cache
 
-**Dependencies:** `QOTD_REMINDER_CHANNEL_ID`, MongoDB (`QotdRotation`)
+**Dependencies:** `qotdReminder` channel, MongoDB (`QotdRotation`, `GuildConfig.qotd.reminderTemplate`)
 
 **Diagnostics:** `/qotd-status` uses `getQotdDiagnostics()` with `bypassCache: true` for live MongoDB state
 

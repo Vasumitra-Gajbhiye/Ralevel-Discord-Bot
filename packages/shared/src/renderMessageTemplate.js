@@ -68,7 +68,56 @@ const BAN_MESSAGE_PLACEHOLDERS = [
   },
 ];
 
+/** Keep in sync with @ralevel/db DEFAULT_QOTD_REMINDER_TEMPLATE. */
+const DEFAULT_QOTD_REMINDER_TEMPLATE =
+  `🌅 **Question and Song of the Day — Reminder**\n\n` +
+  `Today’s QOTD and SOTD is assigned to:\n` +
+  `👉 {currentMention}\n\n` +
+  `Please post the Question and Song of the Day when ready.\n\n` +
+  `🔔 **Next up:** {nextMention}\n` +
+  `You’re next in rotation — please start preparing.`;
+
+const QOTD_REMINDER_PLACEHOLDERS = [
+  {
+    key: "currentMention",
+    label: "{currentMention}",
+    description: "Mention of today’s assigned moderator.",
+  },
+  {
+    key: "nextMention",
+    label: "{nextMention}",
+    description: "Mention of the next moderator in rotation.",
+  },
+  {
+    key: "currentTag",
+    label: "{currentTag}",
+    description: "Display tag of today’s assigned moderator.",
+  },
+  {
+    key: "nextTag",
+    label: "{nextTag}",
+    description: "Display tag of the next moderator in rotation.",
+  },
+  {
+    key: "currentId",
+    label: "{currentId}",
+    description: "Discord user ID of today’s assigned moderator.",
+  },
+  {
+    key: "nextId",
+    label: "{nextId}",
+    description: "Discord user ID of the next moderator in rotation.",
+  },
+  {
+    key: "date",
+    label: "{date}",
+    description: "Today’s date in IST (YYYY-MM-DD).",
+  },
+];
+
 module.exports = {
   renderMessageTemplate,
   BAN_MESSAGE_PLACEHOLDERS,
+  DEFAULT_QOTD_REMINDER_TEMPLATE,
+  QOTD_REMINDER_PLACEHOLDERS,
 };

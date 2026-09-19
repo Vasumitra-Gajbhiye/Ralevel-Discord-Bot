@@ -1,5 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const { DEFAULT_QOTD_REMINDER_TEMPLATE } = require("@ralevel/db");
+const { renderMessageTemplate } = require("@ralevel/shared");
 
 function assert(condition, message) {
   if (!condition) {
@@ -11,14 +13,71 @@ function testQotdSourceOrder() {
   const qotdPath = path.join(__dirname, "../systems/qotd.js");
   const source = fs.readFileSync(qotdPath, "utf8");
 
-  const hourCheckIndex = source.indexOf("hour < REMINDER_HOUR_IST");
+  const hourCheckIndex = source.indexOf("hour < reminderHour");
   const findRotationIndex = source.indexOf("await findActiveRotation");
 
-  assert(hourCheckIndex !== -1, "qotd.js must check REMINDER_HOUR_IST before MongoDB");
+  assert(hourCheckIndex !== -1, "qotd.js must check reminderHour before MongoDB");
   assert(findRotationIndex !== -1, "qotd.js must await findActiveRotation()");
   assert(
     hourCheckIndex < findRotationIndex,
     "qotd.js must check IST hour before findActiveRotation",
+  );
+}
+
+function testQotdUsesReminderTemplate() {
+  const source = fs.readFileSync(
+    path.join(__dirname, "../systems/qotd.js"),
+    "utf8",
+  );
+
+  assert(
+    source.includes("renderMessageTemplate"),
+    "qotd.js must render the reminder with renderMessageTemplate",
+  );
+  assert(
+    source.includes("reminderTemplate"),
+    "qotd.js must read qotd.reminderTemplate from guild config",
+  );
+  assert(
+    source.includes("DEFAULT_QOTD_REMINDER_TEMPLATE"),
+    "qotd.js must fall back to DEFAULT_QOTD_REMINDER_TEMPLATE",
+  );
+  assert(
+    source.includes("DISCORD_CONTENT_LIMIT"),
+    "qotd.js must skip sends that exceed Discord's content limit",
+  );
+}
+
+function testDefaultTemplateRendersMentions() {
+  const message = renderMessageTemplate(DEFAULT_QOTD_REMINDER_TEMPLATE, {
+    currentMention: "<@111>",
+    nextMention: "<@222>",
+    currentTag: "today#0001",
+    nextTag: "next#0002",
+    currentId: "111",
+    nextId: "222",
+    date: "2026-09-19",
+  });
+
+  assert(
+    message.includes("<@111>"),
+    "default template should include current mention",
+  );
+  assert(
+    message.includes("<@222>"),
+    "default template should include next mention",
+  );
+  assert(
+    !message.includes("{currentMention}"),
+    "currentMention placeholder should be replaced",
+  );
+  assert(
+    !message.includes("{nextMention}"),
+    "nextMention placeholder should be replaced",
+  );
+  assert(
+    message.includes("Question and Song of the Day"),
+    "default template should keep the original reminder title",
   );
 }
 
@@ -108,6 +167,8 @@ async function testUpdateRotationCache() {
 
 async function main() {
   testQotdSourceOrder();
+  testQotdUsesReminderTemplate();
+  testDefaultTemplateRendersMentions();
   testXpFlushUsesSharedISTHelper();
   testGetISTDateInfoShape();
   await testRotationCacheTTL();

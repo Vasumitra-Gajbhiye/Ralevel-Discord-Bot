@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
-const { DEFAULT_BAN_MESSAGES } = require("../defaultGuildConfig");
+const {
+  DEFAULT_BAN_MESSAGES,
+  DEFAULT_QOTD_REMINDER_TEMPLATE,
+} = require("../defaultGuildConfig");
 
 const RoleEntrySchema = new mongoose.Schema(
   {
@@ -211,6 +214,12 @@ const GuildConfigSchema = new mongoose.Schema(
     },
     helper: {
       pingDelayMs: { type: Number, default: 10000 },
+    },
+    qotd: {
+      reminderTemplate: {
+        type: String,
+        default: DEFAULT_QOTD_REMINDER_TEMPLATE,
+      },
     },
     moderation: {
       banAppealApproverRoleKeys: {

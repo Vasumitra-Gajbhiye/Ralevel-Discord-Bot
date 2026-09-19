@@ -7,6 +7,7 @@ const {
   buildDefaultCertPanel,
   buildDefaultModmail,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_COMMAND_PERMISSIONS,
@@ -379,6 +380,14 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     $set["moderation.banMessages"] = { ...DEFAULT_BAN_MESSAGES };
   }
 
+  if (
+    !raw.qotd ||
+    typeof raw.qotd !== "object" ||
+    raw.qotd.reminderTemplate == null
+  ) {
+    $set["qotd.reminderTemplate"] = DEFAULT_QOTD_REMINDER_TEMPLATE;
+  }
+
   if (!Array.isArray(raw.moderation?.banAppealApproverRoleKeys)) {
     $set["moderation.banAppealApproverRoleKeys"] =
       resolveBanAppealApproverRoleKeys(raw);
@@ -560,6 +569,17 @@ function migrateGuildConfigInPlace(doc) {
     doc.moderation.banAppealApproverRoleKeys =
       resolveBanAppealApproverRoleKeys(doc);
     doc.markModified("moderation");
+    changed = true;
+  }
+
+  if (
+    !doc.qotd ||
+    typeof doc.qotd !== "object" ||
+    doc.qotd.reminderTemplate == null
+  ) {
+    doc.qotd = doc.qotd || {};
+    doc.qotd.reminderTemplate = DEFAULT_QOTD_REMINDER_TEMPLATE;
+    doc.markModified("qotd");
     changed = true;
   }
 

@@ -2,9 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/PageHeader";
+import {
+  DEFAULT_QOTD_REMINDER_TEMPLATE,
+  QOTD_REMINDER_PLACEHOLDERS,
+} from "@ralevel/shared";
+import { PageHeader, RestartBanner } from "@/components/PageHeader";
 import { SaveActions } from "@/components/SaveActions";
+import { useGuildConfig } from "@/lib/useGuildConfig";
 import { useUnsavedChanges } from "@/lib/unsaved-changes";
+
+const DISCORD_CONTENT_LIMIT = 2000;
 
 type ModEntry = {
   id: string;
@@ -48,13 +55,28 @@ export default function OpsQotdPage() {
   const [addId, setAddId] = useState("");
   const [addTag, setAddTag] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
+  const [templateDraft, setTemplateDraft] = useState<string | null>(null);
+
+  const {
+    config,
+    loading: configLoading,
+    error: configError,
+    saving: templateSaving,
+    save: saveConfig,
+  } = useGuildConfig();
 
   const form = draft ?? saved;
+  const savedTemplate =
+    config?.qotd?.reminderTemplate ?? DEFAULT_QOTD_REMINDER_TEMPLATE;
+  const reminderTemplate = templateDraft ?? savedTemplate;
+  const templateOverLimit = reminderTemplate.length > DISCORD_CONTENT_LIMIT;
 
-  const isDirty = useMemo(
+  const rotationDirty = useMemo(
     () => draft !== null && saved !== null && !draftsEqual(draft, saved),
     [draft, saved],
   );
+  const templateDirty = templateDraft !== null && templateDraft !== savedTemplate;
+  const isDirty = rotationDirty || templateDirty;
 
   const upNext = useMemo(() => {
     if (!form || form.modOrder.length === 0) return null;
@@ -158,14 +180,23 @@ export default function OpsQotdPage() {
     setAddError(null);
   }
 
-  function onDiscard() {
+  function onDiscardRotation() {
     setDraft(null);
     setAddId("");
     setAddTag("");
     setAddError(null);
   }
 
-  async function onSave() {
+  function onDiscardTemplate() {
+    setTemplateDraft(null);
+  }
+
+  function onDiscard() {
+    onDiscardRotation();
+    onDiscardTemplate();
+  }
+
+  async function onSaveRotation() {
     if (!item || !form) return;
     setSaving(true);
     setError(null);
@@ -194,6 +225,18 @@ export default function OpsQotdPage() {
     await load();
   }
 
+  async function onSaveTemplate() {
+    try {
+      await saveConfig({
+        qotd: { reminderTemplate },
+      });
+      setTemplateDraft(null);
+      toast.success("Reminder message saved");
+    } catch {
+      toast.error("Failed to save reminder message");
+    }
+  }
+
   const { saveBarRef } = useUnsavedChanges({
     isDirty,
     onDiscard,
@@ -203,9 +246,84 @@ export default function OpsQotdPage() {
     <>
       <PageHeader
         title="QOTD & SOTD"
-        description="Moderator rotation for daily question and statement reminders."
+        description="Moderator rotation and daily reminder message for question and song of the day."
       />
+      <RestartBanner />
+
       <div className="card stack">
+        <h3 style={{ margin: 0 }}>Reminder message</h3>
+        <p className="muted" style={{ margin: 0 }}>
+          Sent each day to the QOTD reminder channel. Placeholders are replaced
+          when the bot sends. Discord’s content limit is {DISCORD_CONTENT_LIMIT}{" "}
+          characters after placeholders expand.
+        </p>
+        {configError ? <p className="status err">{configError}</p> : null}
+        {configLoading ? (
+          <p className="muted">Loading reminder message…</p>
+        ) : (
+          <>
+            <div className="field">
+              <label>Daily reminder</label>
+              <textarea
+                rows={10}
+                value={reminderTemplate}
+                onChange={(e) => setTemplateDraft(e.target.value)}
+              />
+              <p
+                className={templateOverLimit ? "status err" : "muted"}
+                style={{ margin: 0, fontSize: "0.82rem" }}
+              >
+                {reminderTemplate.length} / {DISCORD_CONTENT_LIMIT} characters
+                {templateOverLimit
+                  ? " — over Discord’s 2000-character limit. The bot will skip sending until this is shortened."
+                  : null}
+              </p>
+            </div>
+            <div className="row" style={{ flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="btn"
+                disabled={
+                  templateSaving ||
+                  reminderTemplate === DEFAULT_QOTD_REMINDER_TEMPLATE
+                }
+                onClick={() =>
+                  setTemplateDraft(DEFAULT_QOTD_REMINDER_TEMPLATE)
+                }
+              >
+                Reset to default
+              </button>
+            </div>
+            <div className="stack" style={{ gap: "0.35rem" }}>
+              <p className="muted" style={{ margin: 0 }}>
+                Placeholders
+              </p>
+              <ul className="stack" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {QOTD_REMINDER_PLACEHOLDERS.map((placeholder) => (
+                  <li key={placeholder.key}>
+                    <code>{placeholder.label}</code>{" "}
+                    <span className="muted" style={{ fontSize: "0.82rem" }}>
+                      {placeholder.description}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <SaveActions
+              saveBarRef={saveBarRef}
+              isDirty={templateDirty}
+              saving={templateSaving}
+              onSave={onSaveTemplate}
+              onDiscard={onDiscardTemplate}
+              saveLabel="Save reminder message"
+              sticky
+            />
+          </>
+        )}
+      </div>
+
+      <div className="card stack" style={{ marginTop: "1.5rem" }}>
+        <h3 style={{ margin: 0 }}>Rotation</h3>
         <div className="row">
           <button
             type="button"
@@ -415,12 +533,11 @@ export default function OpsQotdPage() {
             {addError ? <p className="status err">{addError}</p> : null}
 
             <SaveActions
-              saveBarRef={saveBarRef}
-              isDirty={isDirty}
+              isDirty={rotationDirty}
               saving={saving}
-              onSave={onSave}
-              onDiscard={onDiscard}
-              saveLabel="Save"
+              onSave={onSaveRotation}
+              onDiscard={onDiscardRotation}
+              saveLabel="Save rotation"
               sticky
             />
           </>

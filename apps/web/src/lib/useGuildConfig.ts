@@ -95,6 +95,9 @@ export type GuildConfigData = {
   };
   sticky: { defaultLineThreshold: number };
   helper: { pingDelayMs: number };
+  qotd: {
+    reminderTemplate: string;
+  };
   moderation: {
     banAppealApproverRoleKeys: string[];
     banMessages: {

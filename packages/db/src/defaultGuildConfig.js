@@ -161,6 +161,15 @@ const DEFAULT_BAN_MESSAGES = {
     "❌ **Your ban appeal for the {serverName} Discord server has been REJECTED.**\n\nYour ban will remain in place.\n**Reason:** {reason}",
 };
 
+/** Keep in sync with @ralevel/shared DEFAULT_QOTD_REMINDER_TEMPLATE. */
+const DEFAULT_QOTD_REMINDER_TEMPLATE =
+  `🌅 **Question and Song of the Day — Reminder**\n\n` +
+  `Today’s QOTD and SOTD is assigned to:\n` +
+  `👉 {currentMention}\n\n` +
+  `Please post the Question and Song of the Day when ready.\n\n` +
+  `🔔 **Next up:** {nextMention}\n` +
+  `You’re next in rotation — please start preparing.`;
+
 /** Production XP rank ladder (Discord role IDs + XP thresholds). */
 const DEFAULT_RANK_LADDER_ROLE_IDS = [
   "1487405095627915315",
@@ -693,6 +702,9 @@ function buildDefaultGuildConfig(guildId) {
     helper: {
       pingDelayMs: 10000,
     },
+    qotd: {
+      reminderTemplate: DEFAULT_QOTD_REMINDER_TEMPLATE,
+    },
     moderation: {
       banAppealApproverRoleKeys: ["admin", "dcHead"],
       banMessages: { ...DEFAULT_BAN_MESSAGES },
@@ -710,6 +722,7 @@ module.exports = {
   DEFAULT_THANK_WORDS,
   DEFAULT_WELCOME_WORDS,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
   DEFAULT_RANK_LADDER,
   ROLE_DEFS,

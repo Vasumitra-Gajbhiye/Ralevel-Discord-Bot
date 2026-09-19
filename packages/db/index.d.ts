@@ -50,6 +50,14 @@ export declare function buildDefaultGuildConfig(guildId: string): Record<string,
 export declare const DEFAULT_COMMAND_PERMISSIONS: Record<string, string[]>;
 export declare const DEFAULT_COMMAND_DISCORD_PERMISSIONS: Record<string, string>;
 export declare const DEFAULT_COMMAND_EPHEMERAL: Record<string, boolean>;
+export declare const DEFAULT_BAN_MESSAGES: {
+  appealUrl: string;
+  banAppealable: string;
+  banNotAppealable: string;
+  appealApproved: string;
+  appealRejected: string;
+};
+export declare const DEFAULT_QOTD_REMINDER_TEMPLATE: string;
 export declare function normalizeIdLabels(
   raw: unknown,
 ): { id: string; label: string }[];

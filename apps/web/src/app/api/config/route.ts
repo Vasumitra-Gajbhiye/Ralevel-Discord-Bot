@@ -55,6 +55,7 @@ const PATCHABLE = [
   "polls",
   "sticky",
   "helper",
+  "qotd",
   "moderation",
 ] as const;
 
@@ -123,7 +124,8 @@ export async function PUT(request: Request) {
             key === "commandDiscordPermissions" ||
             key === "commandDisplayNames" ||
             key === "commandMetadataOverrides" ||
-            key === "commandEphemeral"
+            key === "commandEphemeral" ||
+            key === "qotd"
           ) {
             doc.markModified(key);
           }

@@ -1,3 +1,5 @@
+const { DEFAULT_QOTD_REMINDER_TEMPLATE } = require("@ralevel/db");
+const { renderMessageTemplate } = require("@ralevel/shared");
 const {
   getReminderHourIst,
   getISTDateInfo,
@@ -11,6 +13,13 @@ const {
 } = require("../utils/guildConfigStore");
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // every 5 minutes
+const DISCORD_CONTENT_LIMIT = 2000;
+
+function resolveReminderTemplate(cfg) {
+  const stored = cfg?.qotd?.reminderTemplate;
+  if (typeof stored === "string" && stored.trim()) return stored;
+  return DEFAULT_QOTD_REMINDER_TEMPLATE;
+}
 
 module.exports = function qotdSystem(client) {
   async function checkAndSendReminder() {
@@ -67,6 +76,29 @@ module.exports = function qotdSystem(client) {
         return;
       }
 
+      const template = resolveReminderTemplate(cfg);
+      const message = renderMessageTemplate(template, {
+        currentMention: `<@${current.id}>`,
+        nextMention: `<@${next.id}>`,
+        currentTag: current.tag || current.id,
+        nextTag: next.tag || next.id,
+        currentId: current.id,
+        nextId: next.id,
+        date: dateStr,
+      });
+
+      if (!message.trim()) {
+        console.warn("[QOTD] Skip: reminder template rendered empty.");
+        return;
+      }
+
+      if (message.length > DISCORD_CONTENT_LIMIT) {
+        console.warn(
+          `[QOTD] Skip: rendered reminder is ${message.length} characters (limit ${DISCORD_CONTENT_LIMIT}).`,
+        );
+        return;
+      }
+
       const channel = await client.channels.fetch(reminderChannelId);
       if (!channel) {
         console.warn(
@@ -81,14 +113,6 @@ module.exports = function qotdSystem(client) {
         );
         return;
       }
-
-      const message =
-        `🌅 **Question and Song of the Day — Reminder**\n\n` +
-        `Today’s QOTD and SOTD is assigned to:\n` +
-        `👉 <@${current.id}>\n\n` +
-        `Please post the Question and Song of the Day when ready.\n\n` +
-        `🔔 **Next up:** <@${next.id}>\n` +
-        `You’re next in rotation — please start preparing.`;
 
       console.log(
         `[QOTD] ${dateStr} | index=${rotation.currentIndex} | current=${current.id}`,
