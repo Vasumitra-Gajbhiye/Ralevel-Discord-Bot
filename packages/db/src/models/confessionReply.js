@@ -16,7 +16,26 @@ const ConfessionReplySchema = new mongoose.Schema(
 
     anonymousNumber: {
       type: Number,
-      required: true,
+      default: null,
+    },
+
+    // Defaults to APPROVED so replies saved before approval existed stay valid.
+    // New replies are created explicitly as PENDING.
+    status: {
+      type: String,
+      enum: ["PENDING", "APPROVED", "REJECTED"],
+      default: "APPROVED",
+      index: true,
+    },
+
+    modActionBy: {
+      type: String,
+      default: null,
+    },
+
+    reviewedAt: {
+      type: Date,
+      default: null,
     },
 
     content: {

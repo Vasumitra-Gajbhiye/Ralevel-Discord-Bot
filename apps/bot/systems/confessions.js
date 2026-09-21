@@ -188,6 +188,165 @@ module.exports = function confessionSystem(client) {
         return interaction.showModal(modal);
       }
 
+      /* ---------- REPLY APPROVE / REJECT ---------- */
+      if (
+        id.startsWith("confess_rapprove:") ||
+        id.startsWith("confess_rreject:")
+      ) {
+        const cfg = getGuildConfig();
+        const approverRoleIds = resolveRoleKeys(
+          cfg.confessions?.approverRoleKeys || [],
+        );
+        const member = interaction.member;
+        if (
+          approverRoleIds.length &&
+          (!member ||
+            !approverRoleIds.some((rid) => member.roles.cache.has(rid)))
+        ) {
+          return interaction.reply({
+            content: "❌ You do not have permission to review replies.",
+            ephemeral: true,
+          });
+        }
+
+        await interaction.deferUpdate();
+
+        const [action, replyDocId] = id.split(":");
+        const isApprove = action === "confess_rapprove";
+
+        const reply = await ConfessionReply.findById(replyDocId).catch(
+          () => null,
+        );
+
+        if (!reply || reply.status !== "PENDING") {
+          await interaction.editReply({
+            content: "⚠️ This reply has already been reviewed.",
+            embeds: [],
+            components: [],
+          });
+          return;
+        }
+
+        const resolvedPayload = (decision) => {
+          const embed = new EmbedBuilder()
+            .setTitle(`Anonymous Reply to Confession (#${reply.confessionId})`)
+            .setDescription(reply.content)
+            .setColor(decision === "approved" ? "#00B894" : "#ff4d4d")
+            .setFooter({
+              text: `${decision === "approved" ? "Approved" : "Rejected"} by ${interaction.user.tag}`,
+            })
+            .setTimestamp();
+          if (reply.attachment) embed.setImage(reply.attachment);
+          return { content: null, embeds: [embed], components: [] };
+        };
+
+        const dmAuthor = (text) =>
+          client.users
+            .fetch(reply.authorId)
+            .then((u) => u.send(text))
+            .catch(() => {});
+
+        /* ----- REJECT ----- */
+        if (!isApprove) {
+          reply.status = "REJECTED";
+          reply.reviewedAt = new Date();
+          reply.modActionBy = interaction.user.id;
+          await reply.save();
+
+          dmAuthor(
+            `❌ Your reply to confession #${reply.confessionId} was rejected.`,
+          );
+          await interaction.editReply(resolvedPayload("rejected"));
+          await interaction
+            .followUp({ ephemeral: true, content: "❌ Reply rejected." })
+            .catch(() => {});
+          return;
+        }
+
+        /* ----- APPROVE ----- */
+        try {
+          const confession = await Confession.findOne({
+            confessionId: reply.confessionId,
+          });
+
+          if (!confession?.threadId) {
+            await interaction
+              .followUp({
+                ephemeral: true,
+                content:
+                  "❌ The original confession or its thread no longer exists. Reject this reply instead.",
+              })
+              .catch(() => {});
+            return;
+          }
+
+          const thread = await client.channels
+            .fetch(confession.threadId)
+            .catch(() => null);
+
+          if (!thread?.isTextBased?.()) {
+            await interaction
+              .followUp({
+                ephemeral: true,
+                content:
+                  "❌ Could not find the confession thread. Reject this reply instead.",
+              })
+              .catch(() => {});
+            return;
+          }
+
+          const anonymousNumber = await getOrAssignAnonymousNumber(
+            confession.confessionId,
+            reply.authorId,
+          );
+
+          if (!anonymousNumber) {
+            await interaction
+              .followUp({
+                ephemeral: true,
+                content:
+                  "❌ Could not assign an anonymous identity. The reply is still pending.",
+              })
+              .catch(() => {});
+            return;
+          }
+
+          const replyEmbed = new EmbedBuilder()
+            .setTitle(`Anonymous User #${anonymousNumber}`)
+            .setDescription(reply.content)
+            .setColor(randomConfessionColor());
+
+          if (reply.attachment) replyEmbed.setImage(reply.attachment);
+
+          const msg = await thread.send({ embeds: [replyEmbed] });
+
+          reply.status = "APPROVED";
+          reply.anonymousNumber = anonymousNumber;
+          reply.messageId = msg.id;
+          reply.reviewedAt = new Date();
+          reply.modActionBy = interaction.user.id;
+          await reply.save();
+
+          dmAuthor(
+            `✅ Your reply to confession #${reply.confessionId} has been approved and posted.`,
+          );
+          await interaction.editReply(resolvedPayload("approved"));
+          await interaction
+            .followUp({ ephemeral: true, content: "✅ Reply approved and posted." })
+            .catch(() => {});
+        } catch (err) {
+          console.error("[confessions] Reply approve failed:", err);
+          await interaction
+            .followUp({
+              ephemeral: true,
+              content:
+                "❌ Failed to approve this reply. Check bot logs — the reply is still pending.",
+            })
+            .catch(() => {});
+        }
+        return;
+      }
+
       /* ---------- APPROVE / REJECT ---------- */
       if (
         !id.startsWith("confess_approve:") &&
@@ -488,6 +647,17 @@ module.exports = function confessionSystem(client) {
           });
         }
 
+        const banned = await ConfessionBan.findOne({
+          userId: interaction.user.id,
+        });
+
+        if (banned) {
+          return interaction.reply({
+            content: "🚫 You are banned from submitting confessions.",
+            ephemeral: true,
+          });
+        }
+
         const confession = await Confession.findOne({
           confessionId: targetId,
         });
@@ -508,48 +678,55 @@ module.exports = function confessionSystem(client) {
           });
         }
 
-        const anonymousNumber = await getOrAssignAnonymousNumber(
-          confession.confessionId,
-          interaction.user.id,
-        );
+        const reply = await ConfessionReply.create({
+          confessionId: confession.confessionId,
+          authorId: interaction.user.id,
+          content: replyText,
+          attachment,
+          status: "PENDING",
+        });
 
-        if (!anonymousNumber) {
+        try {
+          const modChannelKey =
+            getGuildConfig().confessions?.modChannelKey || "modAction";
+          const modChannel = await client.channels.fetch(
+            getChannelId(modChannelKey),
+          );
+
+          const embed = new EmbedBuilder()
+            .setTitle(
+              `Anonymous Reply to Confession (#${confession.confessionId})`
+            )
+            .setDescription(replyText)
+            .setColor("#f1c40f");
+
+          if (attachment) embed.setImage(attachment);
+
+          const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId(`confess_rapprove:${reply._id}`)
+              .setLabel("Approve")
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId(`confess_rreject:${reply._id}`)
+              .setLabel("Reject")
+              .setStyle(ButtonStyle.Danger)
+          );
+
+          await modChannel.send({ embeds: [embed], components: [row] });
+        } catch (err) {
+          console.error("[confessions] Failed to send reply for review:", err);
+          await ConfessionReply.deleteOne({ _id: reply._id }).catch(() => {});
           return interaction.reply({
             content:
-              "❌ Could not assign an anonymous identity for this reply. Please try again.",
+              "❌ Could not submit your reply for review. Please try again later.",
             ephemeral: true,
           });
         }
 
-        const thread = await client.channels.fetch(
-          confession.threadId
-        );
-
-        const replyEmbed = new EmbedBuilder()
-          .setTitle(`Anonymous User #${anonymousNumber}`)
-          .setDescription(replyText)
-          .setColor(randomConfessionColor());
-
-        if (attachment) {
-          replyEmbed.setImage(attachment);
-        }
-
-        const msg = await thread.send({
-          embeds: [replyEmbed],
-        });
-
-        await ConfessionReply.create({
-          confessionId: confession.confessionId,
-          authorId: interaction.user.id,
-          anonymousNumber,
-          content: replyText,
-          attachment,
-          messageId: msg.id,
-        });
-
         return interaction.reply({
           content:
-            "✅ Your anonymous reply has been posted in the thread.",
+            "📨 **Your reply has been submitted for review.**\nIt will appear in the thread once a moderator approves it.",
           ephemeral: true,
         });
       }
