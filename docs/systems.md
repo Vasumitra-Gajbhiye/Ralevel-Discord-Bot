@@ -368,7 +368,7 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **Workflow:**
 
-1. User clicks Apply button in `APPLICATION_CHANNEL`
+1. User clicks Apply button in `APPLICATION_CHANNEL`. If the button has `certificates.panel.buttons[].requiredRoleKeys` (editable at `/settings/certificates`), the user must hold **all** those roles or is told which are missing. Empty = no requirement (Helper defaults to `srHelper`).
 2. Creates `CertificateApplication` in MongoDB (status: `pending`)
 3. Posts review embed to `REVIEW_CHANNEL` with Approve/Reject buttons
 4. Admin approves → status `approved`, DMs applicant (or `CERT_UPDATES_CHANNEL` fallback)

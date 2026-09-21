@@ -10,6 +10,7 @@ const {
   getGuildConfig,
   tryGetGuildConfig,
   setGuildConfig,
+  getRoleMap,
 } = require("./guildConfigStore");
 
 const SEND_OPTIONS = { allowedMentions: { parse: [] } };
@@ -25,6 +26,25 @@ function isValidCertTypeId(certTypeId) {
 
 function getCertTypeLabel(certTypeId) {
   return certTypeId;
+}
+
+/**
+ * Roles from button.requiredRoleKeys that the member lacks (applicant must hold ALL).
+ * Keys with no configured Discord role are ignored so a deleted role can't lock everyone out.
+ * Returns [{ key, label, roleId }].
+ */
+function getMissingCertRoles(button, member, config = getGuildConfig()) {
+  const keys = Array.isArray(button?.requiredRoleKeys) ? button.requiredRoleKeys : [];
+  const roleMap = getRoleMap(config);
+  const labels = new Map((config.roles || []).map((r) => [r.key, r.label]));
+  const missing = [];
+  for (const key of keys) {
+    const roleId = roleMap[key];
+    if (!roleId) continue;
+    if (member?.roles?.cache?.has(roleId)) continue;
+    missing.push({ key, label: labels.get(key) || key, roleId });
+  }
+  return missing;
 }
 
 function getCertTypeIdFromCustomId(customId) {
@@ -198,6 +218,7 @@ module.exports = {
   SEND_OPTIONS,
   buildCertPanelPayload,
   getCertTypeLabel,
+  getMissingCertRoles,
   getCertTypeIdFromCustomId,
   isValidCertTypeId,
   isCertPanelMessage,

@@ -2,6 +2,7 @@ const {
   buildCertPanelPayload,
   getCertTypeIdFromCustomId,
   getCertTypeLabel,
+  getMissingCertRoles,
   isCertPanelMessage,
   isValidCertTypeId,
   SEND_OPTIONS,
@@ -154,7 +155,29 @@ function testPanelMessageDetection() {
   );
 }
 
+function testMissingCertRoles() {
+  const config = {
+    roles: [
+      { key: "writer", label: "Writer", roleId: "r1" },
+      { key: "srWriter", label: "Sr Writer", roleId: "r2" },
+      { key: "unset", label: "Unset", roleId: "" },
+    ],
+  };
+  const member = (...ids) => ({ roles: { cache: new Set(ids) } });
+  const keysOf = (btn, m) => getMissingCertRoles(btn, m, config).map((r) => r.key);
+
+  assert(keysOf({}, member()).length === 0, "no requirement -> none missing");
+  assert(keysOf({ requiredRoleKeys: [] }, member()).length === 0, "empty -> none missing");
+  const both = { requiredRoleKeys: ["writer", "srWriter"] };
+  assert(keysOf(both, member("r1", "r2")).length === 0, "all held -> none missing");
+  assert(keysOf(both, member("r1")).join() === "srWriter", "one missing");
+  assert(keysOf(both, member()).join() === "writer,srWriter", "all missing");
+  assert(keysOf({ requiredRoleKeys: ["unset", "gone"] }, member()).length === 0, "unresolvable keys ignored");
+  assert(getMissingCertRoles(both, member("r1"), config)[0].label === "Sr Writer", "label returned");
+}
+
 function main() {
+  testMissingCertRoles();
   testCustomIdHelpers();
   testCertTypeIdValidation();
   testBuildPayload();

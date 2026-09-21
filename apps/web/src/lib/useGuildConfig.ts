@@ -64,6 +64,7 @@ export type GuildConfigData = {
         certTypeId: string;
         label: string;
         style: "Primary" | "Secondary" | "Success" | "Danger";
+        requiredRoleKeys?: string[];
       }[];
     };
   };

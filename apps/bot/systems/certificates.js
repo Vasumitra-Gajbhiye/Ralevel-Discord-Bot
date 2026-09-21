@@ -25,6 +25,7 @@ const {
 const {
   getCertTypeLabel,
   getCertTypeIdFromCustomId,
+  getMissingCertRoles,
   isValidCertTypeId,
   syncCertPanel,
 } = require("../utils/certPanel");
@@ -256,19 +257,25 @@ module.exports = function certificateSystem(client) {
         if (guild)
           member = await guild.members.fetch(user.id).catch(() => null);
 
-        // Eligibility: helper requires Senior Helper role
-        if (certTypeId === "helper") {
-          const requiredRoleIds = resolveRoleKeys(["srHelper"]);
-          if (
-            !member ||
-            !requiredRoleIds.some((rid) => member.roles.cache.has(rid))
-          ) {
-            return interaction.editReply({
-              content:
-                `❌ You are not eligible for the ${type} certificate.\n` +
-                "If you think this is an error, contact staff by opening a ticket.",
-            });
-          }
+        // Eligibility: applicant must hold every role in panelButton.requiredRoleKeys
+        const required = Array.isArray(panelButton.requiredRoleKeys)
+          ? panelButton.requiredRoleKeys
+          : [];
+        if (required.length && !member) {
+          return interaction.editReply({
+            content: `❌ You are not eligible for the ${type} certificate.`,
+          });
+        }
+        const missingRoles = getMissingCertRoles(panelButton, member, cfg);
+        if (missingRoles.length) {
+          return interaction.editReply({
+            content:
+              `❌ You are not eligible for the ${type} certificate.\n` +
+              `You need the following role(s) to apply: ${missingRoles
+                .map((r) => `**${r.label}**`)
+                .join(", ")}.\n` +
+              "If you think this is an error, contact staff by opening a ticket.",
+          });
         }
 
         // Disallow duplicate pending application of same type

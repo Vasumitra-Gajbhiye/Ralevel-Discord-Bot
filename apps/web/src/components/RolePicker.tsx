@@ -9,9 +9,16 @@ type RolePickerProps = {
   roles: RoleOption[];
   selectedKeys: string[];
   onChange: (keys: string[]) => void;
+  /** Wording for the removal confirm, e.g. "this command". */
+  removeNoun?: string;
 };
 
-export function RolePicker({ roles, selectedKeys, onChange }: RolePickerProps) {
+export function RolePicker({
+  roles,
+  selectedKeys,
+  onChange,
+  removeNoun = "this command",
+}: RolePickerProps) {
   const [open, setOpen] = useState(false);
   const [pendingRemoveKey, setPendingRemoveKey] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -146,8 +153,8 @@ export function RolePicker({ roles, selectedKeys, onChange }: RolePickerProps) {
         title="Remove role"
         message={
           pendingRole
-            ? `Remove "${pendingRole.label}" from this command?`
-            : "Remove this role from the command?"
+            ? `Remove "${pendingRole.label}" from ${removeNoun}?`
+            : `Remove this role from ${removeNoun}?`
         }
         confirmLabel="Remove"
         variant="danger"

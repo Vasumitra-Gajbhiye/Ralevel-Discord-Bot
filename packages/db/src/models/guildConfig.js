@@ -88,6 +88,8 @@ const CertPanelButtonSchema = new mongoose.Schema(
       enum: ["Primary", "Secondary", "Success", "Danger"],
       default: "Primary",
     },
+    // Role keys the applicant must ALL hold to apply. Empty = no requirement.
+    requiredRoleKeys: { type: [String], default: [] },
   },
   { _id: false },
 );

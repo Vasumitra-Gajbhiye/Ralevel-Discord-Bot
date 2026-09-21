@@ -384,6 +384,19 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     $set["certificates.panel"] = buildDefaultCertPanel(
       applicationChannel || process.env.APPLICATION_CHANNEL || "",
     );
+  } else if (
+    Array.isArray(raw.certificates.panel.buttons) &&
+    raw.certificates.panel.buttons.some((b) => !Array.isArray(b?.requiredRoleKeys))
+  ) {
+    // Helper used to be hard-coded to require Sr Helper; preserve that.
+    $set["certificates.panel.buttons"] = raw.certificates.panel.buttons.map((b) =>
+      Array.isArray(b?.requiredRoleKeys)
+        ? b
+        : {
+            ...b,
+            requiredRoleKeys: b?.certTypeId === "helper" ? ["srHelper"] : [],
+          },
+    );
   }
 
   if (!raw.modmail || typeof raw.modmail !== "object") {

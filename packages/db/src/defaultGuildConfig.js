@@ -502,10 +502,10 @@ function buildDefaultCertPanel(channelId = "") {
     footer: "Only one pending application per certificate is permitted.",
     showTimestamp: true,
     buttons: [
-      { certTypeId: "helper", label: "Apply — Helper", style: "Primary" },
-      { certTypeId: "writer", label: "Apply — Writer", style: "Primary" },
-      { certTypeId: "resource", label: "Apply — Resource", style: "Primary" },
-      { certTypeId: "graphic", label: "Apply — Graphic", style: "Primary" },
+      { certTypeId: "helper", label: "Apply — Helper", style: "Primary", requiredRoleKeys: ["srHelper"] },
+      { certTypeId: "writer", label: "Apply — Writer", style: "Primary", requiredRoleKeys: [] },
+      { certTypeId: "resource", label: "Apply — Resource", style: "Primary", requiredRoleKeys: [] },
+      { certTypeId: "graphic", label: "Apply — Graphic", style: "Primary", requiredRoleKeys: [] },
     ],
   };
 }

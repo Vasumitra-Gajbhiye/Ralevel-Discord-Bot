@@ -295,6 +295,7 @@ export default function CertificatesSettingsPage() {
                       certTypeId: "",
                       label: "Apply",
                       style: "Primary",
+                      requiredRoleKeys: [],
                     },
                   ],
                 })
@@ -312,8 +313,12 @@ export default function CertificatesSettingsPage() {
             <div className="stack" style={{ gap: "0.5rem" }}>
               {panel.buttons.map((button, i) => (
                 <div
-                  className="row"
                   key={`button-${i}`}
+                  className="stack"
+                  style={{ gap: "0.5rem" }}
+                >
+                <div
+                  className="row"
                   style={{ alignItems: "flex-end", margin: 0 }}
                 >
                   <div className="field" style={{ flex: 2, minWidth: "10rem" }}>
@@ -385,6 +390,25 @@ export default function CertificatesSettingsPage() {
                       Remove
                     </button>
                   </div>
+                </div>
+                <div className="field" style={{ margin: 0 }}>
+                  <label>Required roles</label>
+                  <RolePicker
+                    roles={roles}
+                    selectedKeys={button.requiredRoleKeys ?? []}
+                    onChange={(keys) =>
+                      updateButton(i, { requiredRoleKeys: keys })
+                    }
+                    removeNoun="this requirement"
+                  />
+                  <p
+                    className="muted"
+                    style={{ margin: "0.25rem 0 0", fontSize: "0.8rem" }}
+                  >
+                    Applicants must have all of these roles. Leave empty for no
+                    requirement.
+                  </p>
+                </div>
                 </div>
               ))}
             </div>
