@@ -33,19 +33,25 @@ function randomConfessionColor() {
   return CONFESSION_COLORS[Math.floor(Math.random() * CONFESSION_COLORS.length)];
 }
 
-/* Buttons shown under EVERY approved confession */
-function confessionButtons(confessionId) {
-  return new ActionRowBuilder().addComponents(
+/* Buttons shown under every approved confession (Reply only if replies are allowed) */
+function confessionButtons(confessionId, allowReply = true) {
+  const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId("confess_open")
       .setLabel("Submit a confession!")
-      .setStyle(ButtonStyle.Primary),
-
-    new ButtonBuilder()
-      .setCustomId(`confess_reply_open:${confessionId}`)
-      .setLabel("Reply")
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Primary)
   );
+
+  if (allowReply) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`confess_reply_open:${confessionId}`)
+        .setLabel("Reply")
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  return row;
 }
 
 function buildResolvedReviewPayload(confession, { decision, moderatorTag }) {
@@ -153,6 +159,17 @@ module.exports = function confessionSystem(client) {
       /* ---------- OPEN REPLY MODAL ---------- */
       if (id.startsWith("confess_reply_open")) {
         const [, confessionId] = id.split(":");
+
+        const target = await Confession.findOne({
+          confessionId: Number(confessionId),
+        });
+
+        if (target && !target.allowReply) {
+          return interaction.reply({
+            content: "❌ Replies are not allowed on this confession.",
+            ephemeral: true,
+          });
+        }
 
         const modal = new ModalBuilder()
           .setCustomId(`confess_reply_modal:${confessionId}`)
@@ -268,6 +285,17 @@ module.exports = function confessionSystem(client) {
           const confession = await Confession.findOne({
             confessionId: reply.confessionId,
           });
+
+          if (confession && !confession.allowReply) {
+            await interaction
+              .followUp({
+                ephemeral: true,
+                content:
+                  "❌ Replies are disabled on this confession. Reject this reply instead.",
+              })
+              .catch(() => {});
+            return;
+          }
 
           if (!confession?.threadId) {
             await interaction
@@ -442,18 +470,24 @@ module.exports = function confessionSystem(client) {
           const msg = await vent.send({
             embeds: [embed],
             components: [
-              confessionButtons(confession.confessionId),
+              confessionButtons(
+                confession.confessionId,
+                confession.allowReply,
+              ),
             ],
           });
 
-          const thread = await msg.startThread({
-            name: `Confession #${confession.confessionId}`,
-            autoArchiveDuration: 1440,
-          });
+          /* No thread when replies are disabled */
+          const thread = confession.allowReply
+            ? await msg.startThread({
+                name: `Confession #${confession.confessionId}`,
+                autoArchiveDuration: 1440,
+              })
+            : null;
 
           confession.status = "APPROVED";
           confession.postedMessageId = msg.id;
-          confession.threadId = thread.id;
+          confession.threadId = thread?.id ?? null;
           confession.reviewedAt = new Date();
           confession.modActionBy = interaction.user.id;
           await confession.save();
@@ -476,7 +510,9 @@ module.exports = function confessionSystem(client) {
           await interaction
             .followUp({
               ephemeral: true,
-              content: "✅ Confession approved and thread created.",
+              content: confession.allowReply
+                ? "✅ Confession approved and thread created."
+                : "✅ Confession approved (replies disabled, no thread created).",
             })
             .catch(() => {});
           return;
@@ -662,10 +698,9 @@ module.exports = function confessionSystem(client) {
           confessionId: targetId,
         });
 
-        if (!confession || !confession.threadId) {
+        if (!confession) {
           return interaction.reply({
-            content:
-              "❌ That confession does not exist or has no discussion thread.",
+            content: "❌ That confession does not exist.",
             ephemeral: true,
           });
         }
@@ -674,6 +709,14 @@ module.exports = function confessionSystem(client) {
           return interaction.reply({
             content:
               "❌ Replies are not allowed on this confession.",
+            ephemeral: true,
+          });
+        }
+
+        if (!confession.threadId) {
+          return interaction.reply({
+            content:
+              "❌ That confession has no discussion thread.",
             ephemeral: true,
           });
         }
