@@ -4,7 +4,9 @@ const {
   ChannelType,
   EmbedBuilder,
   Events,
+  MessageReferenceType,
   ModalBuilder,
+  StickerFormatType,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   TextInputBuilder,
@@ -326,10 +328,72 @@ function fileFailureEntries(files, reason) {
   }));
 }
 
-function prepareRelayAttachments(message, { maxBytes } = {}) {
-  const attachments = message.attachments?.size
-    ? [...message.attachments.values()]
+function forwardedSnapshots(message) {
+  return message?.messageSnapshots?.size
+    ? [...message.messageSnapshots.values()]
     : [];
+}
+
+// The message itself plus the content of any messages forwarded inside it.
+function relaySources(message) {
+  return [message, ...forwardedSnapshots(message)];
+}
+
+function collectionValues(collection) {
+  return collection?.size ? [...collection.values()] : [];
+}
+
+function relayStickers(message) {
+  return relaySources(message).flatMap((source) =>
+    collectionValues(source.stickers)
+  );
+}
+
+function forwardedTextBlock(message) {
+  const snapshots = forwardedSnapshots(message);
+  if (!snapshots.length) return "";
+  return snapshots
+    .map((snapshot) => {
+      const text = relayTextContent(snapshot);
+      if (!text) return "↪ *Forwarded message*";
+      return `↪ *Forwarded message*\n${text
+        .split("\n")
+        .map((line) => `> ${line}`)
+        .join("\n")}`;
+    })
+    .join("\n\n");
+}
+
+function buildRelayDescription(message) {
+  const parts = [relayTextContent(message), forwardedTextBlock(message)];
+  const stickers = relayStickers(message);
+  if (stickers.length) {
+    parts.push(stickers.map((sticker) => `Sticker: ${sticker.name}`).join("\n"));
+  }
+  return parts.filter(Boolean).join("\n\n").slice(0, 4096);
+}
+
+function firstStickerImageUrl(message) {
+  const sticker = relayStickers(message).find(
+    (item) => item.format !== StickerFormatType.Lottie && item.url
+  );
+  return sticker?.url || null;
+}
+
+function applyRelayImage(embed, message, relay) {
+  if (relay.firstImageName) {
+    embed.setImage(`attachment://${relay.firstImageName}`);
+    return;
+  }
+  const stickerUrl = firstStickerImageUrl(message);
+  if (stickerUrl) embed.setImage(stickerUrl);
+}
+
+function prepareRelayAttachments(message, { maxBytes } = {}) {
+  const sources = relaySources(message);
+  const attachments = sources.flatMap((source) =>
+    collectionValues(source.attachments)
+  );
   const files = [];
   const extraFiles = [];
   const failed = [];
@@ -382,7 +446,9 @@ function prepareRelayAttachments(message, { maxBytes } = {}) {
     }
   }
 
-  const gifEmbeds = (message.embeds || []).filter(isGifSourceEmbed);
+  const gifEmbeds = sources
+    .flatMap((source) => source.embeds || [])
+    .filter(isGifSourceEmbed);
   for (let i = 0; i < gifEmbeds.length; i++) {
     const embed = gifEmbeds[i];
     const url = gifEmbedMediaUrl(embed);
@@ -421,14 +487,19 @@ function applyRelayAttachmentFields(embed, { nonImageNames = [], failed = [] } =
 
 function hasRelayableContent(message) {
   return (
-    Boolean(relayTextContent(message)) ||
     Boolean(message.content?.trim()) ||
-    Boolean(message.attachments?.size) ||
-    (message.embeds || []).some(isGifSourceEmbed)
+    Boolean(message.messageSnapshots?.size) ||
+    relaySources(message).some(
+      (source) =>
+        Boolean(source.attachments?.size) ||
+        Boolean(source.stickers?.size) ||
+        (source.embeds || []).some(isGifSourceEmbed)
+    )
   );
 }
 
 function referencedMessageId(message) {
+  if (message?.reference?.type === MessageReferenceType.Forward) return null;
   return (
     message?.reference?.messageId ||
     message?.reference?.message_id ||
@@ -510,15 +581,12 @@ function buildUserRelayEmbed(message, relay = {}) {
     .setFooter({ text: `User ID: ${message.author.id}` })
     .setTimestamp(message.createdAt);
 
-  const description = relayTextContent(message);
+  const description = buildRelayDescription(message);
   if (description) {
     embed.setDescription(description);
   }
 
-  if (relay.firstImageName) {
-    embed.setImage(`attachment://${relay.firstImageName}`);
-  }
-
+  applyRelayImage(embed, message, relay);
   applyRelayAttachmentFields(embed, relay);
   return embed;
 }
@@ -541,15 +609,12 @@ function buildStaffRelayEmbed(message, relay = {}) {
     .setAuthor({ name: "Staff" })
     .setTimestamp(message.createdAt);
 
-  const description = relayTextContent(message);
+  const description = buildRelayDescription(message);
   if (description) {
     embed.setDescription(description);
   }
 
-  if (relay.firstImageName) {
-    embed.setImage(`attachment://${relay.firstImageName}`);
-  }
-
+  applyRelayImage(embed, message, relay);
   applyRelayAttachmentFields(embed, relay);
   return embed;
 }
