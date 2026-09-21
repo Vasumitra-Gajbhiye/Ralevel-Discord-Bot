@@ -26,6 +26,7 @@
     "verify:purge-user": "node scripts/verify-purge-user.js",
     "verify:exam-lock": "node scripts/verify-exam-lock.js",
     "verify:modmail-replies": "node scripts/verify-modmail-replies.js",
+    "verify:modmail-ban": "node scripts/verify-modmail-ban.js",
     "seed:guild-config": "node scripts/seed-guild-config.js",
     "deploy-commands": "node scripts/deploy-commands.js",
     "export-command-catalog": "node scripts/export-command-catalog.js"

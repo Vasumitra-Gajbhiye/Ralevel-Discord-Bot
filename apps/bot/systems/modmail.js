@@ -791,14 +791,27 @@ async function closeTicketAsSystem(ticket) {
 
 
 function buildBannedFromModmailEmbed(reason, { ticketClosed = false } = {}) {
-  const description = ticketClosed
-    ? `You are banned from using modmail.\n\n**Reason:** ${reason}\n\nYour open support ticket has been closed.`
-    : `You are banned from using modmail.\n\n**Reason:** ${reason}`;
+  let description = `You are banned from using modmail.\n\n**Reason:** ${reason}`;
+  if (ticketClosed) {
+    description += "\n\nYour open support ticket has been closed.";
+  }
+  description +=
+    "\n\nYou can DM any server admin to request an unban from modmail.";
 
   return new EmbedBuilder()
     .setColor(0xed4245)
     .setTitle("Banned from Modmail")
     .setDescription(description)
+    .setTimestamp();
+}
+
+function buildUnbannedFromModmailEmbed() {
+  return new EmbedBuilder()
+    .setColor(USER_EMBED_COLOR)
+    .setTitle("Unbanned from Modmail")
+    .setDescription(
+      "You have been unbanned from modmail. You can now use modmail again like any regular user."
+    )
     .setTimestamp();
 }
 
@@ -921,7 +934,27 @@ async function handleModmailDm(client, message) {
   if (message.author.bot || message.guild) return;
 
   try {
+    // Ban check comes first so a banned user can never reach a thread or menu.
+    const ban = await findModmailBan(message.author.id);
     let ticket = await findOpenTicketByUser(message.author.id);
+
+    if (ban) {
+      if (ticket) {
+        const staleThread = await client.channels
+          .fetch(ticket.threadId)
+          .catch(() => null);
+        await closeOpenTicket(ticket, {
+          closedBy: "system",
+          thread: staleThread,
+          archiveReason: "User is banned from modmail",
+        });
+      }
+      if (!markMessageProcessed(message.id)) return;
+      await message.channel.send({
+        embeds: [buildBannedFromModmailEmbed(ban.reason)],
+      });
+      return;
+    }
 
     if (ticket) {
       const thread = await client.channels
@@ -952,15 +985,6 @@ async function handleModmailDm(client, message) {
         });
         return;
       }
-    }
-
-    const ban = await findModmailBan(message.author.id);
-    if (ban) {
-      if (!markMessageProcessed(message.id)) return;
-      await message.channel.send({
-        embeds: [buildBannedFromModmailEmbed(ban.reason)],
-      });
-      return;
     }
 
     // No open ticket — show intake menu (any non-bot DM triggers it)
@@ -1217,6 +1241,7 @@ function modmailSystem(client) {
 modmailSystem.closeOpenTicket = closeOpenTicket;
 modmailSystem.findOpenTicketByUser = findOpenTicketByUser;
 modmailSystem.buildBannedFromModmailEmbed = buildBannedFromModmailEmbed;
+modmailSystem.buildUnbannedFromModmailEmbed = buildUnbannedFromModmailEmbed;
 modmailSystem.referencedMessageId = referencedMessageId;
 modmailSystem.counterpartMessageId = counterpartMessageId;
 modmailSystem.buildRelayReplyOptions = buildRelayReplyOptions;

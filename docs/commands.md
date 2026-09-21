@@ -176,7 +176,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/modmail/unban-user-modmail.js` |
-| **Description** | Remove a user from the modmail blacklist |
+| **Description** | Remove a user from the modmail blacklist and DM them that they can use modmail again (reply notes if the DM failed) |
 | **Discord permissions** | `ModerateMembers` |
 | **Role access** | admin, dcHead, srMods, jrMods, trialMods |
 | **Options** | `user` (required) |

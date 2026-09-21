@@ -90,8 +90,16 @@ module.exports = {
       return;
     }
 
-    await interaction.editReply({
-      content: "Ticket closed and archived.",
-    });
+    const confirmEmbed = new EmbedBuilder()
+      .setColor(0xed4245)
+      .setTitle("Ticket Closed")
+      .setDescription("Ticket closed and archived.")
+      .addFields({
+        name: "Reason",
+        value: reason || "No reason provided.",
+      })
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [confirmEmbed] });
   },
 };
