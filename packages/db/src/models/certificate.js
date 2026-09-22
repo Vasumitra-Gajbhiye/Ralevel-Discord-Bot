@@ -37,6 +37,7 @@ const CertificateSchema = new mongoose.Schema({
 
   // Extra helpful fields
   rep: { type: Number, default: 0 },
+  includeRepCount: { type: Boolean, default: false },
   joinedAt: { type: Date, default: null },
 
   // Review channel message reference (for in-place embed updates)

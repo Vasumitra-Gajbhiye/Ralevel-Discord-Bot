@@ -296,6 +296,7 @@ export default function CertificatesSettingsPage() {
                       label: "Apply",
                       style: "Primary",
                       requiredRoleKeys: [],
+                      includeRepCount: false,
                     },
                   ],
                 })
@@ -408,6 +409,24 @@ export default function CertificatesSettingsPage() {
                     Applicants must have all of these roles. Leave empty for no
                     requirement.
                   </p>
+                </div>
+                <div className="field" style={{ margin: 0 }}>
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(button.includeRepCount)}
+                      onChange={(e) =>
+                        updateButton(i, { includeRepCount: e.target.checked })
+                      }
+                    />
+                    Include rep count in review message
+                  </label>
                 </div>
                 </div>
               ))}

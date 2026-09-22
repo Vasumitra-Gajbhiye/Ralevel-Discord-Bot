@@ -10,7 +10,6 @@ function buildPendingReviewEmbed(app, { userTag, userId, channelName }) {
       inline: true,
     },
     { name: "Type", value: `${app.type}`, inline: true },
-    { name: "Rep", value: `${app.rep ?? 0}`, inline: true },
     {
       name: "Joined",
       value: joinedAt
@@ -24,6 +23,10 @@ function buildPendingReviewEmbed(app, { userTag, userId, channelName }) {
       inline: true,
     },
   ];
+
+  if (app.includeRepCount) {
+    fields.splice(1, 0, { name: "Rep", value: `${app.rep ?? 0}`, inline: true });
+  }
 
   if (app.assignedAdminId) {
     fields.push({
@@ -71,44 +74,49 @@ function buildResolvedReviewEmbed(app, { decision, moderatorTag, reason }) {
     statusLabel = "Forfeited";
   }
 
+  const fields = [
+    {
+      name: "Applicant",
+      value: `${app.userTag} (${app.userId})`,
+      inline: true,
+    },
+    { name: "Type", value: `${app.type}`, inline: true },
+    {
+      name: "Joined",
+      value: joinedAt
+        ? `<t:${Math.floor(joinedAt.getTime() / 1000)}:R>`
+        : "Unknown",
+      inline: true,
+    },
+    {
+      name: "Submitted",
+      value: `<t:${Math.floor(app.createdAt.getTime() / 1000)}:F>`,
+      inline: true,
+    },
+    { name: "Application ID", value: `\`${app._id}\``, inline: false },
+    {
+      name: "Status",
+      value: statusLabel,
+      inline: true,
+    },
+    { name: "Moderator", value: moderatorTag, inline: true },
+    {
+      name: "Resolved",
+      value: app.resolvedAt
+        ? `<t:${Math.floor(app.resolvedAt.getTime() / 1000)}:F>`
+        : "Unknown",
+      inline: true,
+    },
+  ];
+
+  if (app.includeRepCount) {
+    fields.splice(2, 0, { name: "Rep", value: `${app.rep ?? 0}`, inline: true });
+  }
+
   const embed = new EmbedBuilder()
     .setTitle(title)
     .setColor(color)
-    .addFields(
-      {
-        name: "Applicant",
-        value: `${app.userTag} (${app.userId})`,
-        inline: true,
-      },
-      { name: "Type", value: `${app.type}`, inline: true },
-      { name: "Rep", value: `${app.rep ?? 0}`, inline: true },
-      {
-        name: "Joined",
-        value: joinedAt
-          ? `<t:${Math.floor(joinedAt.getTime() / 1000)}:R>`
-          : "Unknown",
-        inline: true,
-      },
-      {
-        name: "Submitted",
-        value: `<t:${Math.floor(app.createdAt.getTime() / 1000)}:F>`,
-        inline: true,
-      },
-      { name: "Application ID", value: `\`${app._id}\``, inline: false },
-      {
-        name: "Status",
-        value: statusLabel,
-        inline: true,
-      },
-      { name: "Moderator", value: moderatorTag, inline: true },
-      {
-        name: "Resolved",
-        value: app.resolvedAt
-          ? `<t:${Math.floor(app.resolvedAt.getTime() / 1000)}:F>`
-          : "Unknown",
-        inline: true,
-      },
-    )
+    .addFields(fields)
     .setTimestamp();
 
   if (!isApproved && reason) {

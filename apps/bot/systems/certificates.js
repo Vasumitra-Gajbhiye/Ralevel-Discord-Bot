@@ -307,6 +307,7 @@ module.exports = function certificateSystem(client) {
           userTag: user.tag,
           type,
           rep,
+          includeRepCount: panelButton.includeRepCount ?? false,
           joinedAt,
           status: "pending",
           createdAt: new Date(),

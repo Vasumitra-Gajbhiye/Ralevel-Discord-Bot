@@ -65,6 +65,7 @@ export type GuildConfigData = {
         label: string;
         style: "Primary" | "Secondary" | "Success" | "Danger";
         requiredRoleKeys?: string[];
+        includeRepCount?: boolean;
       }[];
     };
   };

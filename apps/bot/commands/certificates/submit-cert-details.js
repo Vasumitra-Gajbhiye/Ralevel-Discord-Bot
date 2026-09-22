@@ -179,6 +179,48 @@ module.exports = {
         .fetch(getChannelId("review"))
         .catch(() => null);
       if (reviewCh) {
+        const detailFields = [
+          {
+            name: "👤 User",
+            value: `${app.userTag} (${app.userId})`,
+            inline: false,
+          },
+          {
+            name: "📘 Certificate Type",
+            value: app.type,
+            inline: false,
+          },
+          { name: "👤 Legal Name", value: legalName, inline: false },
+          { name: "📩 Email", value: email, inline: false },
+          {
+            name: "🆔 Application ID",
+            value: `\`${applicationId}\``,
+            inline: false,
+          },
+          {
+            name: "🛠️ Recorded By",
+            value: `${interaction.user.tag}`,
+            inline: false,
+          },
+          {
+            name: "⏰ Joined Server",
+            value: app.joinedAt
+              ? `<t:${Math.floor(
+                  new Date(app.joinedAt).getTime() / 1000
+                )}:R>`
+              : "Unknown",
+            inline: true,
+          },
+        ];
+
+        if (app.includeRepCount) {
+          detailFields.push({
+            name: "⭐ Rep Count",
+            value: `${app.rep ?? 0}`,
+            inline: true,
+          });
+        }
+
         await reviewCh
           .send({
             embeds: [
@@ -188,44 +230,7 @@ module.exports = {
                   "A moderator has recorded new certificate details."
                 )
                 .setColor("#FFC107")
-                .addFields(
-                  {
-                    name: "👤 User",
-                    value: `${app.userTag} (${app.userId})`,
-                    inline: false,
-                  },
-                  {
-                    name: "📘 Certificate Type",
-                    value: app.type,
-                    inline: false,
-                  },
-                  { name: "👤 Legal Name", value: legalName, inline: false },
-                  { name: "📩 Email", value: email, inline: false },
-                  {
-                    name: "🆔 Application ID",
-                    value: `\`${applicationId}\``,
-                    inline: false,
-                  },
-                  {
-                    name: "🛠️ Recorded By",
-                    value: `${interaction.user.tag}`,
-                    inline: false,
-                  },
-                  {
-                    name: "⏰ Joined Server",
-                    value: app.joinedAt
-                      ? `<t:${Math.floor(
-                          new Date(app.joinedAt).getTime() / 1000
-                        )}:R>`
-                      : "Unknown",
-                    inline: true,
-                  },
-                  {
-                    name: "⭐ Rep Count",
-                    value: `${app.rep ?? 0}`,
-                    inline: true,
-                  }
-                )
+                .addFields(detailFields)
                 .setTimestamp(),
             ],
           })

@@ -90,6 +90,8 @@ const CertPanelButtonSchema = new mongoose.Schema(
     },
     // Role keys the applicant must ALL hold to apply. Empty = no requirement.
     requiredRoleKeys: { type: [String], default: [] },
+    // Whether the admin review message for this cert type should show the applicant's rep count.
+    includeRepCount: { type: Boolean, default: false },
   },
   { _id: false },
 );
