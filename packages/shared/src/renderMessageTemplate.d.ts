@@ -17,5 +17,6 @@ export declare function renderMessageTemplate(
 ): string;
 
 export declare const BAN_MESSAGE_PLACEHOLDERS: BanMessagePlaceholder[];
+export declare const MOD_POINTS_PLACEHOLDERS: BanMessagePlaceholder[];
 export declare const DEFAULT_QOTD_REMINDER_TEMPLATE: string;
 export declare const QOTD_REMINDER_PLACEHOLDERS: QotdReminderPlaceholder[];

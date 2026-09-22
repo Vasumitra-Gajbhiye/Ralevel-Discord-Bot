@@ -161,6 +161,29 @@ const DEFAULT_BAN_MESSAGES = {
     "❌ **Your ban appeal for the {serverName} Discord server has been REJECTED.**\n\nYour ban will remain in place.\n**Reason:** {reason}",
 };
 
+/** Commands that award moderation points. */
+const MOD_POINT_SOURCES = ["warn", "timeout", "kick", "softban"];
+
+const MOD_POINT_DELETE_MESSAGE_OPTIONS = ["1m", "1h", "1d", "7d"];
+
+const DEFAULT_MOD_POINTS = {
+  enabled: false,
+  threshold: 10,
+  noticeDistance: 3,
+  expiryDays: 0,
+  values: { warn: 2, timeout: 3, kick: 4, softban: 5 },
+  autoBan: {
+    appealable: true,
+    deleteMessages: "1d",
+    reasonTemplate:
+      "Automatic ban: reached {points}/{threshold} moderation points",
+  },
+  banNoticeTemplate:
+    "⚠️ You now have **{points}** moderation points in **{serverName}**. You will be **automatically banned** at **{threshold}** points ({remaining} more).\nLatest: {action} — {reason}",
+  appendToInfractionDms: true,
+  infractionDmSuffix: "\n\n📊 Moderation points: **{points}/{threshold}**",
+};
+
 /** Keep in sync with @ralevel/shared DEFAULT_QOTD_REMINDER_TEMPLATE. */
 const DEFAULT_QOTD_REMINDER_TEMPLATE =
   `🌅 **Question and Song of the Day — Reminder**\n\n` +
@@ -223,6 +246,7 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   unpin: "ManageMessages",
   warnings: "ManageMessages",
   "moderation-history": "ManageMessages",
+  points: "ModerateMembers",
   poll: "ManageMessages",
   "qotd-status": "ManageMessages",
   "add-sticky": "ManageMessages",
@@ -308,6 +332,7 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   unpin: ["admin", "dcHead", "srMods"],
   untimeout: ["admin", "dcHead", "srMods", "trialMods", "jrMods"],
   warn: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
+  points: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   warnings: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   poll: ["admin", "dcHead", "generalStaff", "srMods", "jrMods", "trialMods"],
   "qotd-status": ["admin", "dcHead", "srMods", "jrMods"],
@@ -444,6 +469,7 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   unlock: false,
   unpin: true,
   untimeout: true,
+  points: true,
   warn: false,
   warnings: true,
   website: false,
@@ -712,7 +738,16 @@ function buildDefaultGuildConfig(guildId) {
     moderation: {
       banAppealApproverRoleKeys: ["admin", "dcHead"],
       banMessages: { ...DEFAULT_BAN_MESSAGES },
+      points: cloneDefaultModPoints(),
     },
+  };
+}
+
+function cloneDefaultModPoints() {
+  return {
+    ...DEFAULT_MOD_POINTS,
+    values: { ...DEFAULT_MOD_POINTS.values },
+    autoBan: { ...DEFAULT_MOD_POINTS.autoBan },
   };
 }
 
@@ -726,6 +761,10 @@ module.exports = {
   DEFAULT_THANK_WORDS,
   DEFAULT_WELCOME_WORDS,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_MOD_POINTS,
+  MOD_POINT_SOURCES,
+  MOD_POINT_DELETE_MESSAGE_OPTIONS,
+  cloneDefaultModPoints,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
   DEFAULT_RANK_LADDER,

@@ -10,6 +10,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "verify:rank": "node scripts/verify-rank-system.js",
+    "verify:mod-points": "node scripts/verify-mod-points.js",
     "verify:poll-votes": "node scripts/verify-poll-votes.js",
     "verify:poll-sweeper": "node scripts/verify-poll-sweeper.js",
     "verify:sequential-ids": "node scripts/verify-sequential-ids.js",

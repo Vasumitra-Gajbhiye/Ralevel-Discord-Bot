@@ -2,6 +2,7 @@ const { ModLog, Warning: warning } = require("@ralevel/db");
 const { SlashCommandBuilder } = require("discord.js");
 const logModAction = require("../../utils/logModAction");
 const generateActionId = require("../../utils/generateId.js");
+const modPoints = require("../../utils/modPoints");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -29,13 +30,16 @@ module.exports = {
     const results = await warning.find({ userId: user.id, active: true });
     if (results.length === 0)
       return interaction.editReply(`✅ No warnings found for <@${user.id}>.`);
-    console.log(results);
 
-    results.forEach((result) => {
-      result.active = false;
-      result.save();
-      return;
-    });
+    const warningIds = results.map((result) => result.actionId);
+    await warning.updateMany(
+      { actionId: { $in: warningIds } },
+      { $set: { active: false } },
+    );
+    await modPoints.voidPoints(
+      { source: "warn", sourceActionId: { $in: warningIds } },
+      { reason: `Warnings cleared: ${reason}`, voidedBy: interaction.user.id },
+    );
 
     await logModAction({
       interaction,

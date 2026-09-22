@@ -68,6 +68,63 @@ const BAN_MESSAGE_PLACEHOLDERS = [
   },
 ];
 
+const MOD_POINTS_PLACEHOLDERS = [
+  {
+    key: "points",
+    label: "{points}",
+    description: "User's current active point total (after this infraction).",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+  {
+    key: "threshold",
+    label: "{threshold}",
+    description: "Point total that triggers an automatic ban.",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+  {
+    key: "remaining",
+    label: "{remaining}",
+    description: "Points left before the automatic ban.",
+    templates: ["Ban notice", "Infraction DM line"],
+  },
+  {
+    key: "awarded",
+    label: "{awarded}",
+    description: "Points given for this infraction.",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+  {
+    key: "action",
+    label: "{action}",
+    description: "The infraction that awarded the points (warn, timeout, kick, softban, manual).",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+  {
+    key: "reason",
+    label: "{reason}",
+    description: "Reason the moderator entered for this infraction.",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+  {
+    key: "serverName",
+    label: "{serverName}",
+    description: "Discord server name.",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+  {
+    key: "userTag",
+    label: "{userTag}",
+    description: "User's Discord tag.",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+  {
+    key: "userId",
+    label: "{userId}",
+    description: "User's Discord user ID.",
+    templates: ["Ban notice", "Infraction DM line", "Auto-ban reason"],
+  },
+];
+
 /** Keep in sync with @ralevel/db DEFAULT_QOTD_REMINDER_TEMPLATE. */
 const DEFAULT_QOTD_REMINDER_TEMPLATE =
   `🌅 **Question and Song of the Day — Reminder**\n\n` +
@@ -118,6 +175,7 @@ const QOTD_REMINDER_PLACEHOLDERS = [
 module.exports = {
   renderMessageTemplate,
   BAN_MESSAGE_PLACEHOLDERS,
+  MOD_POINTS_PLACEHOLDERS,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   QOTD_REMINDER_PLACEHOLDERS,
 };

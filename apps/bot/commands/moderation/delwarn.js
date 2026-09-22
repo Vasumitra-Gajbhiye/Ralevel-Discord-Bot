@@ -3,6 +3,7 @@ const { SlashCommandBuilder } = require("discord.js");
 const logModAction = require("../../utils/logModAction");
 const generateActionId = require("../../utils/generateId.js");
 const checkRoleHierarchy = require("../../utils/checkRoleHierarchy.js");
+const modPoints = require("../../utils/modPoints");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -54,6 +55,11 @@ module.exports = {
     warning.delReason = reason;
     await warning.save();
 
+    const voidedPoints = await modPoints.voidPoints(
+      { source: "warn", sourceActionId: warning.actionId },
+      { reason: `Warning deleted: ${reason}`, voidedBy: interaction.user.id },
+    );
+
     const newActionId = generateActionId();
 
     await logModAction({
@@ -71,6 +77,8 @@ module.exports = {
       warningDelReason: reason,
     });
 
-    return interaction.editReply(`🗑️ Warning **${actionId}** deleted.`);
+    return interaction.editReply(
+      `🗑️ Warning **${actionId}** deleted.${voidedPoints ? " Its moderation points were removed." : ""}`,
+    );
   },
 };

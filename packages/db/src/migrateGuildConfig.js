@@ -7,6 +7,7 @@ const {
   buildDefaultCertPanel,
   buildDefaultModmail,
   DEFAULT_BAN_MESSAGES,
+  cloneDefaultModPoints,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
@@ -430,6 +431,10 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
 
   if (!raw.moderation?.banMessages) {
     $set["moderation.banMessages"] = { ...DEFAULT_BAN_MESSAGES };
+  }
+
+  if (!raw.moderation?.points) {
+    $set["moderation.points"] = cloneDefaultModPoints();
   }
 
   if (

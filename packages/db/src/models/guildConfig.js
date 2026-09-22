@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const {
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_MOD_POINTS,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
 } = require("../defaultGuildConfig");
 
@@ -249,6 +250,47 @@ const GuildConfigSchema = new mongoose.Schema(
         appealRejected: {
           type: String,
           default: DEFAULT_BAN_MESSAGES.appealRejected,
+        },
+      },
+      points: {
+        enabled: { type: Boolean, default: DEFAULT_MOD_POINTS.enabled },
+        threshold: { type: Number, default: DEFAULT_MOD_POINTS.threshold },
+        noticeDistance: {
+          type: Number,
+          default: DEFAULT_MOD_POINTS.noticeDistance,
+        },
+        expiryDays: { type: Number, default: DEFAULT_MOD_POINTS.expiryDays },
+        values: {
+          warn: { type: Number, default: DEFAULT_MOD_POINTS.values.warn },
+          timeout: { type: Number, default: DEFAULT_MOD_POINTS.values.timeout },
+          kick: { type: Number, default: DEFAULT_MOD_POINTS.values.kick },
+          softban: { type: Number, default: DEFAULT_MOD_POINTS.values.softban },
+        },
+        autoBan: {
+          appealable: {
+            type: Boolean,
+            default: DEFAULT_MOD_POINTS.autoBan.appealable,
+          },
+          deleteMessages: {
+            type: String,
+            default: DEFAULT_MOD_POINTS.autoBan.deleteMessages,
+          },
+          reasonTemplate: {
+            type: String,
+            default: DEFAULT_MOD_POINTS.autoBan.reasonTemplate,
+          },
+        },
+        banNoticeTemplate: {
+          type: String,
+          default: DEFAULT_MOD_POINTS.banNoticeTemplate,
+        },
+        appendToInfractionDms: {
+          type: Boolean,
+          default: DEFAULT_MOD_POINTS.appendToInfractionDms,
+        },
+        infractionDmSuffix: {
+          type: String,
+          default: DEFAULT_MOD_POINTS.infractionDmSuffix,
         },
       },
     },

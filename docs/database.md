@@ -46,7 +46,7 @@ New IDs are generated via `utils/getNextSequenceId.js`, `utils/getNextPollId.js`
 
 ---
 
-## Collections (19 models)
+## Collections (20 models)
 
 ### `users` — User
 
@@ -357,6 +357,29 @@ Broad audit log for all moderation actions.
 | `timestamp` | Date | When warned |
 
 **Written by:** `/warn`, deleted by `/delete-warning`, `/clear-warnings`
+
+---
+
+### `modpoints` — ModPoint
+
+**Model:** `models/modPoint.js`
+
+One entry per point award. A user's total is the sum of entries that are `active` and, when `moderation.points.expiryDays > 0`, created within that many days.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | User who received the points (indexed) |
+| `userTag` | String | Username at the time |
+| `points` | Number | Points awarded |
+| `source` | String | `warn`, `timeout`, `kick`, `softban` or `manual` |
+| `sourceActionId` | String | `actionId` of the warning / mod log entry that awarded them |
+| `moderatorId` / `moderatorTag` | String | Moderator who issued the infraction |
+| `reason` | String | Infraction reason |
+| `active` | Boolean | `false` once voided (default true) |
+| `voidReason` / `voidedBy` / `voidedAt` | String / String / Date | Why, who and when the entry was voided |
+| `createdAt` / `updatedAt` | Date | Timestamps |
+
+**Written by:** `/warn`, `/timeout`, `/kick`, `/softban`, `/points add`. Voided by `/delete-warning`, `/clear-warnings`, `/untimeout`, `/unban`, `/points remove`, `/points reset` and the dashboard **Point ledger**. Settings live in GuildConfig `moderation.points`.
 
 ---
 

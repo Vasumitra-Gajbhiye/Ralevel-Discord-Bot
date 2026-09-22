@@ -9,6 +9,7 @@ const {
 const generateId = require("../../utils/generateId.js");
 const parseDuration = require("../../utils/parseDuration.js");
 const logModAction = require("../../utils/logModAction.js");
+const modPoints = require("../../utils/modPoints");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -54,10 +55,34 @@ module.exports = {
       });
     }
 
-    // Apply timeout
-    await member.timeout(ms, reason).catch(() => {});
+    await interaction.deferReply();
 
     const actionId = generateId();
+    const preview = await modPoints.previewInfraction(member.id, "timeout");
+
+    // Reaching the ban threshold bans instead, so skip the timeout itself
+    if (preview.zone !== "ban") {
+      try {
+        await member.timeout(ms, reason);
+      } catch (err) {
+        console.error("[timeout] member.timeout failed:", err);
+        return interaction.editReply({
+          content: "❌ I do not have permission to timeout this user.",
+        });
+      }
+
+      const pointsExtra = modPoints.buildInfractionDmExtra(preview, {
+        reason,
+        serverName: interaction.guild.name,
+        userTag: member.user.tag,
+        userId: member.id,
+      });
+      try {
+        await member.send(
+          `⏳ You have been **timed out** in **r/Alevel** for **${durationStr}**.\nReason: **${reason}**${pointsExtra}`,
+        );
+      } catch {}
+    }
 
     // Log entry
     const logReason = `
@@ -94,6 +119,25 @@ Reason: ${reason}
       actionId,
     });
 
+    await modPoints.recordPoints({
+      preview,
+      userId: member.id,
+      userTag: member.user.tag,
+      sourceActionId: actionId,
+      moderatorId: interaction.user.id,
+      moderatorTag: interaction.user.tag,
+      reason,
+    });
+    const enforcement = await modPoints.enforceThreshold({
+      interaction,
+      preview,
+      user: member.user,
+      userId: member.id,
+      userTag: member.user.tag,
+      reason,
+    });
+    const pointsField = modPoints.buildPointsField(preview, enforcement);
+
     // Confirmation embed
     const embed = new EmbedBuilder()
       .setColor(0xff0000)
@@ -106,7 +150,8 @@ Reason: ${reason}
         { name: "Log ID", value: `\`${actionId}\`` }
       )
       .setTimestamp();
+    if (pointsField) embed.addFields(pointsField);
 
-    return interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   },
 };

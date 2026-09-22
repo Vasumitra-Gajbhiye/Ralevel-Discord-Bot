@@ -437,6 +437,31 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 ---
 
+## 14. Moderation point system
+
+**File:** `utils/modPoints.js` (auto-ban via `utils/banUser.js`, shared with `/ban`)
+
+**Purpose:** Infractions give users points. Reaching the threshold **T** bans the user automatically, and every infraction that leaves them at **T − X** or more (but below T) adds a ban notice to their DM.
+
+**Dashboard:** `/moderation/points` (settings, stored in GuildConfig `moderation.points`) and `/moderation/point-ledger` (entries + top users, void/restore). The whole system is off until **Enable the point system** is ticked.
+
+**Settings:** threshold T, notice distance X, expiry days (0 = never; checked when points are read, so changes apply to existing entries), points per command (`warn`, `timeout`, `kick`, `softban`; 0 disables a command), auto-ban appealable + message-deletion window + reason template, ban notice template, and an optional points line added to infraction DMs. Placeholders are listed on the dashboard page (`MOD_POINTS_PLACEHOLDERS` in `@ralevel/shared`).
+
+**Workflow (warn / timeout / kick / softban):**
+
+1. `previewInfraction` works out the new total without writing anything
+2. If the new total is below T: DM the user (with the points line and, in the notice zone, the ban notice), then run the action
+3. If the new total reaches T: skip the infraction DM and the timeout / kick / softban itself, since the ban covers it
+4. After the action succeeds, record a `ModPoint` entry (a failed timeout / kick / softban records nothing)
+5. `enforceThreshold` bans the user using the ban DM templates from **Ban messages** and logs `points-autoban` to the mod log with the bot as moderator
+6. The reply embed gets a **Points** field showing the new total and whether a notice or auto-ban happened
+
+**Reversals:** `/delete-warning` and `/clear-warnings` void the points from those warnings, `/untimeout` voids the latest timeout entry, and `/unban` voids every entry for the user (they start again at 0). Voiding points never unbans anyone.
+
+**Verification:** `npm run verify:mod-points`
+
+---
+
 ## 12. Task display board
 
 **File:** `utils/taskDisplay.js`

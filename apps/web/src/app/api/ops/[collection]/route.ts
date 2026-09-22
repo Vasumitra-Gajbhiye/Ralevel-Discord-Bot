@@ -8,6 +8,7 @@ type AnyModel = Model<Record<string, unknown>>;
 
 type CollectionKey =
   | "warnings"
+  | "modPoints"
   | "notes"
   | "modlogs"
   | "certificates"
@@ -30,6 +31,7 @@ const MODEL_MAP: Record<
   keyof Pick<
     DbModels,
     | "Warning"
+    | "ModPoint"
     | "Note"
     | "ModLog"
     | "Certificate"
@@ -49,6 +51,7 @@ const MODEL_MAP: Record<
   >
 > = {
   warnings: "Warning",
+  modPoints: "ModPoint",
   notes: "Note",
   modlogs: "ModLog",
   certificates: "Certificate",
@@ -139,7 +142,10 @@ export async function GET(
     const filter: Record<string, unknown> = {};
 
     if (userId) filter.userId = userId;
-    if (status) filter.status = status;
+    if (status) {
+      if (collection === "modPoints") filter.active = status === "active";
+      else filter.status = status;
+    }
     if (q) {
       if (collection === "users") {
         filter._id = { $regex: q, $options: "i" };
@@ -159,6 +165,7 @@ export async function GET(
           { question: { $regex: q, $options: "i" } },
           { taskId: { $regex: q, $options: "i" } },
           { actionId: { $regex: q, $options: "i" } },
+          { sourceActionId: { $regex: q, $options: "i" } },
         ];
       }
     }

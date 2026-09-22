@@ -3,6 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const generateActionId = require("../../utils/generateId.js");
 // import logModAction from "../../utils/logModAction.js";
 const logModAction = require("../../utils/logModAction.js");
+const modPoints = require("../../utils/modPoints");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -30,21 +31,32 @@ module.exports = {
         ephemeral: true,
       });
 
-    // DM user
-    try {
-      await member.send(
-        `👢 You have been **kicked** from **r/Alevel**.\nReason: ${reason}`,
-      );
-    } catch {}
+    const preview = await modPoints.previewInfraction(member.id, "kick");
 
-    // Kick
-    try {
-      await member.kick(reason);
-    } catch (err) {
-      return interaction.editReply({
-        content: "❌ I do not have permission to kick this user.",
-        ephemeral: true,
+    // Reaching the ban threshold bans instead, so skip the kick itself
+    if (preview.zone !== "ban") {
+      // DM user
+      const pointsExtra = modPoints.buildInfractionDmExtra(preview, {
+        reason,
+        serverName: interaction.guild.name,
+        userTag: member.user.tag,
+        userId: member.id,
       });
+      try {
+        await member.send(
+          `👢 You have been **kicked** from **r/Alevel**.\nReason: ${reason}${pointsExtra}`,
+        );
+      } catch {}
+
+      // Kick
+      try {
+        await member.kick(reason);
+      } catch (err) {
+        return interaction.editReply({
+          content: "❌ I do not have permission to kick this user.",
+          ephemeral: true,
+        });
+      }
     }
 
     // Log in DB.
@@ -79,6 +91,25 @@ module.exports = {
       actionId,
     });
 
+    await modPoints.recordPoints({
+      preview,
+      userId: member.id,
+      userTag: member.user.tag,
+      sourceActionId: actionId,
+      moderatorId: interaction.user.id,
+      moderatorTag: interaction.user.tag,
+      reason,
+    });
+    const enforcement = await modPoints.enforceThreshold({
+      interaction,
+      preview,
+      user: member.user,
+      userId: member.id,
+      userTag: member.user.tag,
+      reason,
+    });
+    const pointsField = modPoints.buildPointsField(preview, enforcement);
+
     const embed = new EmbedBuilder()
       .setTitle("👢 User Kicked")
       .setColor("#ffaa00")
@@ -89,6 +120,7 @@ module.exports = {
         { name: "Action ID", value: actionId },
       )
       .setTimestamp();
+    if (pointsField) embed.addFields(pointsField);
 
     return interaction.editReply({ embeds: [embed] });
   },

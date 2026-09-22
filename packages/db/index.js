@@ -21,6 +21,7 @@ const QotdRotation = require("./src/models/qotdRotation");
 const Counter = require("./src/models/counter");
 const ModLog = require("./src/models/modlog");
 const Warning = require("./src/models/warning");
+const ModPoint = require("./src/models/modPoint");
 const Note = require("./src/models/note");
 const Kick = require("./src/models/kick");
 const Task = require("./src/models/task");
@@ -38,9 +39,13 @@ const {
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_MOD_POINTS,
+  MOD_POINT_SOURCES,
+  MOD_POINT_DELETE_MESSAGE_OPTIONS,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
 } = require("./src/defaultGuildConfig");
+const { normalizeModPointsConfig } = require("./src/modPointsConfig");
 const {
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
@@ -80,6 +85,7 @@ module.exports = {
   Counter,
   ModLog,
   Warning,
+  ModPoint,
   Note,
   Kick,
   Task,
@@ -96,6 +102,10 @@ module.exports = {
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_BAN_MESSAGES,
+  DEFAULT_MOD_POINTS,
+  MOD_POINT_SOURCES,
+  MOD_POINT_DELETE_MESSAGE_OPTIONS,
+  normalizeModPointsConfig,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
   migrateGuildConfigDocument,

@@ -2,6 +2,7 @@ const { ModLog } = require("@ralevel/db");
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const generateActionId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction.js");
+const modPoints = require("../../utils/modPoints");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -42,6 +43,12 @@ module.exports = {
         content: "❌ That user is not banned or the ID is invalid.",
       });
     }
+
+    // Unbanned users start again at 0 moderation points
+    await modPoints.voidPoints(
+      { userId },
+      { reason: `Unbanned: ${reason}`, voidedBy: interaction.user.id },
+    );
 
     // Prepare targetTag
     const targetTag = userObj ? userObj.tag : `UserID: ${userId}`;

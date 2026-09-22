@@ -291,7 +291,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/moderation/clearwarns.js` |
-| **Description** | Clear all warnings for a user |
+| **Description** | Clear all warnings for a user (also removes the moderation points from those warnings) |
 | **Discord permissions** | None |
 | **Role access** | admin, dcHead |
 | **Hierarchy check** | Yes |
@@ -301,7 +301,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/moderation/delwarn.js` |
-| **Description** | Delete a specific warning by action ID |
+| **Description** | Delete a specific warning by action ID (also removes that warning's moderation points) |
 | **Discord permissions** | None |
 | **Role access** | admin, dcHead, srMods |
 
@@ -385,6 +385,15 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **File** | `commands/moderation/note.js` |
 | **Description** | Add a staff note about a user |
 | **Discord permissions** | None |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+
+### `/points`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/points.js` |
+| **Description** | View or adjust moderation points. Subcommands: `view user`, `add user amount reason`, `remove entryid reason`, `reset user reason`. `add` can trigger the auto-ban. See [Moderation point system](systems.md#14-moderation-point-system) |
+| **Discord permissions** | `ModerateMembers` |
 | **Role access** | admin, dcHead, srMods, jrMods, trialMods |
 
 ### `/pin`

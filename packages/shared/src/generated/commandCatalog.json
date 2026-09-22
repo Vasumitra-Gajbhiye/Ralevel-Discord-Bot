@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T05:24:22.119Z",
+  "generatedAt": "2026-09-22T06:21:38.754Z",
   "commands": [
     {
       "category": "reputation",
@@ -1245,6 +1245,96 @@
         "options": [],
         "name": "ping",
         "description": "Replies with Pong!",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "points",
+      "fileDefault": "ModerateMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 1,
+            "name": "view",
+            "description": "Show a user's active moderation points.",
+            "options": [
+              {
+                "name": "user",
+                "description": "User to check",
+                "required": true,
+                "type": 6
+              }
+            ]
+          },
+          {
+            "type": 1,
+            "name": "add",
+            "description": "Manually add moderation points to a user.",
+            "options": [
+              {
+                "name": "user",
+                "description": "User to add points to",
+                "required": true,
+                "type": 6
+              },
+              {
+                "min_value": 1,
+                "type": 4,
+                "name": "amount",
+                "description": "Number of points to add",
+                "required": true
+              },
+              {
+                "type": 3,
+                "name": "reason",
+                "description": "Reason for adding points",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": 1,
+            "name": "remove",
+            "description": "Remove a single point entry by its ID.",
+            "options": [
+              {
+                "type": 3,
+                "name": "entryid",
+                "description": "Point entry ID (shown in /points view)",
+                "required": true
+              },
+              {
+                "type": 3,
+                "name": "reason",
+                "description": "Reason for removing",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": 1,
+            "name": "reset",
+            "description": "Remove all of a user's moderation points.",
+            "options": [
+              {
+                "name": "user",
+                "description": "User to reset",
+                "required": true,
+                "type": 6
+              },
+              {
+                "type": 3,
+                "name": "reason",
+                "description": "Reason for resetting",
+                "required": true
+              }
+            ]
+          }
+        ],
+        "name": "points",
+        "description": "View or adjust a user's moderation points.",
+        "default_member_permissions": "1099511627776",
         "type": 1
       }
     },

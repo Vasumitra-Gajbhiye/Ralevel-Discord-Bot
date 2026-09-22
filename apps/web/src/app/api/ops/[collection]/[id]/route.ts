@@ -8,6 +8,7 @@ type AnyModel = Model<Record<string, unknown>>;
 
 const MODEL_MAP: Record<string, keyof DbModels> = {
   warnings: "Warning",
+  modPoints: "ModPoint",
   notes: "Note",
   modlogs: "ModLog",
   certificates: "Certificate",

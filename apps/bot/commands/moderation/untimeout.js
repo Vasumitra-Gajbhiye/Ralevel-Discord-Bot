@@ -7,6 +7,8 @@ const {
 
 const generateId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction.js");
+const modPoints = require("../../utils/modPoints");
+const { ModPoint } = require("@ralevel/db");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -48,6 +50,21 @@ module.exports = {
 
     // Remove timeout
     await member.timeout(null).catch(() => {});
+
+    // Remove the points from the most recent timeout
+    const latestTimeoutPoints = await ModPoint.findOne({
+      userId: member.id,
+      source: "timeout",
+      active: true,
+    })
+      .sort({ createdAt: -1, _id: -1 })
+      .lean();
+    if (latestTimeoutPoints) {
+      await modPoints.voidPoints(
+        { _id: latestTimeoutPoints._id },
+        { reason: `Timeout removed: ${reason}`, voidedBy: interaction.user.id },
+      );
+    }
 
     const actionId = generateId();
 

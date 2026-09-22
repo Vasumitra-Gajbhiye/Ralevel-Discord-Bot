@@ -1,5 +1,3 @@
-const { DEFAULT_BAN_MESSAGES } = require("@ralevel/db");
-const { renderMessageTemplate } = require("@ralevel/shared");
 const {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -7,23 +5,9 @@ const {
 } = require("discord.js");
 const generateActionId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
-const { getGuildConfig } = require("../../utils/guildConfigStore");
-
-const DELETE_MESSAGE_SECONDS = {
-  "1m": 60,
-  "1h": 3600,
-  "1d": 86400,
-  "7d": 604800,
-};
+const banUser = require("../../utils/banUser.js");
 
 const SNOWFLAKE_RE = /^\d{17,20}$/;
-
-function formatBanError(err) {
-  const code = err?.code ?? err?.rawError?.code;
-  const message = err?.message || String(err);
-  if (code != null) return `${message} (code ${code})`;
-  return message;
-}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -112,7 +96,6 @@ module.exports = {
     }
 
     const targetId = fromUserOption || fromUserIdOption;
-    const deleteSeconds = DELETE_MESSAGE_SECONDS[deleteMsgs];
 
     let user = resolvedUser;
     if (!user || user.id !== targetId) {
@@ -125,50 +108,18 @@ module.exports = {
 
     const userTag = user?.tag ?? `UserID: ${targetId}`;
 
-    // DM user (may fail for non-members with no mutual servers)
-    if (user) {
-      try {
-        const banMessages = {
-          ...DEFAULT_BAN_MESSAGES,
-          ...getGuildConfig().moderation?.banMessages,
-        };
-        const template = appealable
-          ? banMessages.banAppealable
-          : banMessages.banNotAppealable;
+    const result = await banUser({
+      guild: interaction.guild,
+      targetId,
+      user,
+      userTag,
+      reason,
+      appealable,
+      deleteMessages: deleteMsgs,
+    });
 
-        const message = renderMessageTemplate(template, {
-          reason,
-          serverName: interaction.guild.name,
-          userTag,
-          userId: targetId,
-          appealUrl: banMessages.appealUrl,
-        });
-
-        await user.send(message);
-      } catch {}
-    }
-
-    // Ban by user ID — works even if they are not in the server
-    try {
-      await interaction.guild.bans.create(targetId, {
-        reason,
-        deleteMessageSeconds: deleteSeconds,
-      });
-    } catch (err) {
-      console.error("[ban] bans.create failed:", err);
-      return interaction.editReply({
-        content: `❌ Failed to ban this user: ${formatBanError(err)}`,
-      });
-    }
-
-    try {
-      await interaction.guild.bans.fetch(targetId);
-    } catch (err) {
-      console.error("[ban] bans.fetch verify failed after create:", err);
-      return interaction.editReply({
-        content:
-          "❌ Ban API returned success, but the user is not on the ban list. Check bot **Ban Members** permission and try again.",
-      });
+    if (!result.ok) {
+      return interaction.editReply({ content: result.error });
     }
 
     // Log action (DB + channel)

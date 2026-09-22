@@ -22,6 +22,7 @@ export declare const QotdRotation: Model<any>;
 export declare const Counter: Model<any>;
 export declare const ModLog: Model<any>;
 export declare const Warning: Model<any>;
+export declare const ModPoint: Model<any>;
 export declare const Note: Model<any>;
 export declare const Kick: Model<any>;
 export declare const Task: Model<any>;
@@ -57,6 +58,28 @@ export declare const DEFAULT_BAN_MESSAGES: {
   appealApproved: string;
   appealRejected: string;
 };
+export type ModPointSource = "warn" | "timeout" | "kick" | "softban";
+export type ModPointsConfig = {
+  enabled: boolean;
+  threshold: number;
+  noticeDistance: number;
+  expiryDays: number;
+  values: Record<ModPointSource, number>;
+  autoBan: {
+    appealable: boolean;
+    deleteMessages: string;
+    reasonTemplate: string;
+  };
+  banNoticeTemplate: string;
+  appendToInfractionDms: boolean;
+  infractionDmSuffix: string;
+};
+export declare const DEFAULT_MOD_POINTS: ModPointsConfig;
+export declare const MOD_POINT_SOURCES: ModPointSource[];
+export declare const MOD_POINT_DELETE_MESSAGE_OPTIONS: string[];
+export declare function normalizeModPointsConfig(
+  raw: unknown,
+): { ok: true; points: ModPointsConfig } | { ok: false; errors: string[] };
 export declare const DEFAULT_QOTD_REMINDER_TEMPLATE: string;
 export declare function normalizeIdLabels(
   raw: unknown,

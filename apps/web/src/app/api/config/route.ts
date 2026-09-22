@@ -4,7 +4,11 @@ import {
   guildConfigToJson,
 } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
-import { normalizeReputationIdLabels, normalizeRanksConfig } from "@ralevel/db";
+import {
+  normalizeReputationIdLabels,
+  normalizeRanksConfig,
+  normalizeModPointsConfig,
+} from "@ralevel/db";
 import { getCommandCatalog } from "@ralevel/shared/commandCatalog";
 import { validateCommandDisplayNames } from "@ralevel/shared/commandDisplayNames";
 import { validateCommandMetadataOverrides } from "@ralevel/shared/commandMetadataOverrides";
@@ -102,6 +106,17 @@ export async function PUT(request: Request) {
       body.commandMetadataOverrides = validation.overrides;
     }
 
+    if (body.moderation?.points !== undefined) {
+      const validation = normalizeModPointsConfig(body.moderation.points);
+      if (!validation.ok) {
+        return NextResponse.json(
+          { error: validation.errors.join("; ") },
+          { status: 400 },
+        );
+      }
+      body.moderation.points = validation.points;
+    }
+
     for (const key of PATCHABLE) {
       if (body[key] !== undefined) {
         if (key === "reputation") {
@@ -125,7 +140,8 @@ export async function PUT(request: Request) {
             key === "commandDisplayNames" ||
             key === "commandMetadataOverrides" ||
             key === "commandEphemeral" ||
-            key === "qotd"
+            key === "qotd" ||
+            key === "moderation"
           ) {
             doc.markModified(key);
           }

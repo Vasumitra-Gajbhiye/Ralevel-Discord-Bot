@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { ModPointsConfig } from "@ralevel/db";
 
 export type GuildConfigData = {
   guildId: string;
@@ -111,6 +112,7 @@ export type GuildConfigData = {
       appealApproved: string;
       appealRejected: string;
     };
+    points?: ModPointsConfig;
   };
   updatedAt?: string;
 };

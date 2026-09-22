@@ -27,6 +27,8 @@ export const NAV = [
       { href: "/moderation/notes", label: "Notes" },
       { href: "/moderation/logs", label: "Mod logs" },
       { href: "/moderation/ban-messages", label: "Ban messages" },
+      { href: "/moderation/points", label: "Point system" },
+      { href: "/moderation/point-ledger", label: "Point ledger" },
     ],
   },
   {
