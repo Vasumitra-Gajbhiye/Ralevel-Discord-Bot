@@ -2,6 +2,7 @@ const { ModLog, Warning } = require("@ralevel/db");
 const { SlashCommandBuilder } = require("discord.js");
 const logModAction = require("../../utils/logModAction");
 const generateActionId = require("../../utils/generateId.js");
+const checkRoleHierarchy = require("../../utils/checkRoleHierarchy.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -37,6 +38,17 @@ module.exports = {
       return interaction.editReply({
         content: "❌ This warning is already deleted.",
       });
+
+    if (interaction.guild) {
+      const targetMember = await interaction.guild.members
+        .fetch(warning.userId)
+        .catch(() => null);
+
+      const hierarchyError = checkRoleHierarchy(interaction, targetMember);
+      if (hierarchyError) {
+        return interaction.editReply({ content: hierarchyError.message });
+      }
+    }
 
     warning.active = false;
     warning.delReason = reason;
