@@ -606,7 +606,7 @@ function buildDescriptionEmbed(user, description) {
 function buildStaffRelayEmbed(message, relay = {}) {
   const embed = new EmbedBuilder()
     .setColor(STAFF_EMBED_COLOR)
-    .setAuthor({ name: "Staff" })
+    .setAuthor({ name: "Moderator" })
     .setTimestamp(message.createdAt);
 
   const description = buildRelayDescription(message);
