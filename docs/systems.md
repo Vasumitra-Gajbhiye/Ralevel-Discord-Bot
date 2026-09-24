@@ -446,7 +446,7 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **File:** `systems/modDm.js`
 
-**Purpose:** Lets mods start a private DM conversation with any member. Each user gets **one** forum post in the `modDm` forum, reused every time the conversation is reopened, so the full history stays in one place. Messages are relayed both ways as **plain text** (no embeds). Mods stay anonymous. Users can end the conversation or turn off moderator DMs at any time.
+**Purpose:** Lets mods start a private DM conversation with any member. Each user gets **one** forum post in the `modDm` forum, reused every time the conversation is reopened, so the full history stays in one place. Only the intro DM is an embed; the conversation itself is relayed both ways as **plain text**. Mods stay anonymous. Users can end the conversation or turn off moderator DMs at any time.
 
 **Discord events:** Handled via `messageRouter` (`MessageCreate`) and `InteractionCreate` (buttons); open via `/dm`, close via `/close-dm` or the post's **Close conversation** button
 
@@ -456,7 +456,7 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 1. `/dm user [message]` refuses if the forum isn't configured, the target is a bot, the user turned off moderator DMs, a conversation is already open, or the user has an **open modmail ticket** (the reply links to it)
 2. Otherwise it claims the conversation atomically, then reopens the user's existing post (or creates `dm-<username>`) and posts `🟢 Conversation opened by @mod`
-3. The user gets a plain intro DM with **End conversation** and **Don't DM me again** buttons. If the DM fails (closed DMs / blocked bot), the claim is rolled back, a new post is deleted (a reused post gets a notice and is re-archived), and the mod is told
+3. The user gets an intro embed with **End conversation** and **Don't DM me again** buttons on the same message. If the DM fails (closed DMs / blocked bot), the claim is rolled back, a new post is deleted (a reused post gets a notice and is re-archived), and the mod is told
 4. The optional `message` is sent as the first DM and echoed in the post
 5. User DMs relay into the post; staff messages in the post relay to the user. Native replies map both ways (`ModmailMessageLink`). Mentions are always disabled, so `@everyone` from a user can never ping. Messages starting with `.` stay staff-only
 6. If a staff message fails because the user's DMs are now closed (error 50007), the bot posts a warning in the post and closes + archives the conversation

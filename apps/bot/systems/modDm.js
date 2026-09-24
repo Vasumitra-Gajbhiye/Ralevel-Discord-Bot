@@ -4,6 +4,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
+  EmbedBuilder,
   Events,
   PermissionFlagsBits,
   StickerFormatType,
@@ -22,6 +23,7 @@ const modmail = require("./modmail");
 const DM_CLOSED_ERROR_CODE = 50007;
 const MAX_MESSAGE_LENGTH = 2000;
 const NO_MENTIONS = { parse: [] };
+const INTRO_EMBED_COLOR = 0x5865f2;
 
 const END_BUTTON_PREFIX = "moddm_end:";
 const OPT_OUT_BUTTON_ID = "moddm_optout";
@@ -313,15 +315,21 @@ function staffCloseRow() {
   );
 }
 
+// The intro is the only embed; everything after it is plain text.
 function buildIntroMessage(guild, session) {
   const serverName = guild?.name || "the server";
+  const embed = new EmbedBuilder()
+    .setColor(INTRO_EMBED_COLOR)
+    .setTitle(`📩 The ${serverName} moderators would like to talk to you.`.slice(0, 256))
+    .setDescription(
+      [
+        "A moderator will message you here. Just reply in this DM to respond — your messages go straight to the moderation team.",
+        "",
+        "You can end this conversation or stop moderator DMs at any time using the buttons below.",
+      ].join("\n")
+    );
   return {
-    content: [
-      `📩 **The ${serverName} moderators would like to talk to you.**`,
-      "A moderator will message you here. Just reply in this DM to respond — your messages go straight to the moderation team.",
-      "",
-      "You can end this conversation or stop moderator DMs at any time using the buttons below.",
-    ].join("\n"),
+    embeds: [embed],
     components: [introRow(session)],
     allowedMentions: NO_MENTIONS,
   };

@@ -208,7 +208,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/modmail/dm.js` |
-| **Description** | Start (or reopen) a private DM conversation with a member. Opens the user's post in the `modDm` forum and sends them a plain intro DM with End / Don't DM me buttons. Refused if the user turned off moderator DMs, already has an open conversation, has an open modmail ticket, or has DMs closed |
+| **Description** | Start (or reopen) a private DM conversation with a member. Opens the user's post in the `modDm` forum and sends them an intro embed with End / Don't DM me buttons. Refused if the user turned off moderator DMs, already has an open conversation, has an open modmail ticket, or has DMs closed |
 | **Discord permissions** | `ModerateMembers` |
 | **Role access** | admin, dcHead, srMods, jrMods, trialMods |
 | **Options** | `user` (required), `message` (optional first message, max 2000) |

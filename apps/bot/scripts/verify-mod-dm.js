@@ -464,7 +464,13 @@ async function testOpenCreatesPostAndIntro() {
   assert(forumClient.created.length === 1, "one forum post should be created");
   assert(target.sent.length === 1, "user should get the intro DM");
   const intro = target.sent[0];
-  assert(!intro.embeds, "intro must be plain text");
+  assert(intro.embeds?.length === 1, "intro should be a single embed");
+  const introEmbed = intro.embeds[0].toJSON();
+  assert(
+    introEmbed.title.includes("r/alevel moderators would like to talk to you"),
+    "intro title should name the server"
+  );
+  assert(!intro.content, "intro should have no text outside the embed");
   const buttons = intro.components[0].toJSON().components.map((c) => c.custom_id);
   assert(buttons.includes("moddm_end:3"), "End button carries the session");
   assert(buttons.includes("moddm_optout"), "intro offers opt-out");
