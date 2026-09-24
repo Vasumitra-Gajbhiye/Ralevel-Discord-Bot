@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T06:21:38.754Z",
+  "generatedAt": "2026-09-24T04:32:56.722Z",
   "commands": [
     {
       "category": "reputation",
@@ -366,15 +366,9 @@
           },
           {
             "name": "user",
-            "description": "User to ban (pick from list, or leave empty and use userid)",
-            "required": false,
+            "description": "User to ban (pick from list, or paste a user ID if they left the server)",
+            "required": true,
             "type": 6
-          },
-          {
-            "type": 3,
-            "name": "userid",
-            "description": "Discord user ID to ban — use this when they are not in the server",
-            "required": false
           }
         ],
         "name": "ban",
