@@ -392,7 +392,12 @@ module.exports = async function logModAction({
         { name: "Embed?", value: sayMsgEmbedBoolean }
       )
       .setTimestamp();
-  } else if (action === "setnickname") {
+  } else if (
+    action === "setnickname" ||
+    action === "mark-loa" ||
+    action === "mark-partial-loa" ||
+    action === "unmark-loa"
+  ) {
     embed = new EmbedBuilder()
       .setTitle(`🔨 ${prettyAction}`)
       .setColor(0x8ecae6)

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T04:37:30.880Z",
+  "generatedAt": "2026-09-24T05:02:40.716Z",
   "commands": [
     {
       "category": "reputation",
@@ -1020,6 +1020,44 @@
         "name": "mark-cert-finish",
         "description": "Warn an applicant that their certificate will be forfeited after a grace period",
         "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "mark-loa",
+      "fileDefault": "ManageNicknames",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to mark as LOA.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "mark-loa",
+        "description": "Mark a user as on leave of absence (adds -LOA to their nickname).",
+        "default_member_permissions": "134217728",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "mark-partial-loa",
+      "fileDefault": "ManageNicknames",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to mark as partial LOA.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "mark-partial-loa",
+        "description": "Mark a user as on partial leave of absence (adds -PLOA to their nickname).",
+        "default_member_permissions": "134217728",
         "type": 1
       }
     },
@@ -2243,6 +2281,25 @@
         "name": "unlock",
         "description": "Unlock a channel so members can send messages again.",
         "default_member_permissions": "4",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "unmark-loa",
+      "fileDefault": "ManageNicknames",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to remove the LOA tag from.",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "unmark-loa",
+        "description": "Remove a user's LOA / partial LOA tag from their nickname.",
+        "default_member_permissions": "134217728",
         "type": 1
       }
     },
