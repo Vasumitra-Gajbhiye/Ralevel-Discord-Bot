@@ -15,6 +15,7 @@ const ConfessionReply = require("./src/models/confessionReply");
 const ModmailTicket = require("./src/models/modmailTicket");
 const ModmailBan = require("./src/models/modmailBan");
 const ModmailMessageLink = require("./src/models/modmailMessageLink");
+const ModDm = require("./src/models/modDm");
 const Certificate = require("./src/models/certificate");
 const CertRotation = require("./src/models/certRotation");
 const QotdRotation = require("./src/models/qotdRotation");
@@ -79,6 +80,7 @@ module.exports = {
   ModmailTicket,
   ModmailBan,
   ModmailMessageLink,
+  ModDm,
   Certificate,
   CertRotation,
   QotdRotation,

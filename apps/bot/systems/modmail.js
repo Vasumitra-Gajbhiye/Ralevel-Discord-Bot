@@ -16,6 +16,7 @@ const {
   ModmailTicket,
   ModmailBan,
   ModmailMessageLink,
+  ModDm,
   DEFAULT_MODMAIL_CATEGORIES,
 } = require("@ralevel/db");
 const { tryGetGuildConfig } = require("../utils/guildConfigStore");
@@ -389,7 +390,9 @@ function applyRelayImage(embed, message, relay) {
   if (stickerUrl) embed.setImage(stickerUrl);
 }
 
-function prepareRelayAttachments(message, { maxBytes } = {}) {
+// includeGifEmbeds=false is for plain-text relays, where the GIF link in the
+// message content already renders on its own.
+function prepareRelayAttachments(message, { maxBytes, includeGifEmbeds = true } = {}) {
   const sources = relaySources(message);
   const attachments = sources.flatMap((source) =>
     collectionValues(source.attachments)
@@ -446,9 +449,11 @@ function prepareRelayAttachments(message, { maxBytes } = {}) {
     }
   }
 
-  const gifEmbeds = sources
-    .flatMap((source) => source.embeds || [])
-    .filter(isGifSourceEmbed);
+  const gifEmbeds = includeGifEmbeds
+    ? sources
+        .flatMap((source) => source.embeds || [])
+        .filter(isGifSourceEmbed)
+    : [];
   for (let i = 0; i < gifEmbeds.length; i++) {
     const embed = gifEmbeds[i];
     const url = gifEmbedMediaUrl(embed);
@@ -819,6 +824,14 @@ async function findModmailBan(userId) {
   return ModmailBan.findOne({ userId }).lean();
 }
 
+// Queried directly (not via systems/modDm) to avoid a circular require.
+async function hasOpenModDm(userId) {
+  return Boolean(await ModDm.exists({ userId, status: "OPEN" }));
+}
+
+const OPEN_MOD_DM_MESSAGE =
+  "You're currently talking with the moderators in this DM. Press **End conversation** on their first message to close it before opening a support ticket.";
+
 /**
  * Mark a ticket CLOSED and optionally archive its forum thread.
  * Caller is responsible for any user-facing DM.
@@ -1083,6 +1096,10 @@ async function handleCategorySelect(interaction) {
     });
   }
 
+  if (await hasOpenModDm(interaction.user.id)) {
+    return interaction.reply({ content: OPEN_MOD_DM_MESSAGE, ephemeral: true });
+  }
+
   const modal = new ModalBuilder()
     .setCustomId(`${MODAL_CUSTOM_ID_PREFIX}${category}`)
     .setTitle("Describe your problem");
@@ -1137,6 +1154,10 @@ async function handleModalSubmit(client, interaction) {
         "You already have an open support ticket. Reply in this DM to continue that conversation.",
       ephemeral: true,
     });
+  }
+
+  if (await hasOpenModDm(interaction.user.id)) {
+    return interaction.reply({ content: OPEN_MOD_DM_MESSAGE, ephemeral: true });
   }
 
   await interaction.deferReply({ ephemeral: true });
@@ -1247,5 +1268,23 @@ modmailSystem.counterpartMessageId = counterpartMessageId;
 modmailSystem.buildRelayReplyOptions = buildRelayReplyOptions;
 modmailSystem.resolveReplyMessageId = resolveReplyMessageId;
 modmailSystem.isModmailForumParent = isModmailForumParent;
+modmailSystem.getModMailChannelId = getModMailChannelId;
+modmailSystem.getAdminModMailChannelId = getAdminModMailChannelId;
+modmailSystem.hasOpenModDm = hasOpenModDm;
+
+// Relay helpers shared with systems/modDm.js.
+modmailSystem.NOTE_PREFIX = NOTE_PREFIX;
+modmailSystem.MAX_FILES_PER_MESSAGE = MAX_FILES_PER_MESSAGE;
+modmailSystem.markMessageProcessed = markMessageProcessed;
+modmailSystem.hasRelayableContent = hasRelayableContent;
+modmailSystem.buildRelayDescription = buildRelayDescription;
+modmailSystem.relayStickers = relayStickers;
+modmailSystem.prepareRelayAttachments = prepareRelayAttachments;
+modmailSystem.uploadLimitFor = uploadLimitFor;
+modmailSystem.fileFailureEntries = fileFailureEntries;
+modmailSystem.stripSpoilerPrefix = stripSpoilerPrefix;
+modmailSystem.saveMessageLink = saveMessageLink;
+modmailSystem.deleteMessageLinks = deleteMessageLinks;
+modmailSystem.ensureThreadWritable = ensureThreadWritable;
 
 module.exports = modmailSystem;

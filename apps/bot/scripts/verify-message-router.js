@@ -60,6 +60,7 @@ function testNoStrayMessageCreateRegistrations() {
     "../systems/reputation.js",
     "../systems/sticky.js",
     "../systems/modmail.js",
+    "../systems/modDm.js",
   ];
 
   const pattern =
@@ -173,6 +174,76 @@ async function testModmailForumThreadSkipsGuildHandlers() {
     calls.reputation === 0,
     "reputation should be skipped in modmail threads"
   );
+}
+
+async function testModDmForumThreadSkipsGuildHandlers() {
+  const client = createMockClient();
+  const calls = { tracker: 0, sticky: 0, reputation: 0, modDmReply: 0 };
+
+  messageRouter(client, {
+    handleMessageTracker: async () => {
+      calls.tracker += 1;
+    },
+    handleSticky: async () => {
+      calls.sticky += 1;
+    },
+    handleReputation: async () => {
+      calls.reputation += 1;
+    },
+    handleModmailStaffReply: async () => false,
+    handleModDmStaffReply: async () => {
+      calls.modDmReply += 1;
+      return true;
+    },
+  });
+
+  await client.emitMessageCreate(
+    createGuildMessage({
+      channelId: "moddm-thread-1",
+      parentId: "mod-dm-forum",
+      channel: {
+        id: "moddm-thread-1",
+        parentId: "mod-dm-forum",
+        isThread: () => true,
+        send: async () => {},
+      },
+    })
+  );
+
+  assert(calls.modDmReply === 1, "mod DM staff reply should run");
+  assert(calls.tracker === 0, "tracker should be skipped in mod DM threads");
+  assert(calls.sticky === 0, "sticky should be skipped in mod DM threads");
+  assert(
+    calls.reputation === 0,
+    "reputation should be skipped in mod DM threads"
+  );
+}
+
+async function testDmPrefersOpenModDm() {
+  const client = createMockClient();
+  const calls = { modDm: 0, modmailDm: 0 };
+  let claim = true;
+
+  messageRouter(client, {
+    handleMessageTracker: async () => {},
+    handleSticky: async () => {},
+    handleReputation: async () => {},
+    handleModmailDm: async () => {
+      calls.modmailDm += 1;
+    },
+    handleModDmUserMessage: async () => {
+      calls.modDm += 1;
+      return claim;
+    },
+  });
+
+  await client.emitMessageCreate(createGuildMessage({ guild: null }));
+  assert(calls.modDm === 1, "DMs should check for an open mod DM first");
+  assert(calls.modmailDm === 0, "an open mod DM must bypass modmail");
+
+  claim = false;
+  await client.emitMessageCreate(createGuildMessage({ guild: null }));
+  assert(calls.modmailDm === 1, "DMs without a mod DM should reach modmail");
 }
 
 async function testReputationSkippedInDisabledChannel() {
@@ -448,6 +519,8 @@ async function main() {
   await testSingleListenerRegistration();
   await testSharedGuardsSkipHandlers();
   await testModmailForumThreadSkipsGuildHandlers();
+  await testModDmForumThreadSkipsGuildHandlers();
+  await testDmPrefersOpenModDm();
   await testReputationSkippedInDisabledChannel();
   await testReputationSkippedInStaffChannel();
   testIsReputationDisabledHelper();

@@ -158,6 +158,7 @@ Used in: `apps/web` middleware, API routes, and Clerk components. Allowlisted em
 | `QOTD_REMINDER_CHANNEL_ID` | QOTD daily reminder channel                       | Optional        | QOTD scheduler logs warning, skips  |
 | `MOD_MAIL_CHANNEL_ID`      | Fallback forum ID for modmail (prefer dashboard)  | Optional        | Needed only if guild config unset     |
 | `ADMIN_MOD_MAIL_CHANNEL_ID`| Fallback forum ID for admin modmail               | Optional        | Needed only if guild config unset     |
+| `MOD_DM_CHANNEL_ID`        | Fallback forum ID for moderator DMs (`/dm`)       | Optional        | Needed only if Channels key `modDm` unset |
 
 ---
 
@@ -286,6 +287,21 @@ Used in: `apps/bot/systems/modmail.js`, `apps/bot/commands/modmail/close-ticket.
 
 ---
 
+### `MOD_DM_CHANNEL_ID`
+
+|                |                                                              |
+| -------------- | ------------------------------------------------------------ |
+| **Purpose**    | Fallback Discord forum channel ID for moderator DMs when the guild config channel key `modDm` is unset |
+| **Example**    | `1552547172803940473`                                        |
+| **Required**   | No (prefer dashboard **Settings → Channels**, key `modDm`)   |
+| **If missing** | `/dm` replies that moderator DMs aren't set up               |
+
+Must be a forum channel, and must not be the same channel as either modmail forum (the bot refuses `/dm` if it is).
+
+Used in: `apps/bot/systems/modDm.js` (env fallback only)
+
+---
+
 ### `MOD_ROLES`
 
 |                |                                                              |
@@ -337,6 +353,7 @@ Quick reference for which variables each feature needs:
 | Certificates            | `APPLICATION_CHANNEL`, `REVIEW_CHANNEL`, `CERT_UPDATES_CHANNEL`, `ADMIN_ROLE_ID`, `SR_HELPER_ROLE_ID` |
 | Confessions             | `MOD_ACTION_CHANNEL`, `VENT_CHANNEL`                                                                  |
 | Modmail                 | Guild config `modmail` (fallback `MOD_MAIL_CHANNEL_ID`, `ADMIN_MOD_MAIL_CHANNEL_ID`)                  |
+| Moderator DMs           | Guild config channel `modDm` (fallback `MOD_DM_CHANNEL_ID`)                                           |
 | Tasks                   | `GRAPHIC_CHANNEL`, `DEV_CHANNEL`, `WRITER_CHANNEL`, designer role IDs                                 |
 | Welcome                 | `WELCOME_CHANNEL`                                                                                     |
 | QOTD                    | `QOTD_REMINDER_CHANNEL_ID`                                                                            |

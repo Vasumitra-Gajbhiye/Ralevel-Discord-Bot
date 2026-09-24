@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T05:02:40.716Z",
+  "generatedAt": "2026-09-24T05:40:55.640Z",
   "commands": [
     {
       "category": "reputation",
@@ -509,6 +509,26 @@
     },
     {
       "category": "modmail",
+      "name": "close-dm",
+      "fileDefault": "ModerateMembers",
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Optional reason shown to the user",
+            "required": false,
+            "max_length": 500
+          }
+        ],
+        "name": "close-dm",
+        "description": "Close this moderator DM conversation.",
+        "default_member_permissions": "1099511627776",
+        "type": 1
+      }
+    },
+    {
+      "category": "modmail",
       "name": "close-ticket",
       "fileDefault": "ModerateMembers",
       "payload": {
@@ -640,6 +660,32 @@
         ],
         "name": "delete-warning",
         "description": "Delete a specific warning by its action ID",
+        "type": 1
+      }
+    },
+    {
+      "category": "modmail",
+      "name": "dm",
+      "fileDefault": "ModerateMembers",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "The member to DM.",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "message",
+            "description": "Optional first message to send them.",
+            "required": false,
+            "max_length": 2000
+          }
+        ],
+        "name": "dm",
+        "description": "Start a private DM conversation with a member through the bot.",
+        "default_member_permissions": "1099511627776",
         "type": 1
       }
     },

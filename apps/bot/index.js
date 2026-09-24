@@ -16,6 +16,7 @@ const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
 const ruleSyncSystem = require("./systems/ruleSync");
 const modmailSystem = require("./systems/modmail");
+const modDmSystem = require("./systems/modDm");
 const { handleMessageTracker } = require("./systems/messageTracker");
 const messageRouter = require("./systems/messageRouter");
 const xpFlushSystem = require("./systems/xpFlushSystem");
@@ -56,12 +57,15 @@ async function start() {
   confessionsSystem(client);
   ruleSyncSystem(client);
   const { handleModmailDm, handleModmailStaffReply } = modmailSystem(client);
+  const { handleModDmUserMessage, handleModDmStaffReply } = modDmSystem(client);
   messageRouter(client, {
     handleMessageTracker,
     handleSticky,
     handleReputation,
     handleModmailDm,
     handleModmailStaffReply,
+    handleModDmUserMessage,
+    handleModDmStaffReply,
   });
   xpFlushSystem(client);
   pollSystem(client);

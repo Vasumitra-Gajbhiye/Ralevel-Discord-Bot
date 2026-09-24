@@ -4,6 +4,7 @@ const Poll = require("./models/poll");
 const Confession = require("./models/confession");
 const Task = require("./models/task");
 const ModmailTicket = require("./models/modmailTicket");
+const ModDm = require("./models/modDm");
 
 async function seedCounter(counterName, maxValue) {
   if (maxValue <= 0) return;
@@ -46,6 +47,8 @@ module.exports = async () => {
 
   await seedCounters();
   await ModmailTicket.ensureModmailIndexes();
+  // /dm's atomic claim relies on the unique userId index existing.
+  await ModDm.init();
 
   console.log("✅ MongoDB Connected");
 };

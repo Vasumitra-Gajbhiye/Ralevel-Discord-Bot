@@ -8,6 +8,7 @@ const {
   closeOpenTicket,
   isModmailForumParent,
 } = require("../../systems/modmail");
+const { isModDmForumParent } = require("../../systems/modDm");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,6 +34,13 @@ module.exports = {
     if (!interaction.channel.isThread?.()) {
       return interaction.reply({
         content: "This command can only be used in a modmail forum post.",
+        ephemeral: true,
+      });
+    }
+
+    if (isModDmForumParent(interaction.channel.parentId)) {
+      return interaction.reply({
+        content: "This is a moderator DM post — use `/close-dm` instead.",
         ephemeral: true,
       });
     }

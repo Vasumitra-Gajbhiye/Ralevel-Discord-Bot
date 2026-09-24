@@ -259,6 +259,31 @@ Audit trail for sticky moderation actions.
 
 ---
 
+### `moddms` — ModDm
+
+**Model:** `models/modDm.js`
+
+One document per user; the forum post is reused whenever a conversation is reopened.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | Member being DMed (unique — at most one open conversation per user) |
+| `guildId` | String | Guild the conversation belongs to |
+| `threadId` | String | The user's post in the `modDm` forum (null until the first `/dm`) |
+| `status` | String | `OPEN` / `CLOSED` |
+| `session` | Number | Incremented on every open; stale **End conversation** buttons from older sessions are ignored |
+| `openedBy` / `openedAt` | String / Date | Mod who last opened it, and when |
+| `closedBy` / `closedAt` / `closeReason` | String / Date / String | Mod ID, the user's own ID, or `system` (e.g. DMs closed, post deleted) |
+| `introMessageId` | String | The intro DM, so its buttons can be trimmed on close |
+| `optedOutAt` | Date | Set when the user chose **Don't DM me again**; `/dm` is refused while set |
+| `createdAt` / `updatedAt` | Date | Timestamps |
+
+Reply mapping reuses `modmailmessagelinks` (deleted on close, like modmail).
+
+**Written by:** `/dm`, `/close-dm`, `systems/modDm.js` (user buttons, auto-close)
+
+---
+
 ### `certificateapplications` — CertificateApplication
 
 **Model:** `models/certificate.js`

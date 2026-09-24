@@ -203,6 +203,28 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Options** | `reason` (optional, max 500) |
 | **Dependencies** | `ModmailTicket`, `systems/modmail.js` |
 
+### `/dm`
+
+| | |
+|---|---|
+| **File** | `commands/modmail/dm.js` |
+| **Description** | Start (or reopen) a private DM conversation with a member. Opens the user's post in the `modDm` forum and sends them a plain intro DM with End / Don't DM me buttons. Refused if the user turned off moderator DMs, already has an open conversation, has an open modmail ticket, or has DMs closed |
+| **Discord permissions** | `ModerateMembers` |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+| **Options** | `user` (required), `message` (optional first message, max 2000) |
+| **Dependencies** | `ModDm`, `ModmailTicket`, `systems/modDm.js` |
+
+### `/close-dm`
+
+| | |
+|---|---|
+| **File** | `commands/modmail/close-dm.js` |
+| **Description** | Close the current moderator DM conversation, DM the user, and archive the post (same as the post's **Close conversation** button, which has no reason) |
+| **Discord permissions** | `ModerateMembers` |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+| **Options** | `reason` (optional, shown to the user, max 500) |
+| **Dependencies** | `ModDm`, `systems/modDm.js` |
+
 ---
 
 ## Confessions
