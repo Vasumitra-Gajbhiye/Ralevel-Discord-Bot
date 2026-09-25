@@ -35,6 +35,8 @@ On connect, atomic ID counters are seeded from the max existing record in each c
 | `pollId` | Max `pollId` in `Poll` collection |
 | `confessionId` | Max `confessionId` in `Confession` collection |
 | `taskId` | Max numeric part of `taskId` in `Task` collection (e.g. `TSK-42` → 42) |
+| `definitionId` | Max `definitionId` in `Definition` collection |
+| `definitionRequestId` | Max `requestId` in `DefinitionRequest` collection |
 
 Counter documents live in the `counters` collection:
 
@@ -526,6 +528,60 @@ Staff notes on users (separate from warnings).
 | `roleId` | String | Helper role to ping |
 
 **Written by:** `/sethelper`, read by `/helper`
+
+---
+
+### `definitions` — Definition
+
+**Model:** `models/definition.js`
+
+Live (approved) glossary entries. Pending changes are in `definitionrequests`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `definitionId` | Number | Sequential ID (unique) |
+| `subjectId` | String | `GuildConfig.definitions.subjects[].id` |
+| `boardId` | String | `GuildConfig.definitions.boards[].id`, `""` = every board |
+| `term` | String | Display term |
+| `termKey` | String | Normalised term (lowercase, single spaces), set automatically |
+| `definition` | String | Definition text (max 1000) |
+| `chapter` / `topic` | String | Optional, free text |
+| `authorId` / `authorTag` | String | Credited author |
+| `contributors` | Array | `{ userId, userTag, at }` for applied improvements (never the author) |
+| `revision` | Number | Bumped on every content change; used to detect stale edit suggestions |
+| `views` | Number | `/define` lookups, used to rank suggestions |
+| `lastEditedById` / `lastEditedAt` | String / Date | Last content change |
+| `createdAt` / `updatedAt` | Date | Timestamps |
+
+**Indexes:** `{ subjectId: 1, boardId: 1, termKey: 1 }` (unique), `{ termKey: 1 }`, `{ views: -1 }`, `{ authorId: 1 }`
+
+**Written by:** `/add-define`, `/edit-define`, `/delete-define`, `systems/definitions.js`, dashboard **Operations → Definitions**
+
+---
+
+### `definitionrequests` — DefinitionRequest
+
+**Model:** `models/definitionRequest.js`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `requestId` | Number | Sequential ID (unique) |
+| `type` | String | `create`, `edit` or `delete` |
+| `status` | String | `pending`, `approved` or `rejected` |
+| `definitionId` | Number | Target definition (edit/delete), or the created one once a `create` is approved |
+| `baseRevision` | Number | Definition revision an edit was written against |
+| `subjectId` / `boardId` | String | Scope of the definition |
+| `termKey` | String | Normalised proposed term (create), for duplicate checks |
+| `proposed` | Object | `{ term, definition, chapter, topic }` requested (create/edit); replaced by the reviewer's version after **Edit & approve** |
+| `original` | Object | Snapshot of the definition when requested (edit/delete) |
+| `note` | String | What changed (edit) or why to remove it (delete) |
+| `requesterId` / `requesterTag` | String | Who asked |
+| `reviewerId` / `reviewerTag` / `reviewedAt` | String / Date | Who decided and when |
+| `rejectReason` | String | Optional reason sent to the requester |
+| `reviewerEdited` | Boolean | Approved via **Edit & approve** |
+| `reviewChannelId` / `reviewMessageId` | String | Review message in Discord |
+
+**Indexes:** `{ requesterId: 1, status: 1 }`, `{ status: 1, createdAt: -1 }`, `{ definitionId: 1 }`
 
 ---
 

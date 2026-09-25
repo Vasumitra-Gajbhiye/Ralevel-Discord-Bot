@@ -30,6 +30,8 @@ export declare const Kick: Model<any>;
 export declare const Task: Model<any>;
 export declare const TaskDisplay: Model<any>;
 export declare const HelperRole: Model<any>;
+export declare const Definition: Model<any>;
+export declare const DefinitionRequest: Model<any>;
 export declare const GuildConfig: Model<any>;
 export declare const DashboardAccess: Model<any>;
 export declare const ExamSession: Model<any>;
@@ -85,6 +87,39 @@ export declare function normalizeModPointsConfig(
   raw: unknown,
 ): { ok: true; points: ModPointsConfig } | { ok: false; errors: string[] };
 export declare const DEFAULT_QOTD_REMINDER_TEMPLATE: string;
+export type DefinitionSubject = {
+  id: string;
+  label: string;
+  helperRoleKeys: string[];
+  enabled: boolean;
+};
+export type DefinitionBoard = { id: string; label: string; enabled: boolean };
+export type DefinitionsConfig = {
+  subjects: DefinitionSubject[];
+  boards: DefinitionBoard[];
+  reviewChannelId: string;
+  logChannelId: string;
+  approverRoleKeys: string[];
+  pingRoleKeys: string[];
+  maxPendingPerUser: number;
+};
+export declare const DEFINITION_LIMITS: {
+  term: number;
+  definition: number;
+  chapter: number;
+  topic: number;
+  note: number;
+  label: number;
+  maxPendingPerUser: number;
+};
+export declare const DEFAULT_DEFINITION_SUBJECTS: { id: string; label: string }[];
+export declare const DEFAULT_DEFINITION_BOARDS: { id: string; label: string }[];
+export declare function buildDefaultDefinitions(): DefinitionsConfig;
+export declare function normalizeTermKey(term: string): string;
+export declare function slugifyEntryId(label: string): string;
+export declare function normalizeDefinitionsConfig(
+  raw: unknown,
+): { ok: true; definitions: DefinitionsConfig } | { ok: false; errors: string[] };
 export declare function normalizeIdLabels(
   raw: unknown,
 ): { id: string; label: string }[];

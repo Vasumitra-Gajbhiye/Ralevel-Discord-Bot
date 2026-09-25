@@ -3,6 +3,8 @@
  * Used by seed script and bot bootstrap when no document exists.
  */
 
+const { buildDefaultDefinitions } = require("./definitionsConfig");
+
 const ROLE_DEFS = [
   { key: "admin", label: "Admin", env: "ADMIN_ROLE_ID" },
   { key: "gfxHead", label: "GFX Head", env: "GFX_HEAD_ROLE_ID" },
@@ -404,6 +406,7 @@ const DEFAULT_COMMAND_PERMISSIONS = {
  * deferReply/reply call site (true = visible only to user).
  */
 const DEFAULT_COMMAND_EPHEMERAL = {
+  "add-define": true,
   "add-rep": false,
   "add-role": true,
   "add-sticky": true,
@@ -425,11 +428,14 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   "close-dm": true,
   confess: true,
   "delete-confession": true,
+  "delete-define": true,
   "delete-task": true,
   "delete-note": false,
   "delete-warning": false,
   "delete-verbal-warning": false,
+  define: false,
   dm: true,
+  "edit-define": true,
   "edit-sticky": true,
   "edit-task": true,
   "finished-tsk": true,
@@ -638,6 +644,7 @@ function buildDefaultGuildConfig(guildId) {
       welcome: true,
       qotd: true,
       xpRanks: true,
+      definitions: true,
     },
     reputation: {
       tiers: [
@@ -763,6 +770,7 @@ function buildDefaultGuildConfig(guildId) {
     helper: {
       pingDelayMs: 10000,
     },
+    definitions: buildDefaultDefinitions(),
     qotd: {
       reminderTemplate: DEFAULT_QOTD_REMINDER_TEMPLATE,
     },

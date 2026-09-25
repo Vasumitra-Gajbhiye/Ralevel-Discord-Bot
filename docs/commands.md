@@ -241,6 +241,60 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 
 ---
 
+## Definitions
+
+Glossary of subject definitions. Everyone can look up, add and improve definitions; who needs review is decided inside the commands (not by dashboard role gates):
+
+- **Approvers** (default: admin, hlpHead) change anything directly and approve/reject requests.
+- **Subject helpers** (the helper roles set per subject on **Settings → Definitions**) add to their subjects directly and edit/delete only the definitions they wrote.
+- **Everyone else** — and helpers changing someone else's definition — creates a request in the review channel, pinging the configured roles (default: hlpHead).
+
+Settings, subjects and exam boards live on **Settings → Definitions**. See [Systems → Definitions](systems.md#15-definitions).
+
+### `/define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/define.js` |
+| **Description** | Look up a definition. `term` autocompletes from the database (best match, then most viewed); optional `subject` and `board` filters |
+| **Discord permissions** | None |
+| **Role access** | Public (reply is public by default) |
+| **Dependencies** | `Definition` model, `utils/definitions.js` |
+
+Shows the definition with subject, board, chapter/topic and credits (author plus everyone whose improvement was applied), and a **Suggest improvement** button that opens the edit form.
+
+### `/add-define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/add-define.js` |
+| **Description** | Add a definition. `subject` (required) and `board` autocomplete from the dashboard lists; `chapter` / `topic` suggest values already used in the subject |
+| **Discord permissions** | None |
+| **Role access** | Public — approvers and the subject's helpers add directly, everyone else is reviewed |
+| **Dependencies** | `Definition`, `DefinitionRequest`, `utils/definitionActions.js` |
+
+### `/edit-define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/edit-define.js` |
+| **Description** | Opens a pre-filled form to improve a definition (same form as the **Suggest improvement** button) |
+| **Discord permissions** | None |
+| **Role access** | Public — direct for approvers and the helper who wrote it, otherwise reviewed |
+| **Dependencies** | `systems/definitions.js` handles the form |
+
+### `/delete-define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/delete-define.js` |
+| **Description** | Delete a definition (with a confirm button), or request its removal with a `reason` |
+| **Discord permissions** | None |
+| **Role access** | Public — direct for approvers and the helper who wrote it, otherwise reviewed |
+| **Dependencies** | `Definition`, `DefinitionRequest`, `utils/definitionActions.js` |
+
+---
+
 ## Fun
 
 ### `/ping`

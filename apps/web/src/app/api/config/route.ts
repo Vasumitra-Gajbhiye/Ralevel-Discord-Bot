@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  ensureDb,
   getOrCreateGuildConfig,
   guildConfigToJson,
 } from "@/lib/db";
@@ -8,6 +9,7 @@ import {
   normalizeReputationIdLabels,
   normalizeRanksConfig,
   normalizeModPointsConfig,
+  normalizeDefinitionsConfig,
 } from "@ralevel/db";
 import { getCommandCatalog } from "@ralevel/shared/commandCatalog";
 import { validateCommandDisplayNames } from "@ralevel/shared/commandDisplayNames";
@@ -59,9 +61,47 @@ const PATCHABLE = [
   "polls",
   "sticky",
   "helper",
+  "definitions",
   "qotd",
   "moderation",
 ] as const;
+
+type DefinitionsJson = {
+  subjects?: { id: string }[];
+  boards?: { id: string }[];
+};
+
+/**
+ * Subjects/boards that still have definitions can't be removed (they'd become
+ * orphaned) — they should be disabled instead.
+ */
+async function findRemovedEntriesInUse(
+  before: DefinitionsJson | undefined,
+  after: DefinitionsJson,
+): Promise<string[]> {
+  const { Definition } = await ensureDb();
+  const errors: string[] = [];
+  const checks = [
+    { list: "subjects", field: "subjectId", noun: "Subject" },
+    { list: "boards", field: "boardId", noun: "Board" },
+  ] as const;
+
+  for (const { list, field, noun } of checks) {
+    const kept = new Set((after[list] ?? []).map((e) => e.id));
+    const removed = (before?.[list] ?? [])
+      .map((e) => e.id)
+      .filter((id) => !kept.has(id));
+    for (const id of removed) {
+      const count = await Definition.countDocuments({ [field]: id });
+      if (count > 0) {
+        errors.push(
+          `${noun} "${id}" still has ${count} definition(s). Disable it instead of removing it.`,
+        );
+      }
+    }
+  }
+  return errors;
+}
 
 export async function PUT(request: Request) {
   const authResult = await requireAllowlistedAuth();
@@ -117,6 +157,24 @@ export async function PUT(request: Request) {
       body.moderation.points = validation.points;
     }
 
+    if (body.definitions !== undefined) {
+      const validation = normalizeDefinitionsConfig(body.definitions);
+      if (!validation.ok) {
+        return NextResponse.json(
+          { error: validation.errors.join("; ") },
+          { status: 400 },
+        );
+      }
+      const inUse = await findRemovedEntriesInUse(
+        guildConfigToJson(doc).definitions as DefinitionsJson | undefined,
+        validation.definitions,
+      );
+      if (inUse.length) {
+        return NextResponse.json({ error: inUse.join("; ") }, { status: 400 });
+      }
+      body.definitions = validation.definitions;
+    }
+
     for (const key of PATCHABLE) {
       if (body[key] !== undefined) {
         if (key === "reputation") {
@@ -141,7 +199,8 @@ export async function PUT(request: Request) {
             key === "commandMetadataOverrides" ||
             key === "commandEphemeral" ||
             key === "qotd" ||
-            key === "moderation"
+            key === "moderation" ||
+            key === "definitions"
           ) {
             doc.markModified(key);
           }

@@ -1,6 +1,62 @@
 {
-  "generatedAt": "2026-09-25T04:04:47.361Z",
+  "generatedAt": "2026-09-25T04:51:48.973Z",
   "commands": [
+    {
+      "category": "definitions",
+      "name": "add-define",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "subject",
+            "description": "Subject the definition belongs to",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "term",
+            "description": "The word or phrase being defined",
+            "required": true,
+            "max_length": 100
+          },
+          {
+            "type": 3,
+            "name": "definition",
+            "description": "The definition",
+            "required": true,
+            "max_length": 1000
+          },
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "board",
+            "description": "Exam board (leave empty if it applies to every board)",
+            "required": false
+          },
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "chapter",
+            "description": "Chapter (optional)",
+            "required": false,
+            "max_length": 100
+          },
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "topic",
+            "description": "Topic (optional)",
+            "required": false,
+            "max_length": 100
+          }
+        ],
+        "name": "add-define",
+        "description": "Add a definition (helpers add directly; others are reviewed).",
+        "type": 1
+      }
+    },
     {
       "category": "reputation",
       "name": "add-rep",
@@ -603,6 +659,40 @@
       }
     },
     {
+      "category": "definitions",
+      "name": "define",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "term",
+            "description": "Term to look up",
+            "required": true,
+            "max_length": 100
+          },
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "subject",
+            "description": "Only search this subject",
+            "required": false
+          },
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "board",
+            "description": "Only search this exam board",
+            "required": false
+          }
+        ],
+        "name": "define",
+        "description": "Look up the definition of a term.",
+        "type": 1
+      }
+    },
+    {
       "category": "confessions",
       "name": "delete-confession",
       "fileDefault": null,
@@ -617,6 +707,32 @@
         ],
         "name": "delete-confession",
         "description": "Delete one of your confessions by ID",
+        "type": 1
+      }
+    },
+    {
+      "category": "definitions",
+      "name": "delete-define",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "term",
+            "description": "Definition to delete",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Why it should be removed (required when it goes to review)",
+            "required": false,
+            "max_length": 500
+          }
+        ],
+        "name": "delete-define",
+        "description": "Delete a definition (or request its removal for review).",
         "type": 1
       }
     },
@@ -734,6 +850,25 @@
         "name": "dm",
         "description": "Start a private DM conversation with a member through the bot.",
         "default_member_permissions": "1099511627776",
+        "type": 1
+      }
+    },
+    {
+      "category": "definitions",
+      "name": "edit-define",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "term",
+            "description": "Definition to edit",
+            "required": true
+          }
+        ],
+        "name": "edit-define",
+        "description": "Improve a definition (your change is reviewed unless you wrote it as a helper).",
         "type": 1
       }
     },

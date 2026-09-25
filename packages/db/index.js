@@ -29,6 +29,8 @@ const Kick = require("./src/models/kick");
 const Task = require("./src/models/task");
 const TaskDisplay = require("./src/models/taskDisplay");
 const HelperRole = require("./src/models/helperRole");
+const Definition = require("./src/models/definition");
+const DefinitionRequest = require("./src/models/definitionRequest");
 const GuildConfig = require("./src/models/guildConfig");
 const DashboardAccess = require("./src/models/dashboardAccess");
 const ExamSession = require("./src/models/examSession");
@@ -49,6 +51,15 @@ const {
   DEFAULT_MODMAIL_CATEGORIES,
 } = require("./src/defaultGuildConfig");
 const { normalizeModPointsConfig } = require("./src/modPointsConfig");
+const {
+  DEFINITION_LIMITS,
+  DEFAULT_DEFINITION_SUBJECTS,
+  DEFAULT_DEFINITION_BOARDS,
+  buildDefaultDefinitions,
+  normalizeTermKey,
+  slugifyEntryId,
+  normalizeDefinitionsConfig,
+} = require("./src/definitionsConfig");
 const {
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
@@ -96,6 +107,8 @@ module.exports = {
   Task,
   TaskDisplay,
   HelperRole,
+  Definition,
+  DefinitionRequest,
   GuildConfig,
   DashboardAccess,
   ExamSession,
@@ -112,6 +125,13 @@ module.exports = {
   MOD_POINT_EXPIRY_SOURCES,
   MOD_POINT_DELETE_MESSAGE_OPTIONS,
   normalizeModPointsConfig,
+  DEFINITION_LIMITS,
+  DEFAULT_DEFINITION_SUBJECTS,
+  DEFAULT_DEFINITION_BOARDS,
+  buildDefaultDefinitions,
+  normalizeTermKey,
+  slugifyEntryId,
+  normalizeDefinitionsConfig,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
   migrateGuildConfigDocument,

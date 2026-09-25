@@ -15,6 +15,7 @@ const stickySystem = require("./systems/sticky");
 const qotdSystem = require("./systems/qotd");
 const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
+const definitionsSystem = require("./systems/definitions");
 const ruleSyncSystem = require("./systems/ruleSync");
 const modmailSystem = require("./systems/modmail");
 const modDmSystem = require("./systems/modDm");
@@ -60,6 +61,7 @@ async function start() {
   qotdSystem(client);
   welcomeSystem(client);
   confessionsSystem(client);
+  definitionsSystem(client);
   ruleSyncSystem(client);
   const { handleModmailDm, handleModmailStaffReply } = modmailSystem(client);
   const { handleModDmUserMessage, handleModDmStaffReply } = modDmSystem(client);

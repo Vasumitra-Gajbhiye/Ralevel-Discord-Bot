@@ -14,6 +14,7 @@ const {
   DEFAULT_COMMAND_EPHEMERAL,
   DEFAULT_COMMAND_PERMISSIONS,
 } = require("./defaultGuildConfig");
+const { buildDefaultDefinitions } = require("./definitionsConfig");
 
 const CATALOG_PATH = path.resolve(
   __dirname,
@@ -458,6 +459,10 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     raw.qotd.reminderTemplate == null
   ) {
     $set["qotd.reminderTemplate"] = DEFAULT_QOTD_REMINDER_TEMPLATE;
+  }
+
+  if (!raw.definitions || typeof raw.definitions !== "object") {
+    $set.definitions = buildDefaultDefinitions();
   }
 
   if (!Array.isArray(raw.moderation?.banAppealApproverRoleKeys)) {

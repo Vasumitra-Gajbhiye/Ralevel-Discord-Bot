@@ -26,6 +26,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Confessions | `systems/confessions.js` | Buttons/modals | MongoDB |
 | Modmail | `systems/modmail.js` | Called by router + `/close-ticket` / blacklist commands | MongoDB |
 | Moderator DMs | `systems/modDm.js` | Called by router + `/dm` / `/close-dm` + buttons | MongoDB |
+| Definitions | `systems/definitions.js`, `utils/definitions.js`, `utils/definitionActions.js` | `/define` family + buttons/modals | MongoDB |
 
 ---
 
@@ -496,6 +497,43 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 **Reversals:** `/delete-warning` and `/clear-warnings` void the points from those warnings, `/untimeout` voids the latest timeout entry, and `/unban` voids every entry for the user (they start again at 0). Voiding points never unbans anyone.
 
 **Verification:** `npm run verify:mod-points`
+
+---
+
+## 15. Definitions
+
+**Files:** `systems/definitions.js` (buttons/modals), `utils/definitions.js` (config, permissions, search, embeds), `utils/definitionActions.js` (writes, review requests, decisions)
+
+**Purpose:** A subject glossary. `/define` looks terms up; `/add-define`, `/edit-define`, `/delete-define` and the **Suggest improvement** button change it, with a review queue for anyone without rights.
+
+**Dashboard:** **Settings → Definitions** (GuildConfig `definitions` + `features.definitions`): subjects (name, stable ID, helper role keys, enabled), exam boards, review channel, optional log channel, approver roles, ping roles and the per-member pending cap. **Operations → Definitions** lists definitions (inline edit/delete) and the request history. Subjects/boards that still have definitions can't be removed — disable them instead (hidden from `/add-define`, still searchable).
+
+**Who changes what directly:**
+
+| Action | Approver | Subject helper | Everyone else |
+|--------|----------|----------------|---------------|
+| Add | Direct | Direct (own subjects) | Review |
+| Edit / delete own definition | Direct | Direct | Review |
+| Edit / delete someone else's | Direct | Review | Review |
+
+Direct changes are logged to the log channel (or the review channel when unset) without a ping.
+
+**Review workflow:**
+
+1. A `DefinitionRequest` (`create`, `edit` or `delete`) is created and posted to the review channel with the ping roles mentioned
+2. Approvers press **Approve**, **Edit & approve** (pre-filled form; not for deletions) or **Reject** (optional reason)
+3. The request is claimed atomically (`status: "pending"` filter), so two reviewers can't both act; if applying fails it goes back to pending
+4. The review message is updated with the outcome and the requester is DMed (ignored if their DMs are closed)
+
+**Credits:** the author is whoever the definition was created for (the requester for reviewed additions). When an edit is applied, the person who wrote it is added to `contributors` unless they are the author; `/define` shows both.
+
+**Stale edits:** each definition has a `revision`. An edit suggestion records the revision it was based on; plain **Approve** refuses it if the definition changed since, and **Edit & approve** applies it anyway. Edits to deleted definitions are closed as rejected.
+
+**Custom IDs:** `definition:suggest:<definitionId>`, `definition:edit-modal:<definitionId>:<revision>`, `definition:{approve,review-edit,reject}:<requestId>`, `definition:{review-edit-modal,reject-modal}:<requestId>` — all state is in the ID and MongoDB, so buttons survive restarts.
+
+**Seeding test data:** `pnpm --filter @ralevel/bot seed:definitions` (`--author=<user id>` to credit yourself, `--clear` to remove)
+
+**Verification:** `npm run verify:definitions`
 
 ---
 

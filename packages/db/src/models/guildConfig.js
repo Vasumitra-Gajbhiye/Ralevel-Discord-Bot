@@ -124,6 +124,26 @@ const TaskTeamSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const DefinitionSubjectSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    // Role keys whose holders can add definitions to this subject without review
+    helperRoleKeys: { type: [String], default: [] },
+    enabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
+const DefinitionBoardSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    enabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
 const GuildConfigSchema = new mongoose.Schema(
   {
     guildId: { type: String, required: true, unique: true, index: true },
@@ -154,6 +174,7 @@ const GuildConfigSchema = new mongoose.Schema(
       welcome: { type: Boolean, default: true },
       qotd: { type: Boolean, default: true },
       xpRanks: { type: Boolean, default: true },
+      definitions: { type: Boolean, default: true },
     },
     reputation: {
       tiers: { type: [RepTierSchema], default: [] },
@@ -221,6 +242,16 @@ const GuildConfigSchema = new mongoose.Schema(
     },
     helper: {
       pingDelayMs: { type: Number, default: 10000 },
+    },
+    definitions: {
+      subjects: { type: [DefinitionSubjectSchema], default: [] },
+      boards: { type: [DefinitionBoardSchema], default: [] },
+      reviewChannelId: { type: String, default: "" },
+      // Where helper/approver changes are logged; falls back to reviewChannelId
+      logChannelId: { type: String, default: "" },
+      approverRoleKeys: { type: [String], default: ["admin", "hlpHead"] },
+      pingRoleKeys: { type: [String], default: ["hlpHead"] },
+      maxPendingPerUser: { type: Number, default: 5 },
     },
     qotd: {
       reminderTemplate: {
