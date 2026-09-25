@@ -273,16 +273,19 @@ function hasCache() {
  * Autocomplete suggestions for a typed prefix.
  * @param {string} focused
  * @param {number} [limit=25]
+ * @param {{ rulesOnly?: boolean }} [options] rulesOnly leaves out whole sections
  * @returns {{ name: string, value: string }[]}
  */
-function autocompleteRules(focused, limit = 25) {
+function autocompleteRules(focused, limit = 25, { rulesOnly = false } = {}) {
   if (!cache) return [];
 
   const q = String(focused || "").trim().toLowerCase();
-  const sectionEntries = Object.entries(cache.sections).map(([id, s]) => ({
-    name: `Section ${id} — ${s.title}`.slice(0, 100),
-    value: id,
-  }));
+  const sectionEntries = rulesOnly
+    ? []
+    : Object.entries(cache.sections).map(([id, s]) => ({
+        name: `Section ${id} — ${s.title}`.slice(0, 100),
+        value: id,
+      }));
   const ruleEntries = listRuleIds().map((id) => {
     const rule = cache.rules[id];
     return {

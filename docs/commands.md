@@ -318,6 +318,16 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Role access** | admin, dcHead |
 | **Hierarchy check** | Yes |
 
+### `/clear-verbal-warnings`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/clear-verbal-warnings.js` |
+| **Description** | Clear all verbal warnings for a user |
+| **Discord permissions** | None |
+| **Role access** | admin, dcHead |
+| **Hierarchy check** | Yes |
+
 ### `/delete-warning`
 
 | | |
@@ -326,6 +336,16 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Description** | Delete a specific warning by action ID (also removes that warning's moderation points) |
 | **Discord permissions** | None |
 | **Role access** | admin, dcHead, srMods |
+
+### `/delete-verbal-warning`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/delete-verbal-warning.js` |
+| **Description** | Delete a verbal warning by action ID |
+| **Discord permissions** | None |
+| **Role access** | admin, dcHead, srMods |
+| **Hierarchy check** | Yes |
 
 ### `/delete-note`
 
@@ -397,6 +417,15 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 |---|---|
 | **File** | `commands/moderation/my-warnings.js` |
 | **Description** | View your warnings (active first, then expired) |
+| **Discord permissions** | None |
+| **Role access** | Public |
+
+### `/my-verbal-warnings`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/my-verbal-warnings.js` |
+| **Description** | View your verbal warnings |
 | **Discord permissions** | None |
 | **Role access** | Public |
 
@@ -553,6 +582,26 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Discord permissions** | `ModerateMembers` |
 | **Role access** | admin, dcHead, srMods, trialMods, jrMods |
 | **Hierarchy check** | Yes |
+
+### `/verbal-warn`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/verbal-warn.js` |
+| **Description** | Give a user a verbal warning. The bot DMs it (with the text of an optional `rule`, e.g. `1.1`) and records it, but it adds no moderation points and never expires. The reply says whether the DM was delivered |
+| **Discord permissions** | None |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+| **Hierarchy check** | Yes |
+| **Dependencies** | `VerbalWarning`, `ModLog` models, `utils/logModAction.js`, `systems/ruleSync.js` |
+
+### `/verbal-warnings`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/verbal-warnings.js` |
+| **Description** | View all verbal warnings of a user (separate from `/warnings`) |
+| **Discord permissions** | `ManageMessages` |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
 
 ### `/warn`
 

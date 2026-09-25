@@ -352,12 +352,12 @@ Broad audit log for all moderation actions.
 |-------|------|-------------|
 | `userId` | String | Target user (indexed) |
 | `moderatorId` | String | Acting moderator |
-| `action` | String | Action type: `warn`, `ban`, `role-add`, etc. |
+| `action` | String | Action type: `warn`, `verbal-warn`, `ban`, `role-add`, etc. |
 | `reason` | String | Action reason |
 | `actionId` | String | Unique action UUID |
 | `targetTag` | String | Target username |
 | `channelId` | String | Related channel |
-| `metadata` | Object | Extra info (role, duration, etc.) |
+| `metadata` | Object | Extra info. `verbal-warn` stores `{ rule }` here (e.g. `"1.1 — Paper Sharing"` or `"None"`) |
 | `timestamp` | Date | When action occurred (indexed) |
 
 **Indexes:** `{ userId: 1, timestamp: -1 }`, `{ moderatorId: 1, timestamp: -1 }`
@@ -383,6 +383,29 @@ Broad audit log for all moderation actions.
 | `expiresAt` | Date | When the warning expires (`null` = never). Set from `moderation.points.expiryDays.warn` at creation. Expired warnings stay `active` but are shown as expired |
 
 **Written by:** `/warn`, deleted by `/delete-warning`, `/clear-warnings`
+
+---
+
+### `verbalwarnings` — VerbalWarning
+
+**Model:** `models/verbalWarning.js`
+
+Verbal warnings are DMed to the user and kept for history. They are separate from `warnings`: they add no moderation points and never expire.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | Warned user (indexed) |
+| `userTag` | String | Username at time of warning |
+| `moderatorId` / `moderatorTag` | String | Moderator who warned |
+| `reason` | String | Warning reason |
+| `ruleId` | String | Regulation cited, e.g. `1.1` (`null` if none) |
+| `ruleTitle` | String | That rule's title at the time of the warning |
+| `actionId` | String | Unique ID (unique) |
+| `active` | Boolean | Whether the verbal warning is active (default true) |
+| `delReason` | String | Reason if deleted or cleared |
+| `timestamp` | Date | When warned (indexed) |
+
+**Written by:** `/verbal-warn`, read by `/verbal-warnings` and `/my-verbal-warnings`, deleted by `/delete-verbal-warning` and `/clear-verbal-warnings`
 
 ---
 

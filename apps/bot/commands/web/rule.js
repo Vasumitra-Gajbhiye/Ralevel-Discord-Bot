@@ -8,30 +8,13 @@ const {
   autocompleteRules,
   REGULATIONS_URL,
 } = require("../../systems/ruleSync");
-
-const EMBED_COLOR = 0x00aeef;
-const DESC_LIMIT = 4096;
-
-function formatSyncedFooter(meta) {
-  const parts = [];
-  if (meta?.lastUpdatedLabel) {
-    parts.push(`Site: ${meta.lastUpdatedLabel}`);
-  }
-  if (meta?.fetchedAt) {
-    const d = new Date(meta.fetchedAt);
-    parts.push(`Synced: ${d.toUTCString()}`);
-  }
-  parts.push(REGULATIONS_URL);
-  return parts.join(" · ").slice(0, 2048);
-}
-
-function buildRuleEmbed(rule, meta) {
-  return new EmbedBuilder()
-    .setColor(EMBED_COLOR)
-    .setTitle(`Rule ${rule.id} — ${rule.title}`)
-    .setDescription(rule.body.slice(0, DESC_LIMIT))
-    .setFooter({ text: formatSyncedFooter(meta) });
-}
+const {
+  RULE_EMBED_COLOR,
+  DESC_LIMIT,
+  formatSyncedFooter,
+  buildRuleEmbed,
+  ruleNotFoundHint,
+} = require("../../utils/ruleEmbed");
 
 function buildSectionEmbeds(section, meta) {
   const blocks = section.ruleIds.map((id) => {
@@ -64,7 +47,7 @@ function buildSectionEmbeds(section, meta) {
 
   return chunks.map((description, index) => {
     const embed = new EmbedBuilder()
-      .setColor(EMBED_COLOR)
+      .setColor(RULE_EMBED_COLOR)
       .setDescription(description);
 
     if (index === 0) {
@@ -119,15 +102,8 @@ module.exports = {
       return interaction.reply({ embeds: buildSectionEmbeds(section, meta) });
     }
 
-    // Helpful hint if they typed a section that exists as prefix
-    const major = id.split(".")[0];
-    const maybeSection = getSection(major);
-    const hint = maybeSection
-      ? ` Did you mean one of: ${maybeSection.ruleIds.join(", ")}?`
-      : ` See all regulations: <${REGULATIONS_URL}>`;
-
     return interaction.reply({
-      content: `❌ No regulation found for \`${id}\`.${hint}`,
+      content: `❌ No regulation found for \`${id}\`.${ruleNotFoundHint(id)}`,
       ephemeral: true,
     });
   },

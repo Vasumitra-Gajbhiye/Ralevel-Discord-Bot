@@ -22,6 +22,7 @@ const QotdRotation = require("./src/models/qotdRotation");
 const Counter = require("./src/models/counter");
 const ModLog = require("./src/models/modlog");
 const Warning = require("./src/models/warning");
+const VerbalWarning = require("./src/models/verbalWarning");
 const ModPoint = require("./src/models/modPoint");
 const Note = require("./src/models/note");
 const Kick = require("./src/models/kick");
@@ -88,6 +89,7 @@ module.exports = {
   Counter,
   ModLog,
   Warning,
+  VerbalWarning,
   ModPoint,
   Note,
   Kick,

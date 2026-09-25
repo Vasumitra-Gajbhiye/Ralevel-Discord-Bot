@@ -56,4 +56,48 @@ function describeWarningCounts({ activeCount, expiredCount, hidden }) {
   return text;
 }
 
-module.exports = { buildWarningFields, describeWarningCounts };
+/**
+ * Embed fields for a list of verbal warnings (they never expire). Capped at
+ * Discord's 25 fields.
+ * @param {object[]} logs verbal warnings, newest first
+ * @param {(log: object) => string | null} [getModeratorName] adds a Moderator line
+ * @returns {{ fields: object[], total: number, hidden: number }}
+ */
+function buildVerbalWarningFields(logs, getModeratorName) {
+  const fields = logs.slice(0, MAX_FIELDS).map((log) => {
+    const lines = [];
+    if (getModeratorName) lines.push(`**Moderator:** ${getModeratorName(log)}`);
+    lines.push(`**Reason:** ${log.reason}`);
+    if (log.ruleId) {
+      lines.push(
+        `**Rule:** ${log.ruleId}${log.ruleTitle ? ` — ${log.ruleTitle}` : ""}`,
+      );
+    }
+    lines.push(`**Date:** <t:${toUnix(log.timestamp)}:F>`);
+    return {
+      name: `🗣️ Verbal Warning ID: ${log.actionId}`,
+      value: lines.join("\n"),
+      inline: false,
+    };
+  });
+
+  return {
+    fields,
+    total: logs.length,
+    hidden: Math.max(0, logs.length - MAX_FIELDS),
+  };
+}
+
+/** One-line summary for a verbal warnings embed description. */
+function describeVerbalWarningCounts({ total, hidden }) {
+  let text = `**${total}** verbal warning${total === 1 ? "" : "s"}`;
+  if (hidden > 0) text += `\n…and ${hidden} more not shown`;
+  return text;
+}
+
+module.exports = {
+  buildWarningFields,
+  describeWarningCounts,
+  buildVerbalWarningFields,
+  describeVerbalWarningCounts,
+};

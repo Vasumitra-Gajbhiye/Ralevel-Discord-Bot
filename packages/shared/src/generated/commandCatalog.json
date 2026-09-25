@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T03:47:34.821Z",
+  "generatedAt": "2026-09-25T04:04:47.361Z",
   "commands": [
     {
       "category": "reputation",
@@ -485,6 +485,30 @@
     },
     {
       "category": "moderation",
+      "name": "clear-verbal-warnings",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User whose verbal warnings should be cleared",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for clearing the verbal warnings",
+            "required": true
+          }
+        ],
+        "name": "clear-verbal-warnings",
+        "description": "Clear all verbal warnings for a user",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
       "name": "clear-warnings",
       "fileDefault": null,
       "payload": {
@@ -636,6 +660,30 @@
         "name": "delete-task",
         "description": "Delete an existing task (mods only)",
         "default_member_permissions": "2251799813685248",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "delete-verbal-warning",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 3,
+            "name": "actionid",
+            "description": "Action ID of the verbal warning",
+            "required": true
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for deleting the verbal warning",
+            "required": true
+          }
+        ],
+        "name": "delete-verbal-warning",
+        "description": "Delete a specific verbal warning by its action ID",
         "type": 1
       }
     },
@@ -1223,6 +1271,17 @@
         "options": [],
         "name": "my-reputation",
         "description": "Display your current reputation publicly.",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "my-verbal-warnings",
+      "fileDefault": null,
+      "payload": {
+        "options": [],
+        "name": "my-verbal-warnings",
+        "description": "View your verbal warnings",
         "type": 1
       }
     },
@@ -2402,6 +2461,57 @@
         "name": "untimeout",
         "description": "Remove timeout from a user.",
         "default_member_permissions": "1099511627776",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "verbal-warn",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to warn",
+            "required": true,
+            "type": 6
+          },
+          {
+            "type": 3,
+            "name": "reason",
+            "description": "Reason for the verbal warning",
+            "required": true,
+            "max_length": 1024
+          },
+          {
+            "autocomplete": true,
+            "type": 3,
+            "name": "rule",
+            "description": "Rule number to include in the DM (e.g. 1.1)",
+            "required": false
+          }
+        ],
+        "name": "verbal-warn",
+        "description": "Give a user a verbal warning (DMed, no moderation points).",
+        "type": 1
+      }
+    },
+    {
+      "category": "moderation",
+      "name": "verbal-warnings",
+      "fileDefault": "ManageMessages",
+      "payload": {
+        "options": [
+          {
+            "name": "user",
+            "description": "User to check verbal warnings for",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "name": "verbal-warnings",
+        "description": "View all verbal warnings of a user",
+        "default_member_permissions": "8192",
         "type": 1
       }
     },

@@ -42,12 +42,14 @@ const {
 // Value is the slash-command option name that holds the target user.
 const HIERARCHY_TARGET_OPTIONS = {
   warn: "user",
+  "verbal-warn": "user",
   kick: "user",
   ban: "user",
   softban: "user",
   timeout: "user",
   untimeout: "user",
   "clear-warnings": "user",
+  "clear-verbal-warnings": "user",
   setnickname: "user",
   "mark-loa": "user",
   "mark-partial-loa": "user",

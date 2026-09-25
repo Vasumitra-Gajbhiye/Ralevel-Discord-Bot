@@ -23,6 +23,7 @@ export declare const QotdRotation: Model<any>;
 export declare const Counter: Model<any>;
 export declare const ModLog: Model<any>;
 export declare const Warning: Model<any>;
+export declare const VerbalWarning: Model<any>;
 export declare const ModPoint: Model<any>;
 export declare const Note: Model<any>;
 export declare const Kick: Model<any>;

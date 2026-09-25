@@ -43,6 +43,7 @@ module.exports = async function logModAction({
   timeourDuration = "Not Provided",
   banAppealable = "Not Provided",
   deletedMessages = "Not Provided",
+  rule = "Not Provided",
 }) {
   if (!moderatorId || !interaction || !actionId) {
     console.error("Invalid logModAction params", {
@@ -107,6 +108,7 @@ module.exports = async function logModAction({
 
       banAppealable,
       deletedMessages,
+      metadata: rule !== "Not Provided" ? { rule } : {},
       timestamp: new Date(),
     });
 
@@ -214,7 +216,22 @@ module.exports = async function logModAction({
         }
       )
       .setTimestamp();
-  } else if (action === "warning-delete") {
+  } else if (action === "verbal-warn") {
+    embed = new EmbedBuilder()
+      .setTitle(`🗣️ ${prettyAction}`)
+      .setColor(0xffb703)
+      .addFields(
+        { name: "User", value: `${userTag || "N/A"} (${userId || "N/A"})` },
+        { name: "Moderator", value: `${moderatorTag} (${moderatorId})` },
+        { name: "Reason", value: reason || "No reason provided" },
+        { name: "Rule", value: String(rule || "None") },
+        { name: "Action ID", value: actionId }
+      )
+      .setTimestamp();
+  } else if (
+    action === "warning-delete" ||
+    action === "verbal-warning-delete"
+  ) {
     embed = new EmbedBuilder()
       .setTitle(`🔨 ${prettyAction}`)
       .setColor(0x8ecae6)
