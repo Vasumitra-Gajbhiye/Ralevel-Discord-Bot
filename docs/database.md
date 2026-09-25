@@ -380,6 +380,7 @@ Broad audit log for all moderation actions.
 | `active` | Boolean | Whether warning is active (default true) |
 | `delReason` | String | Reason if deleted |
 | `timestamp` | Date | When warned |
+| `expiresAt` | Date | When the warning expires (`null` = never). Set from `moderation.points.expiryDays.warn` at creation. Expired warnings stay `active` but are shown as expired |
 
 **Written by:** `/warn`, deleted by `/delete-warning`, `/clear-warnings`
 
@@ -389,7 +390,7 @@ Broad audit log for all moderation actions.
 
 **Model:** `models/modPoint.js`
 
-One entry per point award. A user's total is the sum of entries that are `active` and, when `moderation.points.expiryDays > 0`, created within that many days.
+One entry per point award. A user's total is the sum of entries that are `active` and not expired (`expiresAt` is `null` or in the future). `expiresAt` is set when the entry is created, from the per-source `moderation.points.expiryDays` setting, so changing that setting only affects new entries. On startup the bot backfills `expiresAt` on older warnings and entries that don't have it (`backfillExpiry` in `utils/modPoints.js`).
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -402,6 +403,7 @@ One entry per point award. A user's total is the sum of entries that are `active
 | `reason` | String | Infraction reason |
 | `active` | Boolean | `false` once voided (default true) |
 | `voidReason` / `voidedBy` / `voidedAt` | String / String / Date | Why, who and when the entry was voided |
+| `expiresAt` | Date | When the points stop counting (`null` = never) |
 | `createdAt` / `updatedAt` | Date | Timestamps |
 
 **Written by:** `/warn`, `/timeout`, `/kick`, `/softban`, `/points add`. Voided by `/delete-warning`, `/clear-warnings`, `/untimeout`, `/unban`, `/points remove`, `/points reset` and the dashboard **Point ledger**. Settings live in GuildConfig `moderation.points`.

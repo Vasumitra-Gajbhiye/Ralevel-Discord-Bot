@@ -5,6 +5,7 @@ const {
   loadGuildConfig,
   startGuildConfigWatcher,
 } = require("./utils/loadGuildConfig");
+const modPoints = require("./utils/modPoints");
 const loadCommands = require("./systems/commands.js");
 const reputationSystem = require("./systems/reputation.js");
 const certificateSystem = require("./systems/certificates.js");
@@ -44,6 +45,10 @@ async function start() {
   await connectDB();
   await loadGuildConfig(client);
   startGuildConfigWatcher(client);
+  const backfilled = await modPoints.backfillExpiry();
+  if (backfilled > 0) {
+    console.log(`[modPoints] Set expiresAt on ${backfilled} older warnings/point entries.`);
+  }
   deployCommandsOnReady(client);
 
   loadCommands(client);

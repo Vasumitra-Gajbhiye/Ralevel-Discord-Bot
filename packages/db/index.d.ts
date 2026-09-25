@@ -60,11 +60,12 @@ export declare const DEFAULT_BAN_MESSAGES: {
   appealRejected: string;
 };
 export type ModPointSource = "warn" | "timeout" | "kick" | "softban";
+export type ModPointExpirySource = ModPointSource | "manual";
 export type ModPointsConfig = {
   enabled: boolean;
   threshold: number;
   noticeDistance: number;
-  expiryDays: number;
+  expiryDays: Record<ModPointExpirySource, number>;
   values: Record<ModPointSource, number>;
   autoBan: {
     appealable: boolean;
@@ -77,6 +78,7 @@ export type ModPointsConfig = {
 };
 export declare const DEFAULT_MOD_POINTS: ModPointsConfig;
 export declare const MOD_POINT_SOURCES: ModPointSource[];
+export declare const MOD_POINT_EXPIRY_SOURCES: ModPointExpirySource[];
 export declare const MOD_POINT_DELETE_MESSAGE_OPTIONS: string[];
 export declare function normalizeModPointsConfig(
   raw: unknown,

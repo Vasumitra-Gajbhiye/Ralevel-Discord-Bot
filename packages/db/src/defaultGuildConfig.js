@@ -165,13 +165,18 @@ const DEFAULT_BAN_MESSAGES = {
 /** Commands that award moderation points. */
 const MOD_POINT_SOURCES = ["warn", "timeout", "kick", "softban"];
 
+/** Point sources with their own expiry setting ("manual" = /points add). */
+const MOD_POINT_EXPIRY_SOURCES = [...MOD_POINT_SOURCES, "manual"];
+
 const MOD_POINT_DELETE_MESSAGE_OPTIONS = ["1m", "1h", "1d", "7d"];
 
 const DEFAULT_MOD_POINTS = {
   enabled: false,
   threshold: 10,
   noticeDistance: 3,
-  expiryDays: 0,
+  // Days until a new entry stops counting (0 = never). Stored on each entry at
+  // creation, so changing these only affects new infractions.
+  expiryDays: { warn: 30, timeout: 0, kick: 0, softban: 0, manual: 0 },
   values: { warn: 2, timeout: 3, kick: 4, softban: 5 },
   autoBan: {
     appealable: true,
@@ -762,6 +767,7 @@ function buildDefaultGuildConfig(guildId) {
 function cloneDefaultModPoints() {
   return {
     ...DEFAULT_MOD_POINTS,
+    expiryDays: { ...DEFAULT_MOD_POINTS.expiryDays },
     values: { ...DEFAULT_MOD_POINTS.values },
     autoBan: { ...DEFAULT_MOD_POINTS.autoBan },
   };
@@ -779,6 +785,7 @@ module.exports = {
   DEFAULT_BAN_MESSAGES,
   DEFAULT_MOD_POINTS,
   MOD_POINT_SOURCES,
+  MOD_POINT_EXPIRY_SOURCES,
   MOD_POINT_DELETE_MESSAGE_OPTIONS,
   cloneDefaultModPoints,
   DEFAULT_QOTD_REMINDER_TEMPLATE,

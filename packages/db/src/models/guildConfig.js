@@ -259,7 +259,22 @@ const GuildConfigSchema = new mongoose.Schema(
           type: Number,
           default: DEFAULT_MOD_POINTS.noticeDistance,
         },
-        expiryDays: { type: Number, default: DEFAULT_MOD_POINTS.expiryDays },
+        expiryDays: {
+          warn: { type: Number, default: DEFAULT_MOD_POINTS.expiryDays.warn },
+          timeout: {
+            type: Number,
+            default: DEFAULT_MOD_POINTS.expiryDays.timeout,
+          },
+          kick: { type: Number, default: DEFAULT_MOD_POINTS.expiryDays.kick },
+          softban: {
+            type: Number,
+            default: DEFAULT_MOD_POINTS.expiryDays.softban,
+          },
+          manual: {
+            type: Number,
+            default: DEFAULT_MOD_POINTS.expiryDays.manual,
+          },
+        },
         values: {
           warn: { type: Number, default: DEFAULT_MOD_POINTS.values.warn },
           timeout: { type: Number, default: DEFAULT_MOD_POINTS.values.timeout },

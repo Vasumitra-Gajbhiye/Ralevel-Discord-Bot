@@ -5,6 +5,10 @@ const {
   PermissionFlagsBits,
 } = require("discord.js");
 const fetchModeratorTags = require("../../utils/fetchModeratorTags");
+const {
+  buildWarningFields,
+  describeWarningCounts,
+} = require("../../utils/warningFields");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -41,25 +45,19 @@ module.exports = {
       missingModeratorIds,
     );
 
-    const embed = new EmbedBuilder()
-      .setTitle(`⚠️ Warnings for ${user.tag}`)
-      .setColor("Orange");
-
-    for (const log of logs) {
-      const moderatorName =
+    const result = buildWarningFields(
+      logs,
+      (log) =>
         log.moderatorTag ||
         moderatorTags.get(log.moderatorId) ||
-        "Unknown Moderator";
+        "Unknown Moderator",
+    );
 
-      embed.addFields({
-        name: `🚨 Warning ID: ${log.actionId}`,
-        value:
-          `**Moderator:** ${moderatorName}\n` +
-          `**Reason:** ${log.reason}\n` +
-          `**Date:** <t:${Math.floor(log.timestamp / 1000)}:F>`,
-        inline: false,
-      });
-    }
+    const embed = new EmbedBuilder()
+      .setTitle(`⚠️ Warnings for ${user.tag}`)
+      .setDescription(describeWarningCounts(result))
+      .setColor("Orange")
+      .addFields(result.fields);
 
     return interaction.reply({ embeds: [embed] });
   },

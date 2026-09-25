@@ -1,4 +1,5 @@
 import { ensureDb, getOrCreateGuildConfig, guildConfigToJson } from "@/lib/db";
+import { notExpiredFilter } from "@/lib/expiry";
 import { PageHeader } from "@/components/PageHeader";
 import { RestartBanner } from "@/components/PageHeader";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -31,7 +32,7 @@ export default async function OverviewPage() {
       polls,
       config,
     ] = await Promise.all([
-      db.Warning.countDocuments({ active: true }),
+      db.Warning.countDocuments({ active: true, ...notExpiredFilter() }),
       db.Certificate.countDocuments({}),
       db.Task.countDocuments({}),
       db.Sticky.countDocuments({}),

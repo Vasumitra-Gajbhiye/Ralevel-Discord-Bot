@@ -396,7 +396,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/moderation/my-warnings.js` |
-| **Description** | View your active warnings |
+| **Description** | View your warnings (active first, then expired) |
 | **Discord permissions** | None |
 | **Role access** | Public |
 
@@ -570,7 +570,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/moderation/warnings.js` |
-| **Description** | View all warnings of a user |
+| **Description** | View all warnings of a user (active first, then expired) |
 | **Discord permissions** | `ManageMessages` |
 | **Role access** | admin, dcHead, srMods, jrMods, trialMods |
 

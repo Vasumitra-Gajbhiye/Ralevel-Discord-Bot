@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T05:47:40.279Z",
+  "generatedAt": "2026-09-25T03:47:34.821Z",
   "commands": [
     {
       "category": "reputation",
@@ -1233,7 +1233,7 @@
       "payload": {
         "options": [],
         "name": "my-warnings",
-        "description": "View your active warnings",
+        "description": "View your warnings",
         "type": 1
       }
     },

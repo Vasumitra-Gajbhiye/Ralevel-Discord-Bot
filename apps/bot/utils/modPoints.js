@@ -4,8 +4,17 @@
  * Infractions (warn, timeout, kick, softban) award points. Active points are
  * summed (ignoring voided and expired entries); reaching the threshold bans the
  * user, and landing within `noticeDistance` of it sends a ban notice DM.
+ *
+ * Each entry stores its own `expiresAt`, computed from the per-source
+ * `expiryDays` setting when it is created, so changing the setting only
+ * affects new infractions.
  */
-const { ModPoint, DEFAULT_MOD_POINTS } = require("@ralevel/db");
+const {
+  ModPoint,
+  Warning,
+  DEFAULT_MOD_POINTS,
+  MOD_POINT_EXPIRY_SOURCES,
+} = require("@ralevel/db");
 const { renderMessageTemplate } = require("@ralevel/shared");
 const { tryGetGuildConfig } = require("./guildConfigStore");
 const banUser = require("./banUser");
@@ -19,28 +28,49 @@ function getPointsConfig() {
   return {
     ...DEFAULT_MOD_POINTS,
     ...raw,
+    expiryDays: normalizeExpiryDays(raw.expiryDays),
     values: { ...DEFAULT_MOD_POINTS.values, ...raw.values },
     autoBan: { ...DEFAULT_MOD_POINTS.autoBan, ...raw.autoBan },
   };
 }
 
-/** Mongo filter for a user's entries that currently count toward their total. */
-function activeFilter(userId, config = getPointsConfig()) {
-  const filter = { userId, active: true };
-  if (config.expiryDays > 0) {
-    filter.createdAt = { $gt: new Date(Date.now() - config.expiryDays * DAY_MS) };
+/** Per-source expiry days; a legacy single number applies to every source. */
+function normalizeExpiryDays(raw) {
+  if (typeof raw === "number") {
+    return Object.fromEntries(MOD_POINT_EXPIRY_SOURCES.map((source) => [source, raw]));
   }
-  return filter;
+  return { ...DEFAULT_MOD_POINTS.expiryDays, ...raw };
 }
 
-/** When an entry stops counting, or null if points never expire. */
-function getExpiryDate(entry, config = getPointsConfig()) {
-  if (!(config.expiryDays > 0)) return null;
-  return new Date(new Date(entry.createdAt).getTime() + config.expiryDays * DAY_MS);
+/** Expiry date for a new entry of `source`, or null if it never expires. */
+function computeExpiresAt(source, from = new Date(), config = getPointsConfig()) {
+  const days = Number(config.expiryDays[source]) || 0;
+  if (days <= 0) return null;
+  return new Date(new Date(from).getTime() + days * DAY_MS);
+}
+
+/** Mongo filter matching entries that have not expired (missing = never). */
+function notExpiredFilter(now = new Date()) {
+  return { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] };
+}
+
+/** Mongo filter for a user's entries that currently count toward their total. */
+function activeFilter(userId) {
+  return { userId, active: true, ...notExpiredFilter() };
+}
+
+/** When an entry stops counting, or null if it never expires. */
+function getExpiryDate(entry) {
+  return entry.expiresAt ? new Date(entry.expiresAt) : null;
+}
+
+/** Whether a point entry or warning has passed its expiry date. */
+function isExpired(doc, now = Date.now()) {
+  return Boolean(doc.expiresAt) && new Date(doc.expiresAt).getTime() <= now;
 }
 
 async function getActivePoints(userId, config = getPointsConfig()) {
-  const entries = await ModPoint.find(activeFilter(userId, config))
+  const entries = await ModPoint.find(activeFilter(userId))
     .sort({ createdAt: -1 })
     .lean();
   const total = Math.max(
@@ -125,6 +155,7 @@ async function recordPoints({
   moderatorId,
   moderatorTag,
   reason,
+  expiresAt,
 }) {
   if (!preview.enabled) return null;
   return ModPoint.create({
@@ -136,6 +167,10 @@ async function recordPoints({
     moderatorId,
     moderatorTag,
     reason: reason || "No reason provided",
+    expiresAt:
+      expiresAt !== undefined
+        ? expiresAt
+        : computeExpiresAt(preview.source, new Date(), preview.config),
   });
 }
 
@@ -205,6 +240,36 @@ async function voidPoints(filter, { reason, voidedBy }) {
   return result.modifiedCount ?? 0;
 }
 
+/**
+ * Give warnings and point entries created before per-entry expiry existed an
+ * `expiresAt`, using the current per-source settings. Only touches documents
+ * without the field, so it is safe to run on every startup.
+ */
+async function backfillExpiry(config = getPointsConfig()) {
+  const missing = { expiresAt: { $exists: false } };
+  const addDays = (field, days) =>
+    days > 0
+      ? [{ $set: { expiresAt: { $add: [`$${field}`, days * DAY_MS] } } }]
+      : { $set: { expiresAt: null } };
+
+  let updated = 0;
+  const warnDays = Number(config.expiryDays.warn) || 0;
+  updated += (await Warning.updateMany(missing, addDays("timestamp", warnDays)))
+    .modifiedCount ?? 0;
+
+  for (const source of MOD_POINT_EXPIRY_SOURCES) {
+    const days = Number(config.expiryDays[source]) || 0;
+    updated += (
+      await ModPoint.updateMany({ ...missing, source }, addDays("createdAt", days))
+    ).modifiedCount ?? 0;
+  }
+  // Any other/unknown source never expires
+  updated += (await ModPoint.updateMany(missing, { $set: { expiresAt: null } }))
+    .modifiedCount ?? 0;
+
+  return updated;
+}
+
 /** Embed field summarizing the points outcome, or null if the system is off. */
 function buildPointsField(preview, enforcement) {
   if (!preview.enabled) return null;
@@ -217,8 +282,12 @@ function buildPointsField(preview, enforcement) {
 
 module.exports = {
   getPointsConfig,
+  computeExpiresAt,
+  notExpiredFilter,
   activeFilter,
   getExpiryDate,
+  isExpired,
+  backfillExpiry,
   getActivePoints,
   previewInfraction,
   buildInfractionDmExtra,

@@ -13,9 +13,9 @@ const modPoints = require("../../utils/modPoints");
 
 const MAX_LISTED_ENTRIES = 15;
 
-function formatEntry(entry, config) {
+function formatEntry(entry) {
   const created = Math.floor(new Date(entry.createdAt).getTime() / 1000);
-  const expiresAt = modPoints.getExpiryDate(entry, config);
+  const expiresAt = modPoints.getExpiryDate(entry);
   const expiry = expiresAt
     ? ` · expires <t:${Math.floor(expiresAt.getTime() / 1000)}:R>`
     : "";
@@ -123,7 +123,7 @@ module.exports = {
           {
             name: "Active entries",
             value: listed.length
-              ? listed.map((entry) => formatEntry(entry, config)).join("\n") + more
+              ? listed.map(formatEntry).join("\n") + more
               : "None",
           },
         )

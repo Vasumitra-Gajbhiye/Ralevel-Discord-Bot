@@ -1,10 +1,14 @@
 const { Warning } = require("@ralevel/db");
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  buildWarningFields,
+  describeWarningCounts,
+} = require("../../utils/warningFields");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("my-warnings")
-    .setDescription("View your active warnings"),
+    .setDescription("View your warnings"),
 
   async execute(interaction) {
     const logs = await Warning.find({
@@ -14,24 +18,18 @@ module.exports = {
 
     if (logs.length === 0) {
       return interaction.reply({
-        content: "✅ You have no active warnings.",
+        content: "✅ You have no warnings.",
         ephemeral: true,
       });
     }
 
+    const result = buildWarningFields(logs);
+
     const embed = new EmbedBuilder()
       .setTitle("⚠️ Your warnings")
-      .setColor("Orange");
-
-    for (const log of logs) {
-      embed.addFields({
-        name: `🚨 Warning ID: ${log.actionId}`,
-        value:
-          `**Reason:** ${log.reason}\n` +
-          `**Date:** <t:${Math.floor(log.timestamp / 1000)}:F>`,
-        inline: false,
-      });
-    }
+      .setDescription(describeWarningCounts(result))
+      .setColor("Orange")
+      .addFields(result.fields);
 
     return interaction.reply({ embeds: [embed], ephemeral: true });
   },

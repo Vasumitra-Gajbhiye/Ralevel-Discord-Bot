@@ -8,6 +8,7 @@ const {
   buildDefaultModmail,
   DEFAULT_BAN_MESSAGES,
   cloneDefaultModPoints,
+  DEFAULT_MOD_POINTS,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_COMMAND_DISCORD_PERMISSIONS,
   DEFAULT_COMMAND_EPHEMERAL,
@@ -435,6 +436,20 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
 
   if (!raw.moderation?.points) {
     $set["moderation.points"] = cloneDefaultModPoints();
+  } else if (
+    !raw.moderation.points.expiryDays ||
+    typeof raw.moderation.points.expiryDays !== "object"
+  ) {
+    // Legacy single expiryDays number → per-source map. Warnings get the new
+    // default; other sources keep the old global value.
+    const legacyDays = Number(raw.moderation.points.expiryDays) || 0;
+    $set["moderation.points.expiryDays"] = {
+      warn: DEFAULT_MOD_POINTS.expiryDays.warn,
+      timeout: legacyDays,
+      kick: legacyDays,
+      softban: legacyDays,
+      manual: legacyDays,
+    };
   }
 
   if (

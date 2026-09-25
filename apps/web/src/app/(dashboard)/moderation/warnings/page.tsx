@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
+import { isExpired } from "@/lib/expiry";
 import { useOpsCollection } from "@/lib/useOpsCollection";
 
 type Warning = {
@@ -15,6 +16,7 @@ type Warning = {
   actionId?: string;
   active?: boolean;
   timestamp?: string;
+  expiresAt?: string | null;
 };
 
 export default function WarningsPage() {
@@ -109,6 +111,7 @@ export default function WarningsPage() {
                 <th>Reason</th>
                 <th>Active</th>
                 <th>When</th>
+                <th>Expires</th>
                 <th />
               </tr>
             </thead>
@@ -126,6 +129,11 @@ export default function WarningsPage() {
                     {w.timestamp
                       ? new Date(w.timestamp).toLocaleString()
                       : "—"}
+                  </td>
+                  <td className="mono muted">
+                    {w.expiresAt
+                      ? `${isExpired(w.expiresAt) ? "expired " : ""}${new Date(w.expiresAt).toLocaleString()}`
+                      : "never"}
                   </td>
                   <td className="row">
                     {w.active ? (

@@ -4,6 +4,7 @@
 const {
   DEFAULT_MOD_POINTS,
   MOD_POINT_SOURCES,
+  MOD_POINT_EXPIRY_SOURCES,
   MOD_POINT_DELETE_MESSAGE_OPTIONS,
 } = require("./defaultGuildConfig");
 
@@ -31,7 +32,6 @@ function normalizeModPointsConfig(raw) {
     input.noticeDistance,
     DEFAULT_MOD_POINTS.noticeDistance,
   );
-  const expiryDays = toInt(input.expiryDays, DEFAULT_MOD_POINTS.expiryDays);
 
   if (!Number.isInteger(threshold) || threshold < 1) {
     errors.push("Ban threshold must be a whole number of at least 1.");
@@ -40,9 +40,6 @@ function normalizeModPointsConfig(raw) {
     errors.push("Notice distance must be a whole number of 0 or more.");
   } else if (Number.isInteger(threshold) && noticeDistance >= threshold) {
     errors.push("Notice distance must be less than the ban threshold.");
-  }
-  if (!Number.isInteger(expiryDays) || expiryDays < 0) {
-    errors.push("Expiry days must be a whole number of 0 or more.");
   }
 
   const rawValues =
@@ -54,6 +51,19 @@ function normalizeModPointsConfig(raw) {
       errors.push(`Points for ${source} must be a whole number of 0 or more.`);
     }
     values[source] = value;
+  }
+
+  const rawExpiry =
+    input.expiryDays && typeof input.expiryDays === "object"
+      ? input.expiryDays
+      : {};
+  const expiryDays = {};
+  for (const source of MOD_POINT_EXPIRY_SOURCES) {
+    const days = toInt(rawExpiry[source], DEFAULT_MOD_POINTS.expiryDays[source]);
+    if (!Number.isInteger(days) || days < 0) {
+      errors.push(`Expiry days for ${source} must be a whole number of 0 or more.`);
+    }
+    expiryDays[source] = days;
   }
 
   const rawAutoBan =

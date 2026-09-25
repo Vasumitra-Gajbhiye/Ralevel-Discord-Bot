@@ -482,7 +482,7 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **Dashboard:** `/moderation/points` (settings, stored in GuildConfig `moderation.points`) and `/moderation/point-ledger` (entries + top users, void/restore). The whole system is off until **Enable the point system** is ticked.
 
-**Settings:** threshold T, notice distance X, expiry days (0 = never; checked when points are read, so changes apply to existing entries), points per command (`warn`, `timeout`, `kick`, `softban`; 0 disables a command), auto-ban appealable + message-deletion window + reason template, ban notice template, and an optional points line added to infraction DMs. Placeholders are listed on the dashboard page (`MOD_POINTS_PLACEHOLDERS` in `@ralevel/shared`).
+**Settings:** threshold T, notice distance X, expiry days for each source (`warn` default 30, `timeout` / `kick` / `softban` / `manual` default 0 = never; stored on each entry as `expiresAt` when it is created, so changes only apply to new infractions), points per command (`warn`, `timeout`, `kick`, `softban`; 0 disables a command), auto-ban appealable + message-deletion window + reason template, ban notice template, and an optional points line added to infraction DMs. Placeholders are listed on the dashboard page (`MOD_POINTS_PLACEHOLDERS` in `@ralevel/shared`).
 
 **Workflow (warn / timeout / kick / softban):**
 
