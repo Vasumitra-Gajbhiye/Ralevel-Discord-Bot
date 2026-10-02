@@ -27,6 +27,7 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Modmail | `systems/modmail.js` | Called by router + `/close-ticket` / blacklist commands | MongoDB |
 | Moderator DMs | `systems/modDm.js` | Called by router + `/dm` / `/close-dm` + buttons | MongoDB |
 | Definitions | `systems/definitions.js`, `utils/definitions.js`, `utils/definitionActions.js` | `/define` family + buttons/modals | MongoDB |
+| Channel directory | `systems/channelDirectory.js` | `ready` + channel create/update/delete (debounced 5s) | MongoDB |
 
 ---
 
@@ -517,6 +518,18 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 | Edit / delete someone else's | Direct | Review | Review |
 
 Direct changes are logged to the log channel (or the review channel when unset) without a ping.
+
+---
+
+## 16. Channel directory
+
+**File:** `systems/channelDirectory.js`
+
+**Purpose:** Publishes the guild's channel list (`id`, `name`, `type`, `parentId`, `position`; threads left out) to the `channeldirectories` collection so the dashboard can offer real channel pickers. Today that is **Settings → Exam subjects**, which maps Cambridge syllabuses (GuildConfig `examLocking.subjects`) to the channels exam locking makes read-only.
+
+**How it works:** Writes once on `ready`, then again 5 seconds after the last `channelCreate` / `channelUpdate` / `channelDelete` in `GUILD_ID`. A list identical to the last one written is skipped, and overlapping publishes are serialised. Failures are logged and retried on the next change.
+
+**Dependencies:** `GUILD_ID` (disabled when unset), the `Guilds` intent's channel cache, MongoDB (`ChannelDirectory`)
 
 **Review workflow:**
 

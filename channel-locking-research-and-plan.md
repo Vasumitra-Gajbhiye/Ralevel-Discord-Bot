@@ -26,7 +26,8 @@ Supporting material (full agent reports, parsed timetables, simulation scripts) 
   - v2 therefore gets one lock record per channel that snapshots the original permissions, tracks every reason the channel is locked (exam or manual), and restores exactly what it changed.
 - **Nov 2026 is running now** (28 Sep – 13 Nov). **155 of its 164 A Level lock windows are still ahead, with one almost every day.**
   - **Starting today:** mods cover the windows by hand with `/lock` and `/unlock`, using the rota in Appendix A.
-  - **Phase 0 (3–4 days):**
+  - **Phase 0 (4–5 days):**
+    - a **Settings → Exam subjects** dashboard page for the subject → channel mapping, shipped first
     - give v1 a safe, exam-only lock (snapshot and restore, staff allow, threads blocked)
     - harden v1's sweeper
     - bulk-load the rest of Nov 2026 from the parsed timetable
@@ -41,7 +42,9 @@ Supporting material (full agent reports, parsed timetables, simulation scripts) 
 | How long to lock | **From the first zone's start to the last zone's end, plus a buffer** |
 | Paper sat on different days by different zones | **Lock each cluster of sittings separately.** In between, keep a "still pending for Zones X until <date>" reminder in the channel |
 | What a locked channel is like | **Read-only.** Visible; no sending, reacting, thread creation, forum posts or thread replies |
-| Who can still talk | **Configured staff roles only** (plus Discord Administrators, who bypass all overwrites anyway) |
+| Who can still talk | **The roles allowed to use `/lock`**, read live from its command permissions (today `admin`, `dcHead`, `srMods`, `jrMods`). Change who can `/lock` and the exemption follows. Discord Administrators bypass all overwrites anyway |
+| Subject → channel mapping | **A dashboard page (Settings → Exam subjects)**, built in Phase 0 so it's ready for the Nov 2026 stopgap, not a JSON file |
+| Server facts (confirmed) | **The bot has Administrator.** **No subject role has an overwrite allowing Send in its channel**, so the `@everyone` deny holds for ordinary members. The audit still checks every channel for stray member overwrites and other roles |
 | Channel layout | **Mixed.** One subject may map to several channels (text, forum, voice) and/or whole categories; a channel may belong to several subjects |
 | Boards in scope | **Cambridge AS & A Level** (8xxx/9xxx syllabuses). The model shouldn't block IGCSE or other boards later, but we build nothing for them now |
 | Timetable entry | **Paste or upload CSV → preview with warnings → commit**, plus manual edits |
@@ -250,7 +253,7 @@ Notes:
 
 ### 3.5 Bot permissions
 
-- **Simplest:** give the bot **Administrator**.
+- **Simplest:** give the bot **Administrator**. ✅ Confirmed: the bot has Administrator.
 - **Otherwise the bot needs:**
   - `ManageRoles` (required to edit overwrites)
   - every bit in the lock mask, **in the guild or in the channel's parent category** (a bot can only allow or deny bits it has there). A category that denies `@everyone` View or Send can break a non-Admin bot, so the preflight must evaluate the parent category too
@@ -408,7 +411,9 @@ The principles:
 
 ```js
 examLocking: {
-  staffBypassRoleKeys: ["admin", "dcHead", "srMods", "jrMods"],   // role keys (same set as /lock), resolved at runtime
+  staffBypass: { source: "lockCommand", extraRoleKeys: [] },
+    // staff = getCommandAllowedRoleIds("lock") (guildConfigStore), resolved at lock time,
+    // plus any extra role keys; today that resolves to admin, dcHead, srMods, jrMods
   policy: {
     lockBufferMinutes: 60,
     unlockRule: "estimatedEnd",      // "keyTime" | "estimatedEnd" | "plus24h"
@@ -652,12 +657,20 @@ All times use `<t:unix:F> (<t:unix:R>)` so every member sees their own local tim
 
 ### 6.7 Dashboard
 
-**Settings → Exam locking** (GuildConfig, draft + `SaveActions`):
+**Settings → Exam subjects** (built in **Phase 0**; GuildConfig `examLocking.subjects`, draft + `SaveActions`, same pattern as Settings → Definitions):
 
-- the feature toggle and staff bypass roles (`RolePicker`)
+- **One row per subject:** label, syllabus codes, channels, enabled.
+- **Syllabus codes:** autocomplete from a list of Cambridge AS & A Level codes and names, shipped in `packages/shared`. "Add all subjects in the Nov 2026 timetable" pre-fills the rows, so the admin only picks channels.
+- **Channels:** chosen with the existing `ChannelIdPicker`, fed from `ChannelDirectory` (the server's real channels, shown as "#name · Category", with a forum or voice tag). A channel can be in several subjects.
+- **Warnings:** a timetabled syllabus with no row; a row with no channels.
+- **Phase 4 additions:** categories and the per-channel preflight badges below.
+
+**Settings → Exam locking** (Phase 4; GuildConfig, draft + `SaveActions`):
+
+- the feature toggle, and staff bypass: "same as `/lock`" (shown read-only with the resolved roles) plus optional extra roles (`RolePicker`)
 - timing policy, with inline explanations of each number, and an `unlockRule` preset picker
 - the default key-time ladder: a 6 × 3 grid, with a live preview such as "Zone 4 AM = 10:00 PKT / 10:30 IST"
-- **subjects:** label, syllabus codes, channels and categories (pickers backed by `ChannelDirectory`), enabled. Each channel shows **preflight badges**:
+- **preflight badges on the Exam subjects page**, per channel:
   - ⚠ role "Physics" allows Send (will be neutralised during locks)
   - ⛔ bot can't manage this channel
   - forum / voice / category-expanded
@@ -772,27 +785,29 @@ There are lock windows almost every day from today, and Phase 0 needs a few days
 - **Reminder to post by hand:** in #maths, *"9709 Paper 1 — Zones 5 & 6 sit it on 13 Oct 01:00 UTC. Please don't discuss Paper 1 until then."* (Zones 1–4 sat it today.) 9701 Paper 3 needs no reminder: its 27 Oct date is the separate "Practical 2" paper (§5.3 step 4).
 - **Known limits:** manual `/lock` only denies `SendMessages` on `@everyone`, so threads and forum replies stay open, and any role allow bypasses it (§3.1). Until Phase 0, mods should also watch threads in locked channels.
 
-### Phase 0: Nov 2026 stopgap (about 3–4 days)
+### Phase 0: Nov 2026 stopgap (about 4–5 days)
 
 The goal is to protect the remaining Nov 2026 A Level windows safely, with v1's sweeper and a minimal set of changes. **Manual `/lock` and `/unlock` stay exactly as they are.** The exam system gets its own lock primitive, so the wider mask and the restore logic never affect manual commands or unaudited channels.
 
 | Step | Change | Files |
 |---|---|---|
-| 0.1 | **Preflight audit script** (read-only). Reads the subject → channel map. For each channel it reports:<br>• type<br>• any explicit `@everyone` value on the lock bits<br>• role and member overwrites that allow lock bits<br>• whether the bot is Admin or has `ManageRoles` plus the lock bits **in the guild or the parent category**<br>• parent category overwrites<br>• sync status<br><br>Mods fix what it flags **before the import**, e.g. by making subject-role overwrites View-only. Phase 0 does not neutralise role allows automatically | `apps/bot/scripts/audit-exam-channels.js`, `apps/bot/data/exam-subject-channels.json` |
-| 0.2 | **Exam-only lock primitive** with a snapshot (a subset of the v2 engine, reusable later).<br><br>**Lock:**<br>1. Fetch the channel fresh.<br>2. **Save a snapshot on the paper before writing:** `{existed, allow, deny}` for `@everyone`, each staff role (`admin`, `dcHead`, `srMods`, `jrMods`) and the bot.<br>3. Apply: `@everyone` deny the lock mask (`SendMessages`, `SendMessagesInThreads`, `CreatePublicThreads`, `CreatePrivateThreads`, `AddReactions`); staff roles allow the mask; the bot allows View/Send/Embed/History if it isn't Admin.<br>4. Record `applied` with its `touched` bits.<br>5. If any *non-staff* role or member overwrite still allows a lock bit, send a modLog alert.<br><br>**Unlock:** a per-bit 3-way restore over the touched bits (`cur == applied ? snapshot : cur`). Delete overwrites that didn't exist before and are now empty | `apps/bot/utils/examChannelLock.js` (new), `packages/db/src/models/examPaper.js` (+ `lockSnapshot`, `lockApplied`: Mixed) |
+| 0.0 | **Subject → channel mapping in the dashboard** (ship first, so admins can fill it in while the rest is built):<br>• `GuildConfig.examLocking.subjects` (schema, `migrateGuildConfigDocument` default `[]`, `normalizeExamLockingConfig`, added to `PATCHABLE` in `api/config`)<br>• a minimal **`ChannelDirectory`** published by the bot on ready and on debounced channel create/update/delete: id, name, type, parent category<br>• the **Settings → Exam subjects** page (§6.7), with the Cambridge syllabus list for autocomplete and pre-fill<br>• a nav entry | `packages/db/src/models/guildConfig.js`, `migrateGuildConfig.js`, `examLockingConfig.js` (new), `models/channelDirectory.js` (new), `apps/bot/systems/channelDirectory.js` (new), `packages/shared/src/cambridgeSyllabuses.js` (new), `apps/web/src/app/(dashboard)/settings/exam-subjects/page.tsx` (new), `api/discord/channels/route.ts` (new), `api/config/route.ts`, `lib/useGuildConfig.ts`, `lib/nav.ts` |
+| 0.1 | **Preflight audit script** (read-only). Reads the mapping from Settings → Exam subjects. For each channel it reports:<br>• type<br>• any explicit `@everyone` value on the lock bits<br>• role and member overwrites that allow lock bits<br>• whether the bot is Admin or has `ManageRoles` plus the lock bits **in the guild or the parent category**<br>• parent category overwrites<br>• sync status<br><br>You've confirmed the bot is Administrator and no subject role allows Send, so the audit should come back clean. It's still worth running: it catches stray member overwrites and other roles, e.g. helpers or Verified, that allow Send. Mods fix anything it flags before the import. Phase 0 does not neutralise role allows automatically | `apps/bot/scripts/audit-exam-channels.js` |
+| 0.2 | **Exam-only lock primitive** with a snapshot (a subset of the v2 engine, reusable later).<br><br>**Lock:**<br>1. Fetch the channel fresh.<br>2. **Save a snapshot on the paper before writing:** `{existed, allow, deny}` for `@everyone` and each staff role. Staff are the roles allowed to use `/lock` (`getCommandAllowedRoleIds("lock")`), which today resolves to `admin`, `dcHead`, `srMods`, `jrMods`.<br>3. Apply: `@everyone` deny the lock mask (`SendMessages`, `SendMessagesInThreads`, `CreatePublicThreads`, `CreatePrivateThreads`, `AddReactions`); staff roles allow the mask. The bot is Administrator, so it needs no allow of its own; the primitive checks this at startup and alerts if it ever changes.<br>4. Record `applied` with its `touched` bits.<br>5. If any *non-staff* role or member overwrite still allows a lock bit, send a modLog alert.<br><br>**Unlock:** a per-bit 3-way restore over the touched bits (`cur == applied ? snapshot : cur`). Delete overwrites that didn't exist before and are now empty | `apps/bot/utils/examChannelLock.js` (new), `packages/db/src/models/examPaper.js` (+ `lockSnapshot`, `lockApplied`: Mixed) |
 | 0.3 | **Sweeper hardening:**<br>• `guildId: process.env.GUILD_ID` on every query<br>• skip sweeps until `client.isReady()`<br>• try/catch around `scheduleNextSweep` with a fallback timer<br>• **a failed lock keeps the paper `scheduled`**, with `attempts`/`nextAttemptAt` backoff and a modLog alert<br>• **a failed unlock keeps it `locked`** and retries<br>• if a window ends while its lock never succeeded, mark the paper `unlocked` with `lastError`<br>• notices use `<t:…:F> (<t:…:R>)` | `apps/bot/systems/examLockSystem.js`, `examPaper.js` (+ `attempts`, `nextAttemptAt`, `lastError`) |
 | 0.4 | **Pending reminder:** add an optional `unlockNote` to `ExamPaper` and append it to the unlock embed | `examPaper.js`, `examLockSystem.js` |
 | 0.5 | **Protect imported papers from the dashboard:**<br>• add `imported: true`<br>• the session PATCH recompute loop skips imported papers (`[id]/route.ts:136-161`)<br>• the paper PATCH refuses anything except cancel and force-unlock for them | `examPaper.js`, `apps/web/src/app/api/exam-sessions/[id]/route.ts`, `[id]/papers/[paperId]/route.ts` |
-| 0.6 | **Bulk import script**, `--csv … --map … [--dry-run] [--shift-minutes N]`:<br>• filters syllabus 8xxx/9xxx and groups and clusters exactly as in §5.3<br>• resolves channels, then **merges intervals per channel** (§5.4)<br>• creates **one v1 paper per (channel, merged interval)**. A channel is then never covered by two v1 papers at once, which keeps the per-paper snapshot safe<br>• **labels** combine the papers, e.g. "9709 Paper 2 + Paper 4 (Zones 1–4)"<br>• **`unlockNote`** is filled from `pendingLater`<br>• **required v1 fields:** one session "Nov 2026 (imported)" with nominal valid times; `date` = UTC date of `lockAt`; `slot` = AM/PM from the UTC hour (cosmetic). EV sittings need no special handling because times are set directly<br>• sets `lockAt`/`unlockAt` directly<br>• **past and running windows:** skips ended windows; a window already running gets `lockAt = now`<br>• idempotent on `channelId + lockAt`<br>• `--dry-run` prints the schedule for mods to check against Appendix A | `apps/bot/scripts/import-exam-windows-v1.js`, `apps/bot/data/exam-timetables/november-2026.csv` |
+| 0.6 | **Bulk import script**, `--csv … [--dry-run] [--shift-minutes N]`:<br>• filters syllabus 8xxx/9xxx and groups and clusters exactly as in §5.3<br>• resolves channels **from Settings → Exam subjects**, then **merges intervals per channel** (§5.4)<br>• **re-runnable after a mapping change:** it replaces imported papers that are still `scheduled` and lock more than 15 min from now, and leaves running and finished ones alone<br>• creates **one v1 paper per (channel, merged interval)**. A channel is then never covered by two v1 papers at once, which keeps the per-paper snapshot safe<br>• **labels** combine the papers, e.g. "9709 Paper 2 + Paper 4 (Zones 1–4)"<br>• **`unlockNote`** is filled from `pendingLater`<br>• **required v1 fields:** one session "Nov 2026 (imported)" with nominal valid times; `date` = UTC date of `lockAt`; `slot` = AM/PM from the UTC hour (cosmetic). EV sittings need no special handling because times are set directly<br>• sets `lockAt`/`unlockAt` directly<br>• **past and running windows:** skips ended windows; a window already running gets `lockAt = now`<br>• idempotent on `channelId + lockAt`<br>• `--dry-run` prints the schedule for mods to check against Appendix A | `apps/bot/scripts/import-exam-windows-v1.js`, `apps/bot/data/exam-timetables/november-2026.csv` |
 | 0.7 | **Rehearsal** on the dev guild. **Use a separate database**, or deploy 0.3's `guildId` filter to production first; otherwise the production sweeper grabs the rehearsal papers. `--shift-minutes` moves a few windows into the next hour on a test channel. Check:<br>• lock applied, notice posted<br>• threads and forum replies blocked<br>• staff can post<br>• unlock restores the original overwrites and the category sync | — |
 
 **Deploy order:**
 
-1. Deploy 0.2–0.5.
-2. Run the 0.1 audit and fix what it flags.
-3. Run the import with `--dry-run`; mods review it.
-4. Run the real import.
-5. Stop the manual rota for the imported channels.
+1. Deploy 0.0 as soon as it's ready. Admins map subjects to channels in the dashboard while the rest is built.
+2. Deploy 0.2–0.5.
+3. Run the 0.1 audit and fix what it flags.
+4. Run the import with `--dry-run`; mods review it.
+5. Run the real import.
+6. Stop the manual rota for the imported channels.
 
 **Operating rules for mods until cutover:**
 
@@ -860,7 +875,7 @@ The goal is to protect the remaining Nov 2026 A Level windows safely, with v1's 
   - `examTimetablePaper.js`
   - `examLockWindow.js`
   - `examLockAction.js`
-  - `channelDirectory.js`
+  - (`channelDirectory.js` already exists from Phase 0; Phase 3 adds the audit fields: allowing roles and members, bot rights, sync status)
   - At cutover, delete `examSession.js`, `examPaper.js` and `examWindows.js`.
 - **Config:** `GuildConfig.examLocking`, `features.examLocking`, migration defaults and `normalizeExamLockingConfig`, wired into `PUT /api/config`.
 - **Compile:** `apps/web/src/lib/examCompile.ts` (recompile + upsert).
@@ -868,7 +883,7 @@ The goal is to protect the remaining Nov 2026 A Level windows safely, with v1's 
   - rewrite `systems/examLockSystem.js` as the reconciler
   - notices and warnings
   - pending-reminder stickies (add `owner` to the `Sticky` model)
-  - `systems/channelDirectory.js`
+  - extend `systems/channelDirectory.js` with per-channel audit data and `roleUpdate` handling
   - the wake route on `commandSyncServer.js`
 - **Data:** a clean-up script that deletes v1 `examsessions`/`exampapers` at cutover. It refuses to run while any v1 paper is `locked`.
 
@@ -913,18 +928,16 @@ The goal is to protect the remaining Nov 2026 A Level windows safely, with v1's 
 
 ## 9. Verify on the live server before Phase 0 goes live
 
-1. **Is the bot Administrator?**
-   - If not, does it have `ManageRoles` plus every mask bit, in the guild or in each subject channel's parent category?
-   - Does the server enforce 2FA for moderation? If so, the bot owner's account needs 2FA.
-2. **Run the 0.1 audit on every subject channel.** Are there role overwrites (subject roles, Verified, helpers) that allow `SendMessages`/`SendMessagesInThreads`? This is the single most likely way the lock silently fails.
+1. ✅ **Bot has Administrator** (confirmed). The Phase 0 primitive alerts if that ever changes.
+2. ✅ **No subject role allows Send in its channel** (confirmed). Still run the 0.1 audit once the mapping is filled in, to catch member overwrites and other roles (helpers, Verified).
 3. **Channel types:** which subject channels are forums, which use threads heavily, and are there subject voice channels?
-4. **Staff bypass:** confirm the role keys that should bypass locks. The proposal is the `/lock` set: `admin`, `dcHead`, `srMods`, `jrMods`. Should helpers (`srHelper`, `jrHelper`) also be included?
+4. ✅ **Staff bypass = whoever can use `/lock`** (confirmed). This is read live from its command permissions.
 5. **Stickies:** do subject channels already have stickies? That decides whether the pending reminder can use a sticky.
 6. **Production environment:** are `SYNC_HTTP_PORT` + `INTERNAL_SYNC_SECRET` + `BOT_INTERNAL_SYNC_URL` set? The wake endpoint needs them; without them we fall back to the ≤60 s poll.
 7. **Production Mongo:**
    - before the Phase 0 import, confirm there are no v1 exam documents
    - confirm no other process with a different `GUILD_ID` uses the same `MONGO_URI` (audit H4); if the dev bot does, rehearse on a separate database
-8. **Subject → channel map:** which Discord channels belong to which syllabus codes? This is the input to the 0.1 audit and the 0.6 import (`apps/bot/data/exam-subject-channels.json`).
+8. **Subject → channel map:** admins fill it in on **Settings → Exam subjects** (step 0.0) as soon as that page ships.
 
 ---
 

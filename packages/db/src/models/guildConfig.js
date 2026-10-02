@@ -144,6 +144,19 @@ const DefinitionBoardSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const ExamSubjectSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    // Cambridge syllabus codes, e.g. ["9709", "9231"]
+    syllabusCodes: { type: [String], default: [] },
+    // Channels made read-only while one of the syllabuses is being sat
+    channels: { type: [IdLabelSchema], default: [] },
+    enabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
 const GuildConfigSchema = new mongoose.Schema(
   {
     guildId: { type: String, required: true, unique: true, index: true },
@@ -252,6 +265,9 @@ const GuildConfigSchema = new mongoose.Schema(
       approverRoleKeys: { type: [String], default: ["admin", "hlpHead"] },
       pingRoleKeys: { type: [String], default: ["hlpHead"] },
       maxPendingPerUser: { type: Number, default: 5 },
+    },
+    examLocking: {
+      subjects: { type: [ExamSubjectSchema], default: [] },
     },
     qotd: {
       reminderTemplate: {

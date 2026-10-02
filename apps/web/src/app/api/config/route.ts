@@ -10,6 +10,7 @@ import {
   normalizeRanksConfig,
   normalizeModPointsConfig,
   normalizeDefinitionsConfig,
+  normalizeExamLockingConfig,
 } from "@ralevel/db";
 import { getCommandCatalog } from "@ralevel/shared/commandCatalog";
 import { validateCommandDisplayNames } from "@ralevel/shared/commandDisplayNames";
@@ -62,6 +63,7 @@ const PATCHABLE = [
   "sticky",
   "helper",
   "definitions",
+  "examLocking",
   "qotd",
   "moderation",
 ] as const;
@@ -175,6 +177,17 @@ export async function PUT(request: Request) {
       body.definitions = validation.definitions;
     }
 
+    if (body.examLocking !== undefined) {
+      const validation = normalizeExamLockingConfig(body.examLocking);
+      if (!validation.ok) {
+        return NextResponse.json(
+          { error: validation.errors.join("; ") },
+          { status: 400 },
+        );
+      }
+      body.examLocking = validation.examLocking;
+    }
+
     for (const key of PATCHABLE) {
       if (body[key] !== undefined) {
         if (key === "reputation") {
@@ -200,7 +213,8 @@ export async function PUT(request: Request) {
             key === "commandEphemeral" ||
             key === "qotd" ||
             key === "moderation" ||
-            key === "definitions"
+            key === "definitions" ||
+            key === "examLocking"
           ) {
             doc.markModified(key);
           }

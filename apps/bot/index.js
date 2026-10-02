@@ -24,6 +24,7 @@ const messageRouter = require("./systems/messageRouter");
 const xpFlushSystem = require("./systems/xpFlushSystem");
 const pollSystem = require("./systems/polls");
 const examLockSystem = require("./systems/examLockSystem");
+const channelDirectorySystem = require("./systems/channelDirectory");
 const { startCommandSyncServer } = require("./systems/commandSyncServer");
 const { deployCommandsOnReady } = require("./systems/deployCommandsOnReady");
 const { exportCommandCatalog } = require("./scripts/export-command-catalog");
@@ -77,6 +78,7 @@ async function start() {
   xpFlushSystem(client);
   pollSystem(client);
   examLockSystem(client);
+  channelDirectorySystem(client);
   startCommandSyncServer();
 
   await client.login(process.env.TOKEN);

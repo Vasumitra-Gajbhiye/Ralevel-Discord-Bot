@@ -15,6 +15,7 @@ const {
   DEFAULT_COMMAND_PERMISSIONS,
 } = require("./defaultGuildConfig");
 const { buildDefaultDefinitions } = require("./definitionsConfig");
+const { buildDefaultExamLocking } = require("./examLockingConfig");
 
 const CATALOG_PATH = path.resolve(
   __dirname,
@@ -463,6 +464,12 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
 
   if (!raw.definitions || typeof raw.definitions !== "object") {
     $set.definitions = buildDefaultDefinitions();
+  }
+
+  if (!raw.examLocking || typeof raw.examLocking !== "object") {
+    $set.examLocking = buildDefaultExamLocking();
+  } else if (!Array.isArray(raw.examLocking.subjects)) {
+    $set["examLocking.subjects"] = [];
   }
 
   if (!Array.isArray(raw.moderation?.banAppealApproverRoleKeys)) {

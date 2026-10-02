@@ -4,6 +4,7 @@
  */
 
 const { buildDefaultDefinitions } = require("./definitionsConfig");
+const { buildDefaultExamLocking } = require("./examLockingConfig");
 
 const ROLE_DEFS = [
   { key: "admin", label: "Admin", env: "ADMIN_ROLE_ID" },
@@ -771,6 +772,7 @@ function buildDefaultGuildConfig(guildId) {
       pingDelayMs: 10000,
     },
     definitions: buildDefaultDefinitions(),
+    examLocking: buildDefaultExamLocking(),
     qotd: {
       reminderTemplate: DEFAULT_QOTD_REMINDER_TEMPLATE,
     },

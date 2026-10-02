@@ -35,6 +35,7 @@ const GuildConfig = require("./src/models/guildConfig");
 const DashboardAccess = require("./src/models/dashboardAccess");
 const ExamSession = require("./src/models/examSession");
 const ExamPaper = require("./src/models/examPaper");
+const ChannelDirectory = require("./src/models/channelDirectory");
 const {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
@@ -60,6 +61,11 @@ const {
   slugifyEntryId,
   normalizeDefinitionsConfig,
 } = require("./src/definitionsConfig");
+const {
+  EXAM_LOCKING_LIMITS,
+  buildDefaultExamLocking,
+  normalizeExamLockingConfig,
+} = require("./src/examLockingConfig");
 const {
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
@@ -113,6 +119,7 @@ module.exports = {
   DashboardAccess,
   ExamSession,
   ExamPaper,
+  ChannelDirectory,
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
   buildDefaultModmail,
@@ -132,6 +139,9 @@ module.exports = {
   normalizeTermKey,
   slugifyEntryId,
   normalizeDefinitionsConfig,
+  EXAM_LOCKING_LIMITS,
+  buildDefaultExamLocking,
+  normalizeExamLockingConfig,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
   migrateGuildConfigDocument,

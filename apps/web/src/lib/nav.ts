@@ -19,6 +19,7 @@ export const NAV = [
       { href: "/settings/tasks", label: "Tasks" },
       { href: "/settings/misc", label: "Polls / Sticky / Helper" },
       { href: "/settings/definitions", label: "Definitions" },
+      { href: "/settings/exam-subjects", label: "Exam subjects" },
     ],
   },
   {

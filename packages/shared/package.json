@@ -44,6 +44,10 @@
     "./commandMetadataOverrides": {
       "types": "./src/commandMetadataOverrides.d.ts",
       "default": "./src/commandMetadataOverrides.js"
+    },
+    "./cambridgeSyllabuses": {
+      "types": "./src/cambridgeSyllabuses.d.ts",
+      "default": "./src/cambridgeSyllabuses.js"
     }
   }
 }

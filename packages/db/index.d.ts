@@ -36,6 +36,7 @@ export declare const GuildConfig: Model<any>;
 export declare const DashboardAccess: Model<any>;
 export declare const ExamSession: Model<any>;
 export declare const ExamPaper: Model<any>;
+export declare const ChannelDirectory: Model<any>;
 export declare const TIME_UTC_RE: RegExp;
 export declare const DATE_RE: RegExp;
 export declare function combineDateAndUtcTime(
@@ -120,6 +121,41 @@ export declare function slugifyEntryId(label: string): string;
 export declare function normalizeDefinitionsConfig(
   raw: unknown,
 ): { ok: true; definitions: DefinitionsConfig } | { ok: false; errors: string[] };
+export type ExamSubject = {
+  id: string;
+  label: string;
+  syllabusCodes: string[];
+  channels: { id: string; label: string }[];
+  enabled: boolean;
+};
+export type ExamLockingConfig = {
+  subjects: ExamSubject[];
+};
+export declare const EXAM_LOCKING_LIMITS: {
+  label: number;
+  subjects: number;
+  syllabusCodesPerSubject: number;
+  channelsPerSubject: number;
+};
+export declare function buildDefaultExamLocking(): ExamLockingConfig;
+export declare function normalizeExamLockingConfig(
+  raw: unknown,
+): { ok: true; examLocking: ExamLockingConfig } | { ok: false; errors: string[] };
+export type ChannelDirectoryType =
+  | "text"
+  | "announcement"
+  | "forum"
+  | "media"
+  | "voice"
+  | "stage"
+  | "category";
+export type ChannelDirectoryEntry = {
+  id: string;
+  name: string;
+  type: ChannelDirectoryType;
+  parentId: string | null;
+  position: number;
+};
 export declare function normalizeIdLabels(
   raw: unknown,
 ): { id: string; label: string }[];

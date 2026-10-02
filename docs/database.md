@@ -585,6 +585,24 @@ Live (approved) glossary entries. Pending changes are in `definitionrequests`.
 
 ---
 
+### `channeldirectories` — ChannelDirectory
+
+**Model:** `models/channelDirectory.js`
+
+One document per guild: the live channel list, so the dashboard can pick real channels (the GuildConfig `channels` registry only holds named keys).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `guildId` | String | Guild (unique) |
+| `channels` | Array | `{ id, name, type, parentId, position }`. `type` is `text`, `announcement`, `forum`, `media`, `voice`, `stage` or `category`; `parentId` is the category (or `null`); `position` is Discord's raw position. Threads are not listed |
+| `createdAt` / `updatedAt` | Date | Timestamps; `updatedAt` = last time the list changed or the bot started |
+
+**Indexes:** `{ guildId: 1 }` (unique)
+
+**Written by:** `systems/channelDirectory.js` only. Read by `GET /api/discord/channels` (dashboard **Settings → Exam subjects**)
+
+---
+
 ## Redis keys
 
 Redis is used **only** for high-frequency message counting and XP flush locking. No general-purpose caching.
