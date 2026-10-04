@@ -54,13 +54,15 @@ function exportCommandCatalog() {
   commands.sort((a, b) => a.name.localeCompare(b.name));
 
   fs.mkdirSync(generatedDir, { recursive: true });
+  // No timestamps: output must be deterministic so regenerating on every
+  // startup doesn't leave a git diff when commands haven't changed.
   fs.writeFileSync(
     outputPath,
-    `${JSON.stringify({ generatedAt: new Date().toISOString(), commands }, null, 2)}\n`,
+    `${JSON.stringify({ commands }, null, 2)}\n`,
   );
   fs.writeFileSync(
     bitfieldsPath,
-    `${JSON.stringify({ generatedAt: new Date().toISOString(), bitfields: permissionBitfields }, null, 2)}\n`,
+    `${JSON.stringify({ bitfields: permissionBitfields }, null, 2)}\n`,
   );
 
   return {
