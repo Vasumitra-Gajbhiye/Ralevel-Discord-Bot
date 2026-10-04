@@ -24,13 +24,27 @@ let nextId = 1;
 
 function matches(doc, filter) {
   return Object.entries(filter).every(([key, cond]) => {
+    if (key === "$or") return cond.some((sub) => matches(doc, sub));
     const value = doc[key];
+    if (cond === null) return value == null;
     if (cond && typeof cond === "object" && !(cond instanceof Date)) {
       if ("$in" in cond) return cond.$in.includes(value);
-      if ("$gt" in cond) return value > cond.$gt;
+      if ("$gt" in cond) return value != null && value > cond.$gt;
+      if ("$exists" in cond) return (key in doc) === cond.$exists;
     }
     return String(value) === String(cond);
   });
+}
+
+// Supports { $set } and the [{ $set: { f: { $add: ["$field", n] } } }] pipeline form.
+function applyUpdate(doc, update) {
+  if (!Array.isArray(update)) return Object.assign(doc, update.$set);
+  for (const stage of update) {
+    for (const [key, expr] of Object.entries(stage.$set)) {
+      const [field, amount] = expr.$add;
+      doc[key] = new Date(doc[field.slice(1)].getTime() + amount);
+    }
+  }
 }
 
 function query(results) {
@@ -63,7 +77,7 @@ ModPoint.updateMany = async (filter, update) => {
   let modifiedCount = 0;
   for (const doc of store) {
     if (matches(doc, filter)) {
-      Object.assign(doc, update.$set);
+      applyUpdate(doc, update);
       modifiedCount++;
     }
   }
@@ -79,8 +93,14 @@ Warning.create = async (doc) => {
 Warning.findOne = async (filter) => warnings.find((w) => matches(w, filter)) || null;
 Warning.find = async (filter) => warnings.filter((w) => matches(w, filter));
 Warning.updateMany = async (filter, update) => {
-  for (const w of warnings) if (matches(w, filter)) Object.assign(w, update.$set);
-  return {};
+  let modifiedCount = 0;
+  for (const w of warnings) {
+    if (matches(w, filter)) {
+      applyUpdate(w, update);
+      modifiedCount++;
+    }
+  }
+  return { modifiedCount };
 };
 
 // ---------- discord mocks ----------
@@ -185,18 +205,90 @@ async function testZones() {
 
 async function testExpiryAndVoid() {
   reset();
-  configure({ expiryDays: 7 });
+  configure();
+  const past = new Date(Date.now() - DAY_MS);
+  const future = new Date(Date.now() + DAY_MS);
   store.push(
-    { _id: "old", userId: "e", points: 4, source: "warn", active: true, createdAt: new Date(Date.now() - 10 * DAY_MS) },
-    { _id: "new", userId: "e", points: 1, source: "warn", active: true, createdAt: new Date() },
+    { _id: "old", userId: "e", points: 4, source: "warn", active: true, createdAt: new Date(), expiresAt: past },
+    { _id: "new", userId: "e", points: 1, source: "warn", active: true, createdAt: new Date(), expiresAt: future },
+    { _id: "never", userId: "e", points: 2, source: "kick", active: true, createdAt: new Date(), expiresAt: null },
+    { _id: "legacy", userId: "e", points: 5, source: "kick", active: true, createdAt: new Date() },
     { _id: "void", userId: "e", points: 3, source: "kick", active: false, createdAt: new Date() },
   );
   const { total } = await modPoints.getActivePoints("e");
-  assert(total === 1, `expired and voided entries must not count (got ${total})`);
+  assert(total === 8, `expired and voided entries must not count (got ${total})`);
+  assert(modPoints.isExpired(store[0]) && !modPoints.isExpired(store[1]), "isExpired");
+  assert(!modPoints.isExpired(store[2]), "null expiresAt never expires");
+}
 
-  configure({ expiryDays: 0 });
-  const { total: noExpiry } = await modPoints.getActivePoints("e");
-  assert(noExpiry === 5, "with expiry off, old entries count again");
+async function testExpiryPerSource() {
+  reset();
+  configure({ threshold: 100, noticeDistance: 0 });
+  const user = makeUser("x");
+  const member = {
+    id: "x",
+    user,
+    send: user.send,
+    timeout: async () => {},
+    isCommunicationDisabled: () => true,
+  };
+  quiet();
+  await warnCommand.execute(makeInteraction({ user, options: { reason: "w" } }));
+  await timeoutCommand.execute(
+    makeInteraction({ user, member, options: { duration: "1h", reason: "t" } }),
+  );
+  loud();
+
+  const warnEntry = store.find((d) => d.source === "warn");
+  const timeoutEntry = store.find((d) => d.source === "timeout");
+  const days = (date) => Math.round((date.getTime() - Date.now()) / DAY_MS);
+  assert(days(warnEntry.expiresAt) === 30, "warn points expire in 30 days by default");
+  assert(timeoutEntry.expiresAt === null, "timeout points never expire by default");
+  assert(
+    warnings[0].expiresAt.getTime() === warnEntry.expiresAt.getTime(),
+    "warning and its points share the same expiry",
+  );
+  assert(user.dms[0].includes("This warning expires"), "warn DM mentions expiry");
+
+  // Changing the setting only affects new entries
+  configure({ threshold: 100, noticeDistance: 0, expiryDays: { ...DEFAULT_MOD_POINTS.expiryDays, warn: 60 } });
+  quiet();
+  await warnCommand.execute(makeInteraction({ user, options: { reason: "w2" } }));
+  loud();
+  const warnEntries = store.filter((d) => d.source === "warn");
+  assert(days(warnEntries[0].expiresAt) === 30, "existing entry keeps its 30-day expiry");
+  assert(days(warnEntries[1].expiresAt) === 60, "new entry uses the new 60-day expiry");
+
+  // Legacy numeric setting applies to every source
+  configure({ expiryDays: 7 });
+  assert(modPoints.getPointsConfig().expiryDays.kick === 7, "legacy number applies to all sources");
+}
+
+async function testBackfill() {
+  reset();
+  configure();
+  const old = new Date(Date.now() - 40 * DAY_MS);
+  const recent = new Date(Date.now() - 5 * DAY_MS);
+  warnings.push(
+    { actionId: "w-old", userId: "b", active: true, timestamp: old },
+    { actionId: "w-recent", userId: "b", active: true, timestamp: recent },
+  );
+  store.push(
+    { _id: "p-old", userId: "b", points: 2, source: "warn", sourceActionId: "w-old", active: true, createdAt: old },
+    { _id: "p-recent", userId: "b", points: 2, source: "warn", sourceActionId: "w-recent", active: true, createdAt: recent },
+    { _id: "p-kick", userId: "b", points: 4, source: "kick", active: true, createdAt: old },
+  );
+
+  const updated = await modPoints.backfillExpiry();
+  assert(updated === 5, `backfill updates every document missing expiresAt (got ${updated})`);
+  assert(modPoints.isExpired(warnings[0]), "warning older than 30 days is expired");
+  assert(!modPoints.isExpired(warnings[1]), "recent warning is not expired");
+  assert(store[2].expiresAt === null, "kick points never expire");
+
+  const { total } = await modPoints.getActivePoints("b");
+  assert(total === 6, `old warn points drop off after backfill (got ${total})`);
+
+  assert((await modPoints.backfillExpiry()) === 0, "backfill is idempotent");
 }
 
 async function testDisabled() {
@@ -209,9 +301,10 @@ async function testDisabled() {
   loud();
   assert(store.length === 0, "disabled system must not record points");
   assert(
-    user.dms[0] === "⚠️ You have been warned in **r/Alevel**.\nReason: **spam**",
-    "disabled system must leave the warn DM unchanged",
+    /^⚠️ You have been warned in \*\*r\/Alevel\*\*\.\nReason: \*\*spam\*\*\nThis warning expires <t:\d+:D>\.$/.test(user.dms[0]),
+    "disabled system must leave the warn DM without points text",
   );
+  assert(warnings[0].expiresAt instanceof Date, "warnings expire even when points are disabled");
   const fields = interaction.replies[0].embeds[0].toJSON().fields;
   assert(!fields.some((f) => f.name === "Points"), "no points field when disabled");
 }
@@ -328,6 +421,8 @@ async function testUnbanResets() {
 async function main() {
   await testZones();
   await testExpiryAndVoid();
+  await testExpiryPerSource();
+  await testBackfill();
   await testDisabled();
   await testWarnFlowToAutoBan();
   await testDeleteAndClearWarnings();

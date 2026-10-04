@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ModPointsConfig } from "@ralevel/db";
+import type {
+  DefinitionsConfig,
+  ExamLockingConfig,
+  ModPointsConfig,
+} from "@ralevel/db";
 
 export type GuildConfigData = {
   guildId: string;
@@ -100,6 +104,8 @@ export type GuildConfigData = {
   };
   sticky: { defaultLineThreshold: number };
   helper: { pingDelayMs: number };
+  definitions: DefinitionsConfig;
+  examLocking: ExamLockingConfig;
   qotd: {
     reminderTemplate: string;
   };

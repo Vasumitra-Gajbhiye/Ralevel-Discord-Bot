@@ -40,16 +40,10 @@ module.exports = {
     .addUserOption((option) =>
       option
         .setName("user")
-        .setDescription("User to ban (pick from list, or leave empty and use userid)")
-        .setRequired(false),
-    )
-    .addStringOption((option) =>
-      option
-        .setName("userid")
         .setDescription(
-          "Discord user ID to ban — use this when they are not in the server",
+          "User to ban (pick from list, or paste a user ID if they left the server)",
         )
-        .setRequired(false),
+        .setRequired(true),
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
@@ -58,44 +52,22 @@ module.exports = {
 
     const resolvedUser = interaction.options.getUser("user");
     const rawUserValue = interaction.options.get("user")?.value;
-    const useridOption = interaction.options.getString("userid")?.trim();
     const reason = interaction.options.getString("reason");
     const appealable = interaction.options.getBoolean("appealable");
     const deleteMsgs = interaction.options.getString("deletemsgs");
 
-    const fromUserOption =
+    const targetId =
       resolvedUser?.id ??
       (typeof rawUserValue === "string" && SNOWFLAKE_RE.test(rawUserValue)
         ? rawUserValue
         : null);
-    const fromUserIdOption =
-      useridOption && SNOWFLAKE_RE.test(useridOption) ? useridOption : null;
 
-    if (!fromUserOption && !fromUserIdOption) {
-      if (useridOption && !SNOWFLAKE_RE.test(useridOption)) {
-        return interaction.editReply({
-          content:
-            "❌ Invalid userid. Paste a Discord snowflake ID (17–20 digits).",
-        });
-      }
+    if (!targetId) {
       return interaction.editReply({
         content:
-          "❌ Provide either **user** or **userid**. Use **userid** when the person is not in the server.",
+          "❌ Invalid user. Pick a user or paste a Discord user ID (17–20 digits).",
       });
     }
-
-    if (
-      fromUserOption &&
-      fromUserIdOption &&
-      fromUserOption !== fromUserIdOption
-    ) {
-      return interaction.editReply({
-        content:
-          "❌ **user** and **userid** do not match. Provide only one, or make sure both refer to the same account.",
-      });
-    }
-
-    const targetId = fromUserOption || fromUserIdOption;
 
     let user = resolvedUser;
     if (!user || user.id !== targetId) {

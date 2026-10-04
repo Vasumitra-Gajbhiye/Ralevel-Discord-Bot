@@ -35,6 +35,8 @@ On connect, atomic ID counters are seeded from the max existing record in each c
 | `pollId` | Max `pollId` in `Poll` collection |
 | `confessionId` | Max `confessionId` in `Confession` collection |
 | `taskId` | Max numeric part of `taskId` in `Task` collection (e.g. `TSK-42` → 42) |
+| `definitionId` | Max `definitionId` in `Definition` collection |
+| `definitionRequestId` | Max `requestId` in `DefinitionRequest` collection |
 
 Counter documents live in the `counters` collection:
 
@@ -259,6 +261,31 @@ Audit trail for sticky moderation actions.
 
 ---
 
+### `moddms` — ModDm
+
+**Model:** `models/modDm.js`
+
+One document per user; the forum post is reused whenever a conversation is reopened.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | Member being DMed (unique — at most one open conversation per user) |
+| `guildId` | String | Guild the conversation belongs to |
+| `threadId` | String | The user's post in the `modDm` forum (null until the first `/dm`) |
+| `status` | String | `OPEN` / `CLOSED` |
+| `session` | Number | Incremented on every open; stale **End conversation** buttons from older sessions are ignored |
+| `openedBy` / `openedAt` | String / Date | Mod who last opened it, and when |
+| `closedBy` / `closedAt` / `closeReason` | String / Date / String | Mod ID, the user's own ID, or `system` (e.g. DMs closed, post deleted) |
+| `introMessageId` | String | The intro DM, so its buttons can be trimmed on close |
+| `optedOutAt` | Date | Set when the user chose **Don't DM me again**; `/dm` is refused while set |
+| `createdAt` / `updatedAt` | Date | Timestamps |
+
+Reply mapping reuses `modmailmessagelinks` (deleted on close, like modmail).
+
+**Written by:** `/dm`, `/close-dm`, `systems/modDm.js` (user buttons, auto-close)
+
+---
+
 ### `certificateapplications` — CertificateApplication
 
 **Model:** `models/certificate.js`
@@ -327,12 +354,12 @@ Broad audit log for all moderation actions.
 |-------|------|-------------|
 | `userId` | String | Target user (indexed) |
 | `moderatorId` | String | Acting moderator |
-| `action` | String | Action type: `warn`, `ban`, `role-add`, etc. |
+| `action` | String | Action type: `warn`, `verbal-warn`, `ban`, `role-add`, etc. |
 | `reason` | String | Action reason |
 | `actionId` | String | Unique action UUID |
 | `targetTag` | String | Target username |
 | `channelId` | String | Related channel |
-| `metadata` | Object | Extra info (role, duration, etc.) |
+| `metadata` | Object | Extra info. `verbal-warn` stores `{ rule }` here (e.g. `"1.1 — Paper Sharing"` or `"None"`) |
 | `timestamp` | Date | When action occurred (indexed) |
 
 **Indexes:** `{ userId: 1, timestamp: -1 }`, `{ moderatorId: 1, timestamp: -1 }`
@@ -355,8 +382,32 @@ Broad audit log for all moderation actions.
 | `active` | Boolean | Whether warning is active (default true) |
 | `delReason` | String | Reason if deleted |
 | `timestamp` | Date | When warned |
+| `expiresAt` | Date | When the warning expires (`null` = never). Set from `moderation.points.expiryDays.warn` at creation. Expired warnings stay `active` but are shown as expired |
 
 **Written by:** `/warn`, deleted by `/delete-warning`, `/clear-warnings`
+
+---
+
+### `verbalwarnings` — VerbalWarning
+
+**Model:** `models/verbalWarning.js`
+
+Verbal warnings are DMed to the user and kept for history. They are separate from `warnings`: they add no moderation points and never expire.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | Warned user (indexed) |
+| `userTag` | String | Username at time of warning |
+| `moderatorId` / `moderatorTag` | String | Moderator who warned |
+| `reason` | String | Warning reason |
+| `ruleId` | String | Regulation cited, e.g. `1.1` (`null` if none) |
+| `ruleTitle` | String | That rule's title at the time of the warning |
+| `actionId` | String | Unique ID (unique) |
+| `active` | Boolean | Whether the verbal warning is active (default true) |
+| `delReason` | String | Reason if deleted or cleared |
+| `timestamp` | Date | When warned (indexed) |
+
+**Written by:** `/verbal-warn`, read by `/verbal-warnings` and `/my-verbal-warnings`, deleted by `/delete-verbal-warning` and `/clear-verbal-warnings`
 
 ---
 
@@ -364,7 +415,7 @@ Broad audit log for all moderation actions.
 
 **Model:** `models/modPoint.js`
 
-One entry per point award. A user's total is the sum of entries that are `active` and, when `moderation.points.expiryDays > 0`, created within that many days.
+One entry per point award. A user's total is the sum of entries that are `active` and not expired (`expiresAt` is `null` or in the future). `expiresAt` is set when the entry is created, from the per-source `moderation.points.expiryDays` setting, so changing that setting only affects new entries. On startup the bot backfills `expiresAt` on older warnings and entries that don't have it (`backfillExpiry` in `utils/modPoints.js`).
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -377,6 +428,7 @@ One entry per point award. A user's total is the sum of entries that are `active
 | `reason` | String | Infraction reason |
 | `active` | Boolean | `false` once voided (default true) |
 | `voidReason` / `voidedBy` / `voidedAt` | String / String / Date | Why, who and when the entry was voided |
+| `expiresAt` | Date | When the points stop counting (`null` = never) |
 | `createdAt` / `updatedAt` | Date | Timestamps |
 
 **Written by:** `/warn`, `/timeout`, `/kick`, `/softban`, `/points add`. Voided by `/delete-warning`, `/clear-warnings`, `/untimeout`, `/unban`, `/points remove`, `/points reset` and the dashboard **Point ledger**. Settings live in GuildConfig `moderation.points`.
@@ -476,6 +528,78 @@ Staff notes on users (separate from warnings).
 | `roleId` | String | Helper role to ping |
 
 **Written by:** `/sethelper`, read by `/helper`
+
+---
+
+### `definitions` — Definition
+
+**Model:** `models/definition.js`
+
+Live (approved) glossary entries. Pending changes are in `definitionrequests`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `definitionId` | Number | Sequential ID (unique) |
+| `subjectId` | String | `GuildConfig.definitions.subjects[].id` |
+| `boardId` | String | `GuildConfig.definitions.boards[].id`, `""` = every board |
+| `term` | String | Display term |
+| `termKey` | String | Normalised term (lowercase, single spaces), set automatically |
+| `definition` | String | Definition text (max 1000) |
+| `chapter` / `topic` | String | Optional, free text |
+| `authorId` / `authorTag` | String | Credited author |
+| `contributors` | Array | `{ userId, userTag, at }` for applied improvements (never the author) |
+| `revision` | Number | Bumped on every content change; used to detect stale edit suggestions |
+| `views` | Number | `/define` lookups, used to rank suggestions |
+| `lastEditedById` / `lastEditedAt` | String / Date | Last content change |
+| `createdAt` / `updatedAt` | Date | Timestamps |
+
+**Indexes:** `{ subjectId: 1, boardId: 1, termKey: 1 }` (unique), `{ termKey: 1 }`, `{ views: -1 }`, `{ authorId: 1 }`
+
+**Written by:** `/add-define`, `/edit-define`, `/delete-define`, `systems/definitions.js`, dashboard **Operations → Definitions**
+
+---
+
+### `definitionrequests` — DefinitionRequest
+
+**Model:** `models/definitionRequest.js`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `requestId` | Number | Sequential ID (unique) |
+| `type` | String | `create`, `edit` or `delete` |
+| `status` | String | `pending`, `approved` or `rejected` |
+| `definitionId` | Number | Target definition (edit/delete), or the created one once a `create` is approved |
+| `baseRevision` | Number | Definition revision an edit was written against |
+| `subjectId` / `boardId` | String | Scope of the definition |
+| `termKey` | String | Normalised proposed term (create), for duplicate checks |
+| `proposed` | Object | `{ term, definition, chapter, topic }` requested (create/edit); replaced by the reviewer's version after **Edit & approve** |
+| `original` | Object | Snapshot of the definition when requested (edit/delete) |
+| `note` | String | What changed (edit) or why to remove it (delete) |
+| `requesterId` / `requesterTag` | String | Who asked |
+| `reviewerId` / `reviewerTag` / `reviewedAt` | String / Date | Who decided and when |
+| `rejectReason` | String | Optional reason sent to the requester |
+| `reviewerEdited` | Boolean | Approved via **Edit & approve** |
+| `reviewChannelId` / `reviewMessageId` | String | Review message in Discord |
+
+**Indexes:** `{ requesterId: 1, status: 1 }`, `{ status: 1, createdAt: -1 }`, `{ definitionId: 1 }`
+
+---
+
+### `channeldirectories` — ChannelDirectory
+
+**Model:** `models/channelDirectory.js`
+
+One document per guild: the live channel list, so the dashboard can pick real channels (the GuildConfig `channels` registry only holds named keys).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `guildId` | String | Guild (unique) |
+| `channels` | Array | `{ id, name, type, parentId, position }`. `type` is `text`, `announcement`, `forum`, `media`, `voice`, `stage` or `category`; `parentId` is the category (or `null`); `position` is Discord's raw position. Threads are not listed |
+| `createdAt` / `updatedAt` | Date | Timestamps; `updatedAt` = last time the list changed or the bot started |
+
+**Indexes:** `{ guildId: 1 }` (unique)
+
+**Written by:** `systems/channelDirectory.js` only. Read by `GET /api/discord/channels` (dashboard **Settings → Exam subjects**)
 
 ---
 

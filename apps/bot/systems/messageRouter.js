@@ -56,12 +56,19 @@ module.exports = function messageRouter(client, handlers) {
     handleReputation,
     handleModmailDm,
     handleModmailStaffReply,
+    handleModDmUserMessage,
+    handleModDmStaffReply,
   } = handlers;
 
   client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
     if (!message.guild) {
+      // An open moderator DM takes priority so the user never sees the
+      // modmail support menu mid-conversation.
+      if (handleModDmUserMessage && (await handleModDmUserMessage(message))) {
+        return;
+      }
       if (handleModmailDm) {
         await handleModmailDm(message);
       }
@@ -70,6 +77,11 @@ module.exports = function messageRouter(client, handlers) {
 
     if (handleModmailStaffReply) {
       const handled = await handleModmailStaffReply(message);
+      if (handled) return;
+    }
+
+    if (handleModDmStaffReply) {
+      const handled = await handleModDmStaffReply(message);
       if (handled) return;
     }
 

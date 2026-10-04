@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export type ChannelOption = { key: string; label: string; channelId: string };
+export type ChannelOption = {
+  key: string;
+  label: string;
+  channelId: string;
+  /** Shown under the label instead of `key`, e.g. the channel type. */
+  hint?: string;
+};
 
 type ChannelSearchMenuProps = {
   channels: ChannelOption[];
@@ -33,7 +39,8 @@ export function ChannelSearchMenu({
       return (
         channel.key.toLowerCase().includes(query) ||
         channel.label.toLowerCase().includes(query) ||
-        channel.channelId.toLowerCase().includes(query)
+        channel.channelId.toLowerCase().includes(query) ||
+        Boolean(channel.hint?.toLowerCase().includes(query))
       );
     });
   }, [channels, excludeIds, search]);
@@ -80,7 +87,9 @@ export function ChannelSearchMenu({
               <span className="role-picker-option-label">
                 {channel.label || channel.key}
               </span>
-              <span className="role-picker-option-key mono">{channel.key}</span>
+              <span className="role-picker-option-key mono">
+                {channel.hint ?? channel.key}
+              </span>
             </button>
           ))
         )}

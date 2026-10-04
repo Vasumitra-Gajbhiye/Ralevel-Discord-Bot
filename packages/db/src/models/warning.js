@@ -48,6 +48,12 @@ const WarningSchema = new mongoose.Schema({
     default: Date.now,
     index: true,
   },
+
+  // When the warning stops counting (null = never). Fixed at creation.
+  expiresAt: {
+    type: Date,
+    default: null,
+  },
 });
 
 module.exports = mongoose.models["Warning"] || mongoose.model("Warning", WarningSchema);

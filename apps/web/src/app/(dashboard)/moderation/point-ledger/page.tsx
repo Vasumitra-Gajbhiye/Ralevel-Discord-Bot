@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
+import { isExpired } from "@/lib/expiry";
 import { useOpsCollection } from "@/lib/useOpsCollection";
 
 type ModPoint = {
@@ -19,6 +20,7 @@ type ModPoint = {
   voidReason?: string | null;
   voidedAt?: string | null;
   createdAt?: string;
+  expiresAt?: string | null;
 };
 
 type UserTotal = {
@@ -32,7 +34,6 @@ type UserTotal = {
 type TotalsResponse = {
   threshold: number;
   noticeAt: number;
-  expiryDays: number;
   items: UserTotal[];
 };
 
@@ -114,10 +115,8 @@ export default function PointLedgerPage() {
         <h3 style={{ margin: 0, fontSize: "1rem" }}>Top users by active points</h3>
         {totals ? (
           <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-            Auto-ban at {totals.threshold}, ban notice from {totals.noticeAt}.{" "}
-            {totals.expiryDays > 0
-              ? `Only counts entries from the last ${totals.expiryDays} day(s).`
-              : "Points never expire."}
+            Auto-ban at {totals.threshold}, ban notice from {totals.noticeAt}.
+            Expired and voided entries don&apos;t count.
           </p>
         ) : null}
         <div className="table-wrap">
@@ -211,6 +210,7 @@ export default function PointLedgerPage() {
                 <th>Reason</th>
                 <th>Status</th>
                 <th>When</th>
+                <th>Expires</th>
                 <th />
               </tr>
             </thead>
@@ -230,7 +230,11 @@ export default function PointLedgerPage() {
                   <td>{entry.reason}</td>
                   <td>
                     {entry.active ? (
-                      "active"
+                      isExpired(entry.expiresAt) ? (
+                        <span className="muted">expired</span>
+                      ) : (
+                        "active"
+                      )
                     ) : (
                       <>
                         <div>voided</div>
@@ -244,6 +248,11 @@ export default function PointLedgerPage() {
                     {entry.createdAt
                       ? new Date(entry.createdAt).toLocaleString()
                       : "—"}
+                  </td>
+                  <td className="mono muted">
+                    {entry.expiresAt
+                      ? new Date(entry.expiresAt).toLocaleString()
+                      : "never"}
                   </td>
                   <td>
                     {entry.active ? (

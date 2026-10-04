@@ -13,6 +13,7 @@ const fetchModeratorTags = require("../../utils/fetchModeratorTags");
 
 const ACTION_EMOJIS = {
   warn: "⚠️",
+  "verbal-warn": "🗣️",
   delwarn: "🗑️",
   clearwarns: "🧹",
   mute: "🔇",

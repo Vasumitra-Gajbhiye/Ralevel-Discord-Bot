@@ -5,6 +5,7 @@ const {
   loadGuildConfig,
   startGuildConfigWatcher,
 } = require("./utils/loadGuildConfig");
+const modPoints = require("./utils/modPoints");
 const loadCommands = require("./systems/commands.js");
 const reputationSystem = require("./systems/reputation.js");
 const certificateSystem = require("./systems/certificates.js");
@@ -14,13 +15,16 @@ const stickySystem = require("./systems/sticky");
 const qotdSystem = require("./systems/qotd");
 const welcomeSystem = require("./systems/welcome");
 const confessionsSystem = require("./systems/confessions.js");
+const definitionsSystem = require("./systems/definitions");
 const ruleSyncSystem = require("./systems/ruleSync");
 const modmailSystem = require("./systems/modmail");
+const modDmSystem = require("./systems/modDm");
 const { handleMessageTracker } = require("./systems/messageTracker");
 const messageRouter = require("./systems/messageRouter");
 const xpFlushSystem = require("./systems/xpFlushSystem");
 const pollSystem = require("./systems/polls");
 const examLockSystem = require("./systems/examLockSystem");
+const channelDirectorySystem = require("./systems/channelDirectory");
 const { startCommandSyncServer } = require("./systems/commandSyncServer");
 const { deployCommandsOnReady } = require("./systems/deployCommandsOnReady");
 const { exportCommandCatalog } = require("./scripts/export-command-catalog");
@@ -43,6 +47,10 @@ async function start() {
   await connectDB();
   await loadGuildConfig(client);
   startGuildConfigWatcher(client);
+  const backfilled = await modPoints.backfillExpiry();
+  if (backfilled > 0) {
+    console.log(`[modPoints] Set expiresAt on ${backfilled} older warnings/point entries.`);
+  }
   deployCommandsOnReady(client);
 
   loadCommands(client);
@@ -54,18 +62,23 @@ async function start() {
   qotdSystem(client);
   welcomeSystem(client);
   confessionsSystem(client);
+  definitionsSystem(client);
   ruleSyncSystem(client);
   const { handleModmailDm, handleModmailStaffReply } = modmailSystem(client);
+  const { handleModDmUserMessage, handleModDmStaffReply } = modDmSystem(client);
   messageRouter(client, {
     handleMessageTracker,
     handleSticky,
     handleReputation,
     handleModmailDm,
     handleModmailStaffReply,
+    handleModDmUserMessage,
+    handleModDmStaffReply,
   });
   xpFlushSystem(client);
   pollSystem(client);
   examLockSystem(client);
+  channelDirectorySystem(client);
   startCommandSyncServer();
 
   await client.login(process.env.TOKEN);

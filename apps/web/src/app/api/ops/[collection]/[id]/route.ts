@@ -25,6 +25,8 @@ const MODEL_MAP: Record<string, keyof DbModels> = {
   certRotation: "CertRotation",
   users: "User",
   polls: "Poll",
+  definitions: "Definition",
+  definitionRequests: "DefinitionRequest",
 };
 
 function getModel(db: DbModels, collection: string): AnyModel | null {

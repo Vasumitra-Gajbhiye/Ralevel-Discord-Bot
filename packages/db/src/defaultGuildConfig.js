@@ -3,6 +3,9 @@
  * Used by seed script and bot bootstrap when no document exists.
  */
 
+const { buildDefaultDefinitions } = require("./definitionsConfig");
+const { buildDefaultExamLocking } = require("./examLockingConfig");
+
 const ROLE_DEFS = [
   { key: "admin", label: "Admin", env: "ADMIN_ROLE_ID" },
   { key: "gfxHead", label: "GFX Head", env: "GFX_HEAD_ROLE_ID" },
@@ -73,6 +76,7 @@ const CHANNEL_DEFS = [
   { key: "modLog", label: "Moderation logs", env: "MOD_LOG_CHANNEL_ID" },
   { key: "levelUp", label: "Level-up announcements", env: "LEVELUP_CHANNEL_ID" },
   { key: "qotdReminder", label: "QOTD reminder", env: "QOTD_REMINDER_CHANNEL_ID" },
+  { key: "modDm", label: "Moderator DMs (forum)", env: "MOD_DM_CHANNEL_ID" },
 ];
 
 const DEFAULT_THANK_WORDS = [
@@ -164,13 +168,18 @@ const DEFAULT_BAN_MESSAGES = {
 /** Commands that award moderation points. */
 const MOD_POINT_SOURCES = ["warn", "timeout", "kick", "softban"];
 
+/** Point sources with their own expiry setting ("manual" = /points add). */
+const MOD_POINT_EXPIRY_SOURCES = [...MOD_POINT_SOURCES, "manual"];
+
 const MOD_POINT_DELETE_MESSAGE_OPTIONS = ["1m", "1h", "1d", "7d"];
 
 const DEFAULT_MOD_POINTS = {
   enabled: false,
   threshold: 10,
   noticeDistance: 3,
-  expiryDays: 0,
+  // Days until a new entry stops counting (0 = never). Stored on each entry at
+  // creation, so changing these only affects new infractions.
+  expiryDays: { warn: 30, timeout: 0, kick: 0, softban: 0, manual: 0 },
   values: { warn: 2, timeout: 3, kick: 4, softban: 5 },
   autoBan: {
     appealable: true,
@@ -232,6 +241,8 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   "ban-user-modmail": "ModerateMembers",
   "unban-user-modmail": "ModerateMembers",
   "list-modmail-ban": "ModerateMembers",
+  dm: "ModerateMembers",
+  "close-dm": "ModerateMembers",
   "approve-certificate": "BanMembers",
   "reject-certificate": "BanMembers",
   "mark-cert-delivered": "BanMembers",
@@ -245,6 +256,7 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   pin: "ManageMessages",
   unpin: "ManageMessages",
   warnings: "ManageMessages",
+  "verbal-warnings": "ManageMessages",
   "moderation-history": "ManageMessages",
   points: "ModerateMembers",
   poll: "ManageMessages",
@@ -269,6 +281,9 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   "add-role": "ChangeNickname",
   "remove-role": "ChangeNickname",
   setnickname: "ManageNicknames",
+  "mark-loa": "ManageNicknames",
+  "mark-partial-loa": "ManageNicknames",
+  "unmark-loa": "ManageNicknames",
   sethelper: "ManageChannels",
   "lock-status": "ManageChannels",
   "send-cert-msg": "ManageGuild",
@@ -297,12 +312,16 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   audit: ["admin", "generalStaff"],
   ban: ["admin", "dcHead", "srMods", "jrMods"],
   "clear-warnings": ["admin", "dcHead"],
+  "clear-verbal-warnings": ["admin", "dcHead"],
   close: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   "ban-user-modmail": ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   "unban-user-modmail": ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   "list-modmail-ban": ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
+  dm: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
+  "close-dm": ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   "delete-note": ["admin", "dcHead", "srMods"],
   "delete-warning": ["admin", "dcHead", "srMods"],
+  "delete-verbal-warning": ["admin", "dcHead", "srMods"],
   kick: ["admin", "dcHead"],
   "lock-status": ["admin", "dcHead", "srMods", "jrMods"],
   lock: ["admin", "dcHead", "srMods", "jrMods"],
@@ -323,6 +342,9 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   "remove-role": ["admin", "dcHead", "generalStaff"],
   say: ["admin", "dcHead", "srMods", "jrMods"],
   setnickname: ["admin", "dcHead", "srMods", "ialAgent"],
+  "mark-loa": ["admin", "dcHead", "srMods", "ialAgent"],
+  "mark-partial-loa": ["admin", "dcHead", "srMods", "ialAgent"],
+  "unmark-loa": ["admin", "dcHead", "srMods", "ialAgent"],
   slowmode: ["admin", "dcHead", "srMods"],
   softban: ["admin", "dcHead", "srMods", "jrMods"],
   "timeout-status": ["admin", "dcHead", "srMods"],
@@ -334,6 +356,8 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   warn: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   points: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   warnings: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
+  "verbal-warn": ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
+  "verbal-warnings": ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   poll: ["admin", "dcHead", "generalStaff", "srMods", "jrMods", "trialMods"],
   "qotd-status": ["admin", "dcHead", "srMods", "jrMods"],
   "approve-certificate": ["admin"],
@@ -383,6 +407,7 @@ const DEFAULT_COMMAND_PERMISSIONS = {
  * deferReply/reply call site (true = visible only to user).
  */
 const DEFAULT_COMMAND_EPHEMERAL = {
+  "add-define": true,
   "add-rep": false,
   "add-role": true,
   "add-sticky": true,
@@ -399,12 +424,19 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   "certificate-status-mod": true,
   claim: true,
   "clear-warnings": false,
+  "clear-verbal-warnings": false,
   close: true,
+  "close-dm": true,
   confess: true,
   "delete-confession": true,
+  "delete-define": true,
   "delete-task": true,
   "delete-note": false,
   "delete-warning": false,
+  "delete-verbal-warning": false,
+  define: false,
+  dm: true,
+  "edit-define": true,
   "edit-sticky": true,
   "edit-task": true,
   "finished-tsk": true,
@@ -427,6 +459,7 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   "my-rank": false,
   "my-reputation": false,
   "my-warnings": true,
+  "my-verbal-warnings": true,
   "my-xp": false,
   mytasks: true,
   note: true,
@@ -451,6 +484,9 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   "set-xp": false,
   sethelper: false,
   setnickname: true,
+  "mark-loa": true,
+  "mark-partial-loa": true,
+  "unmark-loa": true,
   slowmode: false,
   softban: false,
   "sticky-list": true,
@@ -472,6 +508,8 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   points: true,
   warn: false,
   warnings: true,
+  "verbal-warn": false,
+  "verbal-warnings": true,
   website: false,
   xp: false,
   "xp-ban": false,
@@ -607,6 +645,7 @@ function buildDefaultGuildConfig(guildId) {
       welcome: true,
       qotd: true,
       xpRanks: true,
+      definitions: true,
     },
     reputation: {
       tiers: [
@@ -732,6 +771,8 @@ function buildDefaultGuildConfig(guildId) {
     helper: {
       pingDelayMs: 10000,
     },
+    definitions: buildDefaultDefinitions(),
+    examLocking: buildDefaultExamLocking(),
     qotd: {
       reminderTemplate: DEFAULT_QOTD_REMINDER_TEMPLATE,
     },
@@ -746,6 +787,7 @@ function buildDefaultGuildConfig(guildId) {
 function cloneDefaultModPoints() {
   return {
     ...DEFAULT_MOD_POINTS,
+    expiryDays: { ...DEFAULT_MOD_POINTS.expiryDays },
     values: { ...DEFAULT_MOD_POINTS.values },
     autoBan: { ...DEFAULT_MOD_POINTS.autoBan },
   };
@@ -763,6 +805,7 @@ module.exports = {
   DEFAULT_BAN_MESSAGES,
   DEFAULT_MOD_POINTS,
   MOD_POINT_SOURCES,
+  MOD_POINT_EXPIRY_SOURCES,
   MOD_POINT_DELETE_MESSAGE_OPTIONS,
   cloneDefaultModPoints,
   DEFAULT_QOTD_REMINDER_TEMPLATE,

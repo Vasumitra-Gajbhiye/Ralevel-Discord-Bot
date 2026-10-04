@@ -25,6 +25,9 @@ All systems are initialized from `index.js`. There is no separate `events/` or `
 | Cert forfeit sweeper | `systems/certForfeitSweeper.js` | 5 min interval | MongoDB |
 | Confessions | `systems/confessions.js` | Buttons/modals | MongoDB |
 | Modmail | `systems/modmail.js` | Called by router + `/close-ticket` / blacklist commands | MongoDB |
+| Moderator DMs | `systems/modDm.js` | Called by router + `/dm` / `/close-dm` + buttons | MongoDB |
+| Definitions | `systems/definitions.js`, `utils/definitions.js`, `utils/definitionActions.js` | `/define` family + buttons/modals | MongoDB |
+| Channel directory | `systems/channelDirectory.js` | `ready` + channel create/update/delete (debounced 5s) | MongoDB |
 
 ---
 
@@ -80,7 +83,7 @@ const HIERARCHY_TARGET_OPTIONS = {
 
 **File:** `systems/messageRouter.js`
 
-**Purpose:** Single `MessageCreate` listener that fans out to tracker, sticky, and reputation handlers in parallel. Also routes DMs and modmail forum-thread messages to modmail.
+**Purpose:** Single `MessageCreate` listener that fans out to tracker, sticky, and reputation handlers in parallel. Also routes DMs and forum-thread messages to modmail and moderator DMs.
 
 **Discord events:** `MessageCreate`
 
@@ -90,10 +93,13 @@ const HIERARCHY_TARGET_OPTIONS = {
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
   if (!message.guild) {
+    // An open moderator DM wins, so the user never sees the support menu mid-conversation.
+    if (await handleModDmUserMessage?.(message)) return;
     await handleModmailDm?.(message);
     return;
   }
   if (await handleModmailStaffReply?.(message)) return;
+  if (await handleModDmStaffReply?.(message)) return;
 
   // guild fan-out: tracker / sticky / reputation
 });
@@ -101,7 +107,7 @@ client.on(Events.MessageCreate, async (message) => {
 
 **Reputation gating:** Skips reputation in channels/categories listed in `DISABLED_CHANNELS` / `DISABLED_CATEGORIES` env vars (or the matching guild config fields). Legacy `STAFF_CHANNEL_IDS` values are merged into `DISABLED_CHANNELS` on new configs.
 
-**Dependencies:** Handlers injected from `index.js` — `messageTracker`, `sticky`, `reputation`, `modmail`
+**Dependencies:** Handlers injected from `index.js` — `messageTracker`, `sticky`, `reputation`, `modmail`, `modDm`
 
 **Verification:** `npm run verify:message-router`
 
@@ -430,10 +436,43 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 8. `/unban-user-modmail` removes the ban and DMs the user that they can use modmail again
 9. `/ban-user-modmail` upserts a `ModmailBan` with a required reason, DMs the user, and auto-closes + archives any open ticket
 10. After close, the next DM shows the support menu again (or the ban notice) and creates a **new** post only if they are not banned; the old post stays
+11. While the user has an open moderator DM (see below), their DMs go to that conversation instead, and the support dropdown/modal refuses to open a ticket
 
 **Dependencies:** Guild config `modmail` (or env `MOD_MAIL_CHANNEL_ID` / `ADMIN_MOD_MAIL_CHANNEL_ID`), optional booster role / `BOOSTER_ROLE_ID` (intake copy), MongoDB (`ModmailTicket`, `ModmailBan`), intents `DirectMessages` + partial `Channel`
 
 **Related commands:** `/close-ticket`, `/ban-user-modmail`, `/unban-user-modmail`, `/list-modmail-ban`
+
+---
+
+## 13b. Moderator DMs
+
+**File:** `systems/modDm.js`
+
+**Purpose:** Lets mods start a private DM conversation with any member. Each user gets **one** forum post in the `modDm` forum, reused every time the conversation is reopened, so the full history stays in one place. Only the intro DM is an embed; the conversation itself is relayed both ways as **plain text**. Mods stay anonymous. Users can end the conversation or turn off moderator DMs at any time.
+
+**Discord events:** Handled via `messageRouter` (`MessageCreate`) and `InteractionCreate` (buttons); open via `/dm`, close via `/close-dm` or the post's **Close conversation** button
+
+**Dashboard:** Channels page — key `modDm` → the forum channel ID (env fallback `MOD_DM_CHANNEL_ID`). It must be a different forum from both modmail forums.
+
+**Workflow:**
+
+1. `/dm user [message]` refuses if the forum isn't configured, the target is a bot, the user turned off moderator DMs, a conversation is already open, or the user has an **open modmail ticket** (the reply links to it)
+2. Otherwise it claims the conversation atomically, then reopens the user's existing post (or creates `dm-<username>`) and posts `🟢 Conversation opened by @mod`
+3. The user gets an intro embed with **End conversation** and **Don't DM me again** buttons on the same message. If the DM fails (closed DMs / blocked bot), the claim is rolled back, a new post is deleted (a reused post gets a notice and is re-archived), and the mod is told
+4. The optional `message` is sent as the first DM and echoed in the post
+5. User DMs relay into the post; staff messages in the post relay to the user. Native replies map both ways (`ModmailMessageLink`). Mentions are always disabled, so `@everyone` from a user can never ping. Messages starting with `.` stay staff-only
+6. If a staff message fails because the user's DMs are now closed (error 50007), the bot posts a warning in the post and closes + archives the conversation
+7. `/close-dm [reason]` or the Close button closes the conversation, DMs the user (with reason and a **Don't DM me again** button), and archives the post. Staff messages sent in a closed post get a "not delivered" reply
+8. **End conversation** closes it from the user side; stale buttons from an older conversation do nothing
+9. **Don't DM me again** asks for confirmation, ends any open conversation, and sends a DM with an **Allow moderator DMs again** button. Opting out only affects `/dm`, not modmail or moderation notices (warn/ban/timeout DMs)
+
+**Modmail interplay:** a user can't have both at once — `/dm` is refused during an open ticket, and ticket intake is refused during an open moderator DM. A user banned from modmail can still reply to a mod who DMs them.
+
+**Dependencies:** Guild config channel `modDm` (or env `MOD_DM_CHANNEL_ID`), MongoDB (`ModDm`, `ModmailMessageLink`), modmail relay helpers, intents `DirectMessages` + partial `Channel`
+
+**Related commands:** `/dm`, `/close-dm`
+
+**Verification:** `npm run verify:mod-dm`
 
 ---
 
@@ -445,7 +484,7 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **Dashboard:** `/moderation/points` (settings, stored in GuildConfig `moderation.points`) and `/moderation/point-ledger` (entries + top users, void/restore). The whole system is off until **Enable the point system** is ticked.
 
-**Settings:** threshold T, notice distance X, expiry days (0 = never; checked when points are read, so changes apply to existing entries), points per command (`warn`, `timeout`, `kick`, `softban`; 0 disables a command), auto-ban appealable + message-deletion window + reason template, ban notice template, and an optional points line added to infraction DMs. Placeholders are listed on the dashboard page (`MOD_POINTS_PLACEHOLDERS` in `@ralevel/shared`).
+**Settings:** threshold T, notice distance X, expiry days for each source (`warn` default 30, `timeout` / `kick` / `softban` / `manual` default 0 = never; stored on each entry as `expiresAt` when it is created, so changes only apply to new infractions), points per command (`warn`, `timeout`, `kick`, `softban`; 0 disables a command), auto-ban appealable + message-deletion window + reason template, ban notice template, and an optional points line added to infraction DMs. Placeholders are listed on the dashboard page (`MOD_POINTS_PLACEHOLDERS` in `@ralevel/shared`).
 
 **Workflow (warn / timeout / kick / softban):**
 
@@ -459,6 +498,55 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 **Reversals:** `/delete-warning` and `/clear-warnings` void the points from those warnings, `/untimeout` voids the latest timeout entry, and `/unban` voids every entry for the user (they start again at 0). Voiding points never unbans anyone.
 
 **Verification:** `npm run verify:mod-points`
+
+---
+
+## 15. Definitions
+
+**Files:** `systems/definitions.js` (buttons/modals), `utils/definitions.js` (config, permissions, search, embeds), `utils/definitionActions.js` (writes, review requests, decisions)
+
+**Purpose:** A subject glossary. `/define` looks terms up; `/add-define`, `/edit-define`, `/delete-define` and the **Suggest improvement** button change it, with a review queue for anyone without rights.
+
+**Dashboard:** **Settings → Definitions** (GuildConfig `definitions` + `features.definitions`): subjects (name, stable ID, helper role keys, enabled), exam boards, review channel, optional log channel, approver roles, ping roles and the per-member pending cap. **Operations → Definitions** lists definitions (inline edit/delete) and the request history. Subjects/boards that still have definitions can't be removed — disable them instead (hidden from `/add-define`, still searchable).
+
+**Who changes what directly:**
+
+| Action | Approver | Subject helper | Everyone else |
+|--------|----------|----------------|---------------|
+| Add | Direct | Direct (own subjects) | Review |
+| Edit / delete own definition | Direct | Direct | Review |
+| Edit / delete someone else's | Direct | Review | Review |
+
+Direct changes are logged to the log channel (or the review channel when unset) without a ping.
+
+---
+
+## 16. Channel directory
+
+**File:** `systems/channelDirectory.js`
+
+**Purpose:** Publishes the guild's channel list (`id`, `name`, `type`, `parentId`, `position`; threads left out) to the `channeldirectories` collection so the dashboard can offer real channel pickers. Today that is **Settings → Exam subjects**, which maps Cambridge syllabuses (GuildConfig `examLocking.subjects`) to the channels exam locking makes read-only.
+
+**How it works:** Writes once on `ready`, then again 5 seconds after the last `channelCreate` / `channelUpdate` / `channelDelete` in `GUILD_ID`. A list identical to the last one written is skipped, and overlapping publishes are serialised. Failures are logged and retried on the next change.
+
+**Dependencies:** `GUILD_ID` (disabled when unset), the `Guilds` intent's channel cache, MongoDB (`ChannelDirectory`)
+
+**Review workflow:**
+
+1. A `DefinitionRequest` (`create`, `edit` or `delete`) is created and posted to the review channel with the ping roles mentioned
+2. Approvers press **Approve**, **Edit & approve** (pre-filled form; not for deletions) or **Reject** (optional reason)
+3. The request is claimed atomically (`status: "pending"` filter), so two reviewers can't both act; if applying fails it goes back to pending
+4. The review message is updated with the outcome and the requester is DMed (ignored if their DMs are closed)
+
+**Credits:** the author is whoever the definition was created for (the requester for reviewed additions). When an edit is applied, the person who wrote it is added to `contributors` unless they are the author; `/define` shows both.
+
+**Stale edits:** each definition has a `revision`. An edit suggestion records the revision it was based on; plain **Approve** refuses it if the definition changed since, and **Edit & approve** applies it anyway. Edits to deleted definitions are closed as rejected.
+
+**Custom IDs:** `definition:suggest:<definitionId>`, `definition:edit-modal:<definitionId>:<revision>`, `definition:{approve,review-edit,reject}:<requestId>`, `definition:{review-edit-modal,reject-modal}:<requestId>` — all state is in the ID and MongoDB, so buttons survive restarts.
+
+**Seeding test data:** `pnpm --filter @ralevel/bot seed:definitions` (`--author=<user id>` to credit yourself, `--clear` to remove)
+
+**Verification:** `npm run verify:definitions`
 
 ---
 

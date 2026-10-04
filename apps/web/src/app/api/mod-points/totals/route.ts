@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { ensureDb, getOrCreateGuildConfig } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
+import { notExpiredFilter } from "@/lib/expiry";
 
 export const dynamic = "force-dynamic";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Users ranked by active (not voided, not expired) moderation points. */
 export async function GET(request: Request) {
@@ -22,17 +21,13 @@ export async function GET(request: Request) {
     const { ModPoint } = await ensureDb();
     const doc = await getOrCreateGuildConfig();
     const points = doc.moderation?.points ?? {};
-    const expiryDays = Number(points.expiryDays) || 0;
     const threshold = Number(points.threshold) || 0;
     const noticeDistance = Number(points.noticeDistance) || 0;
 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Number(searchParams.get("limit") || 25), 100);
 
-    const match: Record<string, unknown> = { active: true };
-    if (expiryDays > 0) {
-      match.createdAt = { $gt: new Date(Date.now() - expiryDays * DAY_MS) };
-    }
+    const match = { active: true, ...notExpiredFilter() };
 
     const totals = await ModPoint.aggregate([
       { $match: match },
@@ -54,7 +49,6 @@ export async function GET(request: Request) {
     return NextResponse.json({
       threshold,
       noticeAt: Math.max(0, threshold - noticeDistance),
-      expiryDays,
       items: totals.map((row) => ({
         userId: row._id,
         userTag: row.userTag,

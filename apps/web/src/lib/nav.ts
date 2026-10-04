@@ -18,6 +18,8 @@ export const NAV = [
       { href: "/settings/modmail", label: "Modmail" },
       { href: "/settings/tasks", label: "Tasks" },
       { href: "/settings/misc", label: "Polls / Sticky / Helper" },
+      { href: "/settings/definitions", label: "Definitions" },
+      { href: "/settings/exam-subjects", label: "Exam subjects" },
     ],
   },
   {
@@ -41,6 +43,7 @@ export const NAV = [
       { href: "/ops/confessions", label: "Confessions" },
       { href: "/ops/reputation", label: "Reputation" },
       { href: "/ops/helpers", label: "Helper mappings" },
+      { href: "/ops/definitions", label: "Definitions" },
       { href: "/ops/qotd", label: "QOTD & SOTD" },
       { href: "/ops/xp", label: "XP" },
       { href: "/ops/xp-bans", label: "XP bans" },

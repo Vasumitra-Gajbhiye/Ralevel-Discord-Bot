@@ -30,6 +30,8 @@ module.exports = {
 
     const actionId = crypto.randomUUID();
     const preview = await modPoints.previewInfraction(user.id, "warn");
+    const expiresAt = modPoints.computeExpiresAt("warn");
+    const expiresTs = expiresAt ? Math.floor(expiresAt.getTime() / 1000) : null;
 
     await Warning.create({
       userId: user.id,
@@ -38,6 +40,7 @@ module.exports = {
       moderatorTag: interaction.user.tag,
       reason,
       actionId,
+      expiresAt,
     });
 
     // DM the user (the auto-ban sends its own ban DM instead)
@@ -48,9 +51,12 @@ module.exports = {
         userTag: user.tag,
         userId: user.id,
       });
+      const expiryLine = expiresTs
+        ? `\nThis warning expires <t:${expiresTs}:D>.`
+        : "";
       try {
         await user.send(
-          `⚠️ You have been warned in **r/Alevel**.\nReason: **${reason}**${pointsExtra}`,
+          `⚠️ You have been warned in **r/Alevel**.\nReason: **${reason}**${expiryLine}${pointsExtra}`,
         );
       } catch {
         // ignore if DMs are closed
@@ -77,6 +83,7 @@ module.exports = {
       moderatorId: interaction.user.id,
       moderatorTag: interaction.user.tag,
       reason,
+      expiresAt,
     });
     const enforcement = await modPoints.enforceThreshold({
       interaction,
@@ -95,6 +102,11 @@ module.exports = {
       .addFields(
         { name: "User", value: `<@${user.id}>`, inline: true },
         { name: "Reason", value: reason, inline: true },
+        {
+          name: "Expires",
+          value: expiresTs ? `<t:${expiresTs}:R>` : "Never",
+          inline: true,
+        },
         { name: "Action ID", value: actionId, inline: false },
       )
       .setTimestamp();

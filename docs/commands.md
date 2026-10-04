@@ -203,6 +203,28 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Options** | `reason` (optional, max 500) |
 | **Dependencies** | `ModmailTicket`, `systems/modmail.js` |
 
+### `/dm`
+
+| | |
+|---|---|
+| **File** | `commands/modmail/dm.js` |
+| **Description** | Start (or reopen) a private DM conversation with a member. Opens the user's post in the `modDm` forum and sends them an intro embed with End / Don't DM me buttons. Refused if the user turned off moderator DMs, already has an open conversation, has an open modmail ticket, or has DMs closed |
+| **Discord permissions** | `ModerateMembers` |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+| **Options** | `user` (required), `message` (optional first message, max 2000) |
+| **Dependencies** | `ModDm`, `ModmailTicket`, `systems/modDm.js` |
+
+### `/close-dm`
+
+| | |
+|---|---|
+| **File** | `commands/modmail/close-dm.js` |
+| **Description** | Close the current moderator DM conversation, DM the user, and archive the post (same as the post's **Close conversation** button, which has no reason) |
+| **Discord permissions** | `ModerateMembers` |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+| **Options** | `reason` (optional, shown to the user, max 500) |
+| **Dependencies** | `ModDm`, `systems/modDm.js` |
+
 ---
 
 ## Confessions
@@ -216,6 +238,60 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Discord permissions** | None |
 | **Role access** | Public |
 | **Dependencies** | `Confession` model, `MOD_ACTION_CHANNEL`, `systems/confessions.js` |
+
+---
+
+## Definitions
+
+Glossary of subject definitions. Everyone can look up, add and improve definitions; who needs review is decided inside the commands (not by dashboard role gates):
+
+- **Approvers** (default: admin, hlpHead) change anything directly and approve/reject requests.
+- **Subject helpers** (the helper roles set per subject on **Settings → Definitions**) add to their subjects directly and edit/delete only the definitions they wrote.
+- **Everyone else** — and helpers changing someone else's definition — creates a request in the review channel, pinging the configured roles (default: hlpHead).
+
+Settings, subjects and exam boards live on **Settings → Definitions**. See [Systems → Definitions](systems.md#15-definitions).
+
+### `/define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/define.js` |
+| **Description** | Look up a definition. `term` autocompletes from the database (best match, then most viewed); optional `subject` and `board` filters |
+| **Discord permissions** | None |
+| **Role access** | Public (reply is public by default) |
+| **Dependencies** | `Definition` model, `utils/definitions.js` |
+
+Shows the definition with subject, board, chapter/topic and credits (author plus everyone whose improvement was applied), and a **Suggest improvement** button that opens the edit form.
+
+### `/add-define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/add-define.js` |
+| **Description** | Add a definition. `subject` (required) and `board` autocomplete from the dashboard lists; `chapter` / `topic` suggest values already used in the subject |
+| **Discord permissions** | None |
+| **Role access** | Public — approvers and the subject's helpers add directly, everyone else is reviewed |
+| **Dependencies** | `Definition`, `DefinitionRequest`, `utils/definitionActions.js` |
+
+### `/edit-define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/edit-define.js` |
+| **Description** | Opens a pre-filled form to improve a definition (same form as the **Suggest improvement** button) |
+| **Discord permissions** | None |
+| **Role access** | Public — direct for approvers and the helper who wrote it, otherwise reviewed |
+| **Dependencies** | `systems/definitions.js` handles the form |
+
+### `/delete-define`
+
+| | |
+|---|---|
+| **File** | `commands/definitions/delete-define.js` |
+| **Description** | Delete a definition (with a confirm button), or request its removal with a `reason` |
+| **Discord permissions** | None |
+| **Role access** | Public — direct for approvers and the helper who wrote it, otherwise reviewed |
+| **Dependencies** | `Definition`, `DefinitionRequest`, `utils/definitionActions.js` |
 
 ---
 
@@ -296,6 +372,16 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Role access** | admin, dcHead |
 | **Hierarchy check** | Yes |
 
+### `/clear-verbal-warnings`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/clear-verbal-warnings.js` |
+| **Description** | Clear all verbal warnings for a user |
+| **Discord permissions** | None |
+| **Role access** | admin, dcHead |
+| **Hierarchy check** | Yes |
+
 ### `/delete-warning`
 
 | | |
@@ -304,6 +390,16 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Description** | Delete a specific warning by action ID (also removes that warning's moderation points) |
 | **Discord permissions** | None |
 | **Role access** | admin, dcHead, srMods |
+
+### `/delete-verbal-warning`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/delete-verbal-warning.js` |
+| **Description** | Delete a verbal warning by action ID |
+| **Discord permissions** | None |
+| **Role access** | admin, dcHead, srMods |
+| **Hierarchy check** | Yes |
 
 ### `/delete-note`
 
@@ -374,7 +470,16 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/moderation/my-warnings.js` |
-| **Description** | View your active warnings |
+| **Description** | View your warnings (active first, then expired) |
+| **Discord permissions** | None |
+| **Role access** | Public |
+
+### `/my-verbal-warnings`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/my-verbal-warnings.js` |
+| **Description** | View your verbal warnings |
 | **Discord permissions** | None |
 | **Role access** | Public |
 
@@ -532,6 +637,26 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | **Role access** | admin, dcHead, srMods, trialMods, jrMods |
 | **Hierarchy check** | Yes |
 
+### `/verbal-warn`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/verbal-warn.js` |
+| **Description** | Give a user a verbal warning. The bot DMs it (with the text of an optional `rule`, e.g. `1.1`) and records it, but it adds no moderation points and never expires. The reply says whether the DM was delivered |
+| **Discord permissions** | None |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+| **Hierarchy check** | Yes |
+| **Dependencies** | `VerbalWarning`, `ModLog` models, `utils/logModAction.js`, `systems/ruleSync.js` |
+
+### `/verbal-warnings`
+
+| | |
+|---|---|
+| **File** | `commands/moderation/verbal-warnings.js` |
+| **Description** | View all verbal warnings of a user (separate from `/warnings`) |
+| **Discord permissions** | `ManageMessages` |
+| **Role access** | admin, dcHead, srMods, jrMods, trialMods |
+
 ### `/warn`
 
 | | |
@@ -548,7 +673,7 @@ Deletes any existing bot panel messages in that channel and posts a fresh embed 
 | | |
 |---|---|
 | **File** | `commands/moderation/warnings.js` |
-| **Description** | View all warnings of a user |
+| **Description** | View all warnings of a user (active first, then expired) |
 | **Discord permissions** | `ManageMessages` |
 | **Role access** | admin, dcHead, srMods, jrMods, trialMods |
 

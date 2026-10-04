@@ -5,7 +5,11 @@ import {
   MOD_POINTS_PLACEHOLDERS,
   renderMessageTemplate,
 } from "@ralevel/shared";
-import type { ModPointsConfig, ModPointSource } from "@ralevel/db";
+import type {
+  ModPointExpirySource,
+  ModPointsConfig,
+  ModPointSource,
+} from "@ralevel/db";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveActions } from "@/components/SaveActions";
 import { useGuildConfig } from "@/lib/useGuildConfig";
@@ -16,6 +20,11 @@ const SOURCE_FIELDS: { key: ModPointSource; label: string }[] = [
   { key: "timeout", label: "/timeout" },
   { key: "kick", label: "/kick" },
   { key: "softban", label: "/softban" },
+];
+
+const EXPIRY_FIELDS: { key: ModPointExpirySource; label: string }[] = [
+  ...SOURCE_FIELDS,
+  { key: "manual", label: "/points add" },
 ];
 
 const DELETE_MESSAGE_OPTIONS = [
@@ -149,15 +158,6 @@ export default function PointSystemPage() {
               }
             />
           </div>
-          <div className="field">
-            <label>Points expire after (days)</label>
-            <input
-              type="number"
-              min={0}
-              value={current.expiryDays}
-              onChange={(e) => update({ expiryDays: toCount(e.target.value) })}
-            />
-          </div>
         </div>
         <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
           Auto-ban at <strong>{current.threshold}</strong> points. Ban notice
@@ -165,10 +165,7 @@ export default function PointSystemPage() {
           <strong>
             {noticeAt}–{Math.max(noticeAt, current.threshold - 1)}
           </strong>{" "}
-          points.{" "}
-          {current.expiryDays > 0
-            ? `Each entry stops counting ${current.expiryDays} day(s) after it was given.`
-            : "Points never expire (0 days)."}
+          points.
         </p>
         {validationErrors.map((message) => (
           <p key={message} className="status err" style={{ margin: 0 }}>
@@ -194,6 +191,35 @@ export default function PointSystemPage() {
                   update({
                     values: {
                       ...current.values,
+                      [field.key]: toCount(e.target.value),
+                    },
+                  })
+                }
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card stack" style={{ marginBottom: "1.5rem" }}>
+        <h3 style={{ margin: 0, fontSize: "1rem" }}>Expiry (days)</h3>
+        <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
+          How long each infraction counts toward the total. 0 means it never
+          expires. Changes only apply to new infractions; existing ones keep
+          the expiry date they were given with.
+        </p>
+        <div className="row">
+          {EXPIRY_FIELDS.map((field) => (
+            <div className="field" key={field.key}>
+              <label>{field.label}</label>
+              <input
+                type="number"
+                min={0}
+                value={current.expiryDays[field.key]}
+                onChange={(e) =>
+                  update({
+                    expiryDays: {
+                      ...current.expiryDays,
                       [field.key]: toCount(e.target.value),
                     },
                   })

@@ -4,6 +4,9 @@ const Poll = require("./models/poll");
 const Confession = require("./models/confession");
 const Task = require("./models/task");
 const ModmailTicket = require("./models/modmailTicket");
+const ModDm = require("./models/modDm");
+const Definition = require("./models/definition");
+const DefinitionRequest = require("./models/definitionRequest");
 
 async function seedCounter(counterName, maxValue) {
   if (maxValue <= 0) return;
@@ -36,6 +39,18 @@ async function seedCounters() {
     ? parseInt(lastTask.taskId.split("-")[1], 10) || 0
     : 0;
   await seedCounter("taskId", taskMax);
+
+  const lastDefinition = await Definition.findOne()
+    .sort({ definitionId: -1 })
+    .select("definitionId")
+    .lean();
+  await seedCounter("definitionId", lastDefinition?.definitionId ?? 0);
+
+  const lastDefinitionRequest = await DefinitionRequest.findOne()
+    .sort({ requestId: -1 })
+    .select("requestId")
+    .lean();
+  await seedCounter("definitionRequestId", lastDefinitionRequest?.requestId ?? 0);
 }
 
 module.exports = async () => {
@@ -46,6 +61,10 @@ module.exports = async () => {
 
   await seedCounters();
   await ModmailTicket.ensureModmailIndexes();
+  // /dm's atomic claim relies on the unique userId index existing.
+  await ModDm.init();
+  // Duplicate-term detection relies on the unique subject/board/term index.
+  await Definition.init();
 
   console.log("✅ MongoDB Connected");
 };

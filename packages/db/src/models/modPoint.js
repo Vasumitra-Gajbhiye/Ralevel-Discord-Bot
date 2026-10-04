@@ -66,11 +66,18 @@ const ModPointSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // When these points stop counting (null = never). Fixed at creation.
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
 
 ModPointSchema.index({ userId: 1, active: 1, createdAt: -1 });
+ModPointSchema.index({ userId: 1, active: 1, expiresAt: 1 });
 
 module.exports =
   mongoose.models["ModPoint"] || mongoose.model("ModPoint", ModPointSchema);

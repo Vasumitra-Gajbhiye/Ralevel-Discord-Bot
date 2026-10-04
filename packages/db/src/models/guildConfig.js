@@ -124,6 +124,39 @@ const TaskTeamSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const DefinitionSubjectSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    // Role keys whose holders can add definitions to this subject without review
+    helperRoleKeys: { type: [String], default: [] },
+    enabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
+const DefinitionBoardSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    enabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
+const ExamSubjectSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    // Cambridge syllabus codes, e.g. ["9709", "9231"]
+    syllabusCodes: { type: [String], default: [] },
+    // Channels made read-only while one of the syllabuses is being sat
+    channels: { type: [IdLabelSchema], default: [] },
+    enabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
 const GuildConfigSchema = new mongoose.Schema(
   {
     guildId: { type: String, required: true, unique: true, index: true },
@@ -154,6 +187,7 @@ const GuildConfigSchema = new mongoose.Schema(
       welcome: { type: Boolean, default: true },
       qotd: { type: Boolean, default: true },
       xpRanks: { type: Boolean, default: true },
+      definitions: { type: Boolean, default: true },
     },
     reputation: {
       tiers: { type: [RepTierSchema], default: [] },
@@ -222,6 +256,19 @@ const GuildConfigSchema = new mongoose.Schema(
     helper: {
       pingDelayMs: { type: Number, default: 10000 },
     },
+    definitions: {
+      subjects: { type: [DefinitionSubjectSchema], default: [] },
+      boards: { type: [DefinitionBoardSchema], default: [] },
+      reviewChannelId: { type: String, default: "" },
+      // Where helper/approver changes are logged; falls back to reviewChannelId
+      logChannelId: { type: String, default: "" },
+      approverRoleKeys: { type: [String], default: ["admin", "hlpHead"] },
+      pingRoleKeys: { type: [String], default: ["hlpHead"] },
+      maxPendingPerUser: { type: Number, default: 5 },
+    },
+    examLocking: {
+      subjects: { type: [ExamSubjectSchema], default: [] },
+    },
     qotd: {
       reminderTemplate: {
         type: String,
@@ -259,7 +306,22 @@ const GuildConfigSchema = new mongoose.Schema(
           type: Number,
           default: DEFAULT_MOD_POINTS.noticeDistance,
         },
-        expiryDays: { type: Number, default: DEFAULT_MOD_POINTS.expiryDays },
+        expiryDays: {
+          warn: { type: Number, default: DEFAULT_MOD_POINTS.expiryDays.warn },
+          timeout: {
+            type: Number,
+            default: DEFAULT_MOD_POINTS.expiryDays.timeout,
+          },
+          kick: { type: Number, default: DEFAULT_MOD_POINTS.expiryDays.kick },
+          softban: {
+            type: Number,
+            default: DEFAULT_MOD_POINTS.expiryDays.softban,
+          },
+          manual: {
+            type: Number,
+            default: DEFAULT_MOD_POINTS.expiryDays.manual,
+          },
+        },
         values: {
           warn: { type: Number, default: DEFAULT_MOD_POINTS.values.warn },
           timeout: { type: Number, default: DEFAULT_MOD_POINTS.values.timeout },

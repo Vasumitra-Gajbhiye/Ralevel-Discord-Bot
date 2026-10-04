@@ -24,7 +24,9 @@ type CollectionKey =
   | "qotd"
   | "certRotation"
   | "users"
-  | "polls";
+  | "polls"
+  | "definitions"
+  | "definitionRequests";
 
 const MODEL_MAP: Record<
   CollectionKey,
@@ -48,6 +50,8 @@ const MODEL_MAP: Record<
     | "CertRotation"
     | "User"
     | "Poll"
+    | "Definition"
+    | "DefinitionRequest"
   >
 > = {
   warnings: "Warning",
@@ -68,6 +72,8 @@ const MODEL_MAP: Record<
   certRotation: "CertRotation",
   users: "User",
   polls: "Poll",
+  definitions: "Definition",
+  definitionRequests: "DefinitionRequest",
 };
 
 function getModel(db: DbModels, collection: string): AnyModel | null {
@@ -149,6 +155,23 @@ export async function GET(
     if (q) {
       if (collection === "users") {
         filter._id = { $regex: q, $options: "i" };
+      } else if (collection === "definitions") {
+        filter.$or = [
+          { term: { $regex: q, $options: "i" } },
+          { definition: { $regex: q, $options: "i" } },
+          { subjectId: { $regex: q, $options: "i" } },
+          { chapter: { $regex: q, $options: "i" } },
+          { authorId: { $regex: q, $options: "i" } },
+          { authorTag: { $regex: q, $options: "i" } },
+        ];
+      } else if (collection === "definitionRequests") {
+        filter.$or = [
+          { "proposed.term": { $regex: q, $options: "i" } },
+          { "original.term": { $regex: q, $options: "i" } },
+          { subjectId: { $regex: q, $options: "i" } },
+          { requesterId: { $regex: q, $options: "i" } },
+          { requesterTag: { $regex: q, $options: "i" } },
+        ];
       } else if (collection === "confessions") {
         filter.$or = [
           { authorId: { $regex: q, $options: "i" } },

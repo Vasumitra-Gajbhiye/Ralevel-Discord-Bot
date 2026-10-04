@@ -15,22 +15,27 @@ const ConfessionReply = require("./src/models/confessionReply");
 const ModmailTicket = require("./src/models/modmailTicket");
 const ModmailBan = require("./src/models/modmailBan");
 const ModmailMessageLink = require("./src/models/modmailMessageLink");
+const ModDm = require("./src/models/modDm");
 const Certificate = require("./src/models/certificate");
 const CertRotation = require("./src/models/certRotation");
 const QotdRotation = require("./src/models/qotdRotation");
 const Counter = require("./src/models/counter");
 const ModLog = require("./src/models/modlog");
 const Warning = require("./src/models/warning");
+const VerbalWarning = require("./src/models/verbalWarning");
 const ModPoint = require("./src/models/modPoint");
 const Note = require("./src/models/note");
 const Kick = require("./src/models/kick");
 const Task = require("./src/models/task");
 const TaskDisplay = require("./src/models/taskDisplay");
 const HelperRole = require("./src/models/helperRole");
+const Definition = require("./src/models/definition");
+const DefinitionRequest = require("./src/models/definitionRequest");
 const GuildConfig = require("./src/models/guildConfig");
 const DashboardAccess = require("./src/models/dashboardAccess");
 const ExamSession = require("./src/models/examSession");
 const ExamPaper = require("./src/models/examPaper");
+const ChannelDirectory = require("./src/models/channelDirectory");
 const {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
@@ -41,11 +46,26 @@ const {
   DEFAULT_BAN_MESSAGES,
   DEFAULT_MOD_POINTS,
   MOD_POINT_SOURCES,
+  MOD_POINT_EXPIRY_SOURCES,
   MOD_POINT_DELETE_MESSAGE_OPTIONS,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
 } = require("./src/defaultGuildConfig");
 const { normalizeModPointsConfig } = require("./src/modPointsConfig");
+const {
+  DEFINITION_LIMITS,
+  DEFAULT_DEFINITION_SUBJECTS,
+  DEFAULT_DEFINITION_BOARDS,
+  buildDefaultDefinitions,
+  normalizeTermKey,
+  slugifyEntryId,
+  normalizeDefinitionsConfig,
+} = require("./src/definitionsConfig");
+const {
+  EXAM_LOCKING_LIMITS,
+  buildDefaultExamLocking,
+  normalizeExamLockingConfig,
+} = require("./src/examLockingConfig");
 const {
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
@@ -79,22 +99,27 @@ module.exports = {
   ModmailTicket,
   ModmailBan,
   ModmailMessageLink,
+  ModDm,
   Certificate,
   CertRotation,
   QotdRotation,
   Counter,
   ModLog,
   Warning,
+  VerbalWarning,
   ModPoint,
   Note,
   Kick,
   Task,
   TaskDisplay,
   HelperRole,
+  Definition,
+  DefinitionRequest,
   GuildConfig,
   DashboardAccess,
   ExamSession,
   ExamPaper,
+  ChannelDirectory,
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
   buildDefaultModmail,
@@ -104,8 +129,19 @@ module.exports = {
   DEFAULT_BAN_MESSAGES,
   DEFAULT_MOD_POINTS,
   MOD_POINT_SOURCES,
+  MOD_POINT_EXPIRY_SOURCES,
   MOD_POINT_DELETE_MESSAGE_OPTIONS,
   normalizeModPointsConfig,
+  DEFINITION_LIMITS,
+  DEFAULT_DEFINITION_SUBJECTS,
+  DEFAULT_DEFINITION_BOARDS,
+  buildDefaultDefinitions,
+  normalizeTermKey,
+  slugifyEntryId,
+  normalizeDefinitionsConfig,
+  EXAM_LOCKING_LIMITS,
+  buildDefaultExamLocking,
+  normalizeExamLockingConfig,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
   migrateGuildConfigDocument,
