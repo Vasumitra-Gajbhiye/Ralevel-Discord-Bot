@@ -15,5 +15,5 @@ coverage
 .nyc_output
 apps/bot/data/rules-cache.json
 
-# Local onboarding notes (not committed)
-pre-meeting.md
+# Local onboarding notes (not committed; may contain dev secrets)
+dev-onboarding/
