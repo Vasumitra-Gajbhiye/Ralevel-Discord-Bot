@@ -80,7 +80,7 @@ node scripts/deploy-commands.js
 
 ## 🌲 GitHub Workflow
 
-We **DO NOT** work directly on the `main` branch. Please follow this standard workflow:
+We **DO NOT** work directly on the `main` branch. Please follow this standard workflow (full guide, including how to fix common mistakes: [docs/github-workflow.md](docs/github-workflow.md)):
 
 1.  **Pull Latest Code**: `git pull origin main`
 2.  **Create a Branch**: Use the format `feature/<name>` or `fix/<name>`.

@@ -7,6 +7,7 @@ Complete developer documentation for the r/alevel Discord bot.
 1. [Setup](setup.md) — clone, install, configure, and run locally
 2. [Environment Variables](environment-variables.md) — every `.env` variable explained
 3. [Architecture](architecture.md) — project structure and startup flow
+4. [GitHub Workflow](github-workflow.md) — branches, commits, and pull requests
 
 ## Reference
 
@@ -18,6 +19,7 @@ Complete developer documentation for the r/alevel Discord bot.
 | [Commands](commands.md) | All 72 slash commands with permissions |
 | [Systems](systems.md) | Background systems, event listeners, schedulers |
 | [Adding Commands](adding-commands.md) | How to create and deploy new slash commands |
+| [GitHub Workflow](github-workflow.md) | Branches, commits, pull requests, and fixing Git mistakes |
 | [Deployment](deployment.md) | Docker and Coolify production deployment |
 | [Database](database.md) | MongoDB collections and Redis keys |
 | [Troubleshooting](troubleshooting.md) | Common problems and fixes |
