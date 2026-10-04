@@ -135,6 +135,7 @@ Required for `apps/web` only. Create an application at [dashboard.clerk.com](htt
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Sign-up page path | Yes (web) |
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | Redirect after sign-in (e.g. `/`) | Recommended |
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Redirect after sign-up (e.g. `/`) | Recommended |
+| `DASHBOARD_ADMIN_EMAILS` | Comma-separated emails always allowed into the dashboard, on top of the Settings → Access list. For local dev against a fresh database. | No |
 
 Used in: `apps/web` middleware, API routes, and Clerk components. Allowlisted emails are managed via **Settings → Access** in the dashboard (stored in Clerk, not MongoDB).
 

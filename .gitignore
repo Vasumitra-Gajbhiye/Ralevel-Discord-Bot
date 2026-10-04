@@ -14,3 +14,6 @@ pnpm-debug.log*
 coverage
 .nyc_output
 apps/bot/data/rules-cache.json
+
+# Local onboarding notes (not committed)
+pre-meeting.md
