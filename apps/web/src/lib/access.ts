@@ -25,6 +25,17 @@ export function normalizeEmail(email: string): string {
   return email.toLowerCase().trim();
 }
 
+/**
+ * Extra always-allowed emails from DASHBOARD_ADMIN_EMAILS (comma-separated).
+ * Lets each developer log into their own local dashboard against a fresh DB.
+ */
+function getEnvAdminEmails(): string[] {
+  return (process.env.DASHBOARD_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map(normalizeEmail)
+    .filter(Boolean);
+}
+
 export function invalidateAllowlistCache(): void {
   allowlistCache = null;
 }
@@ -63,6 +74,7 @@ async function getAllowlistedEmails(): Promise<Set<string>> {
   const docs = await listAccessDocuments();
   const emails = new Set(docs.map((doc) => normalizeEmail(doc.email)));
   emails.add(SEED_EMAIL);
+  for (const email of getEnvAdminEmails()) emails.add(email);
 
   allowlistCache = { emails, expiresAt: now + ALLOWLIST_CACHE_TTL_MS };
   return emails;
@@ -70,7 +82,9 @@ async function getAllowlistedEmails(): Promise<Set<string>> {
 
 export async function isEmailAllowlisted(email: string): Promise<boolean> {
   const normalized = normalizeEmail(email);
-  if (normalized === SEED_EMAIL) return true;
+  if (normalized === SEED_EMAIL || getEnvAdminEmails().includes(normalized)) {
+    return true;
+  }
   const emails = await getAllowlistedEmails();
   return emails.has(normalized);
 }
