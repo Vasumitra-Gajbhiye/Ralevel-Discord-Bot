@@ -8,6 +8,7 @@ const {
   getChannelId,
   tryGetGuildConfig,
 } = require("../utils/guildConfigStore");
+const { hasGuildMembers } = require("../utils/privilegedIntents");
 
 const IMAGE_PATH = path.join(__dirname, "../assets/welcome.png");
 
@@ -21,6 +22,13 @@ async function getBackground() {
 }
 
 function welcomeSystem(client) {
+  if (!hasGuildMembers(client)) {
+    console.log(
+      "[welcome] Paused: Server Members intent is off, so member joins are not received."
+    );
+    return;
+  }
+
   client.on("guildMemberAdd", async (member) => {
     try {
       const cfg = tryGetGuildConfig();

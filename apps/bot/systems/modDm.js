@@ -128,7 +128,7 @@ function quoteLines(text) {
 /** Message text kept as-is (newlines, markdown, GIF links) plus forwards and sticker names. */
 function buildPlainRelayText(message) {
   const parts = [];
-  const own = message.content?.trim();
+  const own = modmail.messageText(message);
   if (own) parts.push(own);
 
   const snapshots = message.messageSnapshots?.size
@@ -713,9 +713,12 @@ async function handleModDmStaffReply(client, message) {
   const doc = await ModDm.findOne({ threadId: message.channel.id });
   if (!doc) return true;
 
-  const content = message.content?.trim() || "";
+  const content = modmail.messageText(message);
   if (content.startsWith(modmail.NOTE_PREFIX)) return true;
-  if (!modmail.hasRelayableContent(message)) return true;
+  if (!modmail.hasRelayableContent(message)) {
+    await modmail.warnIfContentUnavailable(client, message);
+    return true;
+  }
   if (!modmail.markMessageProcessed(message.id)) return true;
 
   if (doc.status !== "OPEN") {

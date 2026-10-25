@@ -117,25 +117,22 @@ require("dotenv").config();
 connectDB(); // database.js — connects + seeds counters
 ```
 
-**3. Create Discord client** with four intents:
+**3. Create Discord client.** The intents come from `resolveIntents()` in `utils/privilegedIntents.js`, controlled by [`PRIVILEGED_INTENTS`](environment-variables.md#privileged_intents):
 
 ```javascript
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
-});
+const intentConfig = await resolveIntents();
+client = new Client({ intents: intentConfig.intents, partials: [Partials.Channel] });
 ```
 
 | Intent | Why needed |
 |--------|------------|
 | `Guilds` | Server events, slash commands |
-| `GuildMembers` | Welcome system, role checks, member fetch |
 | `GuildMessages` | Message tracking, sticky, reputation |
-| `MessageContent` | Read message text for thank-you detection |
+| `DirectMessages` | Modmail and mod-DM relays |
+| `GuildMembers` (privileged, optional) | Welcome system (member-join events) |
+| `MessageContent` (privileged, optional) | Thank-you detection, `/purge` content filters, staff thread relays |
+
+Systems check `hasMessageContent(client)` / `hasGuildMembers(client)` and degrade when a privileged intent is off.
 
 **4. Load slash commands**
 

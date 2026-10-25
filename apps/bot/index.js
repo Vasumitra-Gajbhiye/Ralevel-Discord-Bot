@@ -1,6 +1,6 @@
 require("./loadEnv");
 const { connectDB } = require("@ralevel/db");
-const { Client, GatewayIntentBits, Partials } = require("discord.js");
+const { Client, Partials } = require("discord.js");
 const {
   loadGuildConfig,
   startGuildConfigWatcher,
@@ -29,20 +29,27 @@ const { startCommandSyncServer } = require("./systems/commandSyncServer");
 const { deployCommandsOnReady } = require("./systems/deployCommandsOnReady");
 const { exportCommandCatalog } = require("./scripts/export-command-catalog");
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.DirectMessages,
-  ],
-  partials: [Partials.Channel],
-});
+const {
+  resolveIntents,
+  describeIntents,
+  isDisallowedIntentsError,
+  explainDisallowedIntents,
+} = require("./utils/privilegedIntents");
+
+let client;
 
 async function start() {
   const { commandCount } = exportCommandCatalog();
   console.log(`[command-catalog] Exported ${commandCount} commands.`);
+
+  // Built after intent resolution so PRIVILEGED_INTENTS=auto can drop intents
+  // Discord hasn't granted instead of failing login with 4014.
+  const intentConfig = await resolveIntents();
+  console.log(describeIntents(intentConfig));
+  client = new Client({
+    intents: intentConfig.intents,
+    partials: [Partials.Channel],
+  });
 
   await connectDB();
   await loadGuildConfig(client);
@@ -81,13 +88,19 @@ async function start() {
   channelDirectorySystem(client);
   startCommandSyncServer();
 
-  await client.login(process.env.TOKEN);
+  try {
+    await client.login(process.env.TOKEN);
+  } catch (err) {
+    if (!isDisallowedIntentsError(err)) throw err;
+    console.error(explainDisallowedIntents(intentConfig));
+    process.exit(1);
+  }
 }
 
 function shutdown(signal) {
   console.log(`[bot] ${signal} received, destroying Discord client`);
   try {
-    client.destroy();
+    client?.destroy();
   } catch (err) {
     console.error("[bot] Failed to destroy Discord client:", err);
   }
