@@ -3,6 +3,17 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
 const generateId = require("../../utils/generateId.js");
 const logModAction = require("../../utils/logModAction");
+const { hasMessageContent } = require("../../utils/privilegedIntents");
+
+// Discord strips content/attachments/embeds from fetched messages without the
+// Message Content intent, so these filters would silently match nothing.
+const CONTENT_FILTERS = new Set([
+  "attachments",
+  "embeds",
+  "links",
+  "images",
+  "keyword",
+]);
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -80,6 +91,12 @@ module.exports = {
     if (amount > 100)
       return interaction.reply({
         content: "❌ Maximum amount is **100**.",
+        ephemeral: true,
+      });
+
+    if (CONTENT_FILTERS.has(filter) && !hasMessageContent(interaction.client))
+      return interaction.reply({
+        content: `❌ The **${filter}** filter is unavailable while the bot lacks Discord's Message Content access. Use **everyone**, **user**, **bots**, **nobots** or **hours** instead.`,
         ephemeral: true,
       });
 

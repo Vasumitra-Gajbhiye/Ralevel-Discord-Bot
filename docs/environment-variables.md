@@ -44,6 +44,28 @@ Used in: `index.js`, `scripts/deploy-commands.js`, `scripts/migrateWarnings.js`,
 
 ---
 
+### `PRIVILEGED_INTENTS`
+
+|                |                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Purpose**    | Whether the bot requests the privileged **Server Members** and **Message Content** gateway intents                      |
+| **Values**     | `auto` (default): request only what Discord has granted the app · `true`: always request both · `false`: request neither |
+| **Required**   | No                                                                                                                      |
+| **If missing** | Treated as `auto`                                                                                                       |
+
+At startup the bot logs which intents are on, e.g. `[intents] mode=auto members=off messageContent=off — degraded: ...`. `auto` reads the app's flags from `GET /applications/@me`; if that lookup fails it starts without privileged intents. After Discord grants the intents, restart the bot and `auto` picks them up.
+
+Without the intents:
+
+- **Server Members off:** welcome messages are paused (no member-join events).
+- **Message Content off:** rep from thank-you messages stops, `/purge` content filters (`links`, `keyword`, `attachments`, `embeds`, `images`) return an error, and sticky reposts count messages instead of lines. Staff replies in modmail / mod-DM threads must **@mention the bot** to be relayed; other staff messages get a "Not delivered" notice (throttled to once per thread every 10 minutes).
+
+With `true` and the intents not granted, login fails with 4014 and the bot exits with an explanation (see [Troubleshooting](troubleshooting.md#error-used-disallowed-intents)).
+
+Used in: `utils/privilegedIntents.js` → `index.js`
+
+---
+
 ### `MONGO_URI`
 
 |                |                                                                                        |

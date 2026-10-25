@@ -271,7 +271,7 @@ Watch for these errors:
 REDIS_URL is required          → missing env var
 Redis connection error:        → Redis unreachable
 MongoDB connection error       → Atlas IP/URI issue
-Error: Used disallowed intents → enable intents in Developer Portal
+Error: Used disallowed intents → set PRIVILEGED_INTENTS=auto, then see troubleshooting.md
 ```
 
 ### Health checks

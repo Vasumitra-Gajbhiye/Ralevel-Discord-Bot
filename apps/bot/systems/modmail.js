@@ -21,17 +21,50 @@ const {
 } = require("@ralevel/db");
 const { tryGetGuildConfig } = require("../utils/guildConfigStore");
 const { createBoundedSet } = require("../utils/boundedSet");
+const { hasMessageContent } = require("../utils/privilegedIntents");
 
 const STAFF_EMBED_COLOR = 0x5865f2;
 const USER_EMBED_COLOR = 0x57f287;
 const NOTE_PREFIX = ".";
 const PROCESSED_MESSAGE_CACHE_SIZE = 10_000;
 const processedMessageIds = createBoundedSet(PROCESSED_MESSAGE_CACHE_SIZE);
+const CONTENT_WARNING_COOLDOWN_MS = 10 * 60 * 1000;
+const contentWarningSentAt = new Map();
 
 function markMessageProcessed(messageId) {
   if (!messageId || processedMessageIds.has(messageId)) return false;
   processedMessageIds.add(messageId);
   return true;
+}
+
+/** Message text with @mentions of the bot removed (staff mention it to relay without Message Content). */
+function messageText(message) {
+  const text = message?.content?.trim() || "";
+  const botId = message?.client?.user?.id;
+  if (!botId || !text) return text;
+  return text.replace(new RegExp(`<@!?${botId}>`, "g"), "").trim();
+}
+
+/**
+ * Without the Message Content intent, staff thread messages arrive empty unless
+ * they @mention the bot. Tell staff (at most once per thread per cooldown)
+ * instead of silently dropping the reply.
+ */
+async function warnIfContentUnavailable(client, message) {
+  if (hasMessageContent(client)) return;
+  const now = Date.now();
+  const lastSent = contentWarningSentAt.get(message.channel.id) || 0;
+  if (now - lastSent < CONTENT_WARNING_COOLDOWN_MS) return;
+  contentWarningSentAt.set(message.channel.id, now);
+
+  await message
+    .reply({
+      content:
+        `⚠️ **Not delivered** — the bot can't read messages in this thread right now (Discord hasn't granted Message Content access yet). ` +
+        `Start your reply with <@${client.user.id}> to send it to the user. Internal \`${NOTE_PREFIX}\` notes can ignore this.`,
+      allowedMentions: { parse: [], repliedUser: false },
+    })
+    .catch(() => {});
 }
 
 const SELECT_CUSTOM_ID = "modmail_category";
@@ -285,7 +318,7 @@ function gifPickerUrlsFromMessage(message) {
 }
 
 function relayTextContent(message) {
-  let text = message.content?.trim() || "";
+  let text = messageText(message);
   if (!text) return "";
 
   const gifUrls = gifPickerUrlsFromMessage(message);
@@ -492,7 +525,7 @@ function applyRelayAttachmentFields(embed, { nonImageNames = [], failed = [] } =
 
 function hasRelayableContent(message) {
   return (
-    Boolean(message.content?.trim()) ||
+    Boolean(messageText(message)) ||
     Boolean(message.messageSnapshots?.size) ||
     relaySources(message).some(
       (source) =>
@@ -1034,9 +1067,12 @@ async function handleModmailStaffReply(client, message) {
     return Boolean(anyTicket);
   }
 
-  if (!hasRelayableContent(message)) return true;
+  if (!hasRelayableContent(message)) {
+    await warnIfContentUnavailable(client, message);
+    return true;
+  }
 
-  const content = message.content?.trim() || "";
+  const content = messageText(message);
   if (content.startsWith(NOTE_PREFIX)) return true;
   if (!markMessageProcessed(message.id)) return true;
 
@@ -1276,6 +1312,8 @@ modmailSystem.hasOpenModDm = hasOpenModDm;
 modmailSystem.NOTE_PREFIX = NOTE_PREFIX;
 modmailSystem.MAX_FILES_PER_MESSAGE = MAX_FILES_PER_MESSAGE;
 modmailSystem.markMessageProcessed = markMessageProcessed;
+modmailSystem.messageText = messageText;
+modmailSystem.warnIfContentUnavailable = warnIfContentUnavailable;
 modmailSystem.hasRelayableContent = hasRelayableContent;
 modmailSystem.buildRelayDescription = buildRelayDescription;
 modmailSystem.relayStickers = relayStickers;

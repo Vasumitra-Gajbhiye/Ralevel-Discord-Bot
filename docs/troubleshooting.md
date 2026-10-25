@@ -45,16 +45,16 @@ Error: REDIS_URL is required
 
 ### `Error: Used disallowed intents`
 
-**Symptom:** Bot crashes on login with disallowed intents error.
+**Symptom:** Bot exits on login with `[intents] Discord rejected the gateway connection (4014: disallowed intents)`.
 
-**Cause:** Privileged intents not enabled in Developer Portal.
+**Cause:** The bot requested Server Members / Message Content, but Discord hasn't granted them to this application. Either the toggles are off, or the app is over Discord's 10,000-user threshold and doesn't have approved access through Privileged Intent Review. Over the threshold, the portal toggles alone aren't enough.
 
 **Fix:**
 
-1. Developer Portal → Your App → Bot
-2. Enable **Server Members Intent**
-3. Enable **Message Content Intent**
-4. Save and restart the bot
+1. Check what Discord has actually granted. With `PRIVILEGED_INTENTS=auto` (the default), the startup log line `[intents] mode=auto members=… messageContent=…` shows it.
+2. To get the bot online right away, set `PRIVILEGED_INTENTS=auto` (or `false`) and restart. Dependent features degrade (see [`PRIVILEGED_INTENTS`](environment-variables.md#privileged_intents)).
+3. Under the threshold: Developer Portal → Your App → Bot → enable **Server Members Intent** and **Message Content Intent**, save, and restart.
+4. Over the threshold: apply for access through Privileged Intent Review in the Developer Portal. Once approved, restart; `auto` re-enables everything.
 
 ---
 

@@ -14,7 +14,7 @@ Before starting, ensure you have the following tools installed on your machine:
 
 ---
 
-## 🚀 Initial Setup
+## Initial Setup
 
 ### 1. Clone the Repository
 Open your terminal and run the following commands:
