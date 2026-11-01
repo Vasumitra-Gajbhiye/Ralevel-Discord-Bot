@@ -3,6 +3,7 @@ const connectDB = require("./src/database");
 const User = require("./src/models/User");
 const Reputation = require("./src/models/reputation");
 const RepBan = require("./src/models/repban");
+const RepGrant = require("./src/models/repGrant");
 const XpBan = require("./src/models/xpban");
 const XpFlushGrant = require("./src/models/xpFlushGrant");
 const Sticky = require("./src/models/sticky");
@@ -88,6 +89,8 @@ module.exports = {
   User,
   Reputation,
   RepBan,
+  RepGrant,
+  REP_GRANT_TTL_SEC: RepGrant.REP_GRANT_TTL_SEC,
   XpBan,
   XpFlushGrant,
   Sticky,

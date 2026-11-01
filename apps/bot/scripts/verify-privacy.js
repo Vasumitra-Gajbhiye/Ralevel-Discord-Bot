@@ -77,6 +77,18 @@ function createTracker() {
     RepBan: {
       exists: async ({ userId }) => (record("RepBan.exists"), repBans.has(userId)),
     },
+    RepGrant: {
+      create: async (doc) => (record("RepGrant.create"), doc),
+      deleteMany: async (filter) => {
+        record("RepGrant.deleteMany");
+        const ids = (filter.$or || []).map((clause) => clause.giverId || clause.receiverId);
+        assert(
+          ids.length === 2 && ids.every((id) => id === "leaver"),
+          "RepGrant delete must cover grants given and received"
+        );
+        return { deletedCount: 4 };
+      },
+    },
     PollVote: {
       countDocuments: async () => (record("PollVote.countDocuments"), 0),
       deleteMany: async () => (record("PollVote.deleteMany"), { deletedCount: 3 }),
@@ -165,6 +177,7 @@ function createMockRedis() {
 
 const RELOADED = [
   "../utils/contentOptOut",
+  "../utils/repAwards",
   "../utils/deleteUserData",
   "../utils/xpFlush",
   "../systems/rankSystem",
@@ -389,10 +402,12 @@ async function testDeleteTouchesOnlyEngagementData() {
   });
 
   assert(result.busy === false, "should not report busy when lock is free");
+  assert(result.deleted.repGrants === 4, "should report deleted rep grants");
 
   const expected = [
     "User.deleteOne",
     "Reputation.deleteOne",
+    "RepGrant.deleteMany",
     "PollVote.deleteMany",
     "Poll.updateMany",
     "XpFlushGrant.deleteMany",

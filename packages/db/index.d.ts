@@ -5,6 +5,8 @@ export declare function connectDB(): Promise<void>;
 export declare const User: Model<any>;
 export declare const Reputation: Model<any>;
 export declare const RepBan: Model<any>;
+export declare const RepGrant: Model<any>;
+export declare const REP_GRANT_TTL_SEC: number;
 export declare const XpBan: Model<any>;
 export declare const XpFlushGrant: Model<any>;
 export declare const Sticky: Model<any>;

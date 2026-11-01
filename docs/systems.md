@@ -53,13 +53,13 @@ No cron library is used — all timing is `setInterval` / `setTimeout` with manu
 
 **Purpose:** Recursively loads all slash commands from `commands/` and routes `InteractionCreate` events with permission and hierarchy checks.
 
-**Discord events:** `interactionCreate` (chat input commands only)
+**Discord events:** `interactionCreate` (slash commands, autocomplete and context menu commands such as **Give Rep**)
 
 **Internal flow:**
 
 1. Scan every subdirectory of `commands/`
 2. Require each `.js` file; if it exports `data` + `execute`, add to `client.commands`
-3. On slash command:
+3. On a slash command or context menu command (both keyed by `data.name`, e.g. `Give Rep`):
    - Check `permissions.config.js` for allowed roles
    - Run role hierarchy checks for moderation commands
    - Call `command.execute(interaction)` with error handling
@@ -149,7 +149,7 @@ pipeline.expire(boosterKey, PENDING_KEY_TTL_SEC);
 
 **File:** `systems/reputation.js`
 
-**Purpose:** Automatically award reputation when users say thank-you or you're-welcome in replies or mentions.
+**Purpose:** Automatically award reputation when users say thank-you or you're-welcome in replies or mentions. The **Give Rep** message context menu (`commands/reputation/give-rep.js`) is the interaction alternative and shares the award logic in `utils/repAwards.js`.
 
 **Trigger:** Called by message router (returns `handleReputationMessage`, not a direct listener)
 
@@ -157,7 +157,8 @@ pipeline.expire(boosterKey, PENDING_KEY_TTL_SEC);
 
 1. User replies to someone with a thank phrase → recipient gets +1 rep
 2. User says thanks and @mentions users → each mentioned user gets +1 rep
-3. User replies "yw"/"welcome"/"np" to a thank → original thanker gets +1 rep
+3. User replies "yw"/"welcome"/"np" to a thank → the "yw" author gets +1 rep (the member they replied to counts as the giver)
+4. **Give Rep** context menu on a message → the message's author gets +1 rep (see [Commands](commands.md#give-rep-message-context-menu))
 
 **Tier roles** (assigned when rep crosses threshold):
 
@@ -174,15 +175,16 @@ On tier-up, removes old tier roles and announces in channel.
 **Internal details:**
 
 - Checks `RepBan` collection — banned users cannot receive rep
+- Paths 1, 3 and 4 go through `awardMessageRep` in `utils/repAwards.js`: no self-rep, no rep to bots, `RepBan` check, then a `RepGrant` insert keyed by `(messageId, giverId)` (unique index), so each member can award a given message only once whether by "thanks" reply or Give Rep. The key is the replied-to message for path 1, the "yw" message for path 3 and the target message for path 4. Records expire after 30 days (TTL index); Give Rep refuses older messages so expiry can't reopen an award. Path 2 (thank @mentions) has no single message and isn't recorded
 - Automatic rep awards use atomic MongoDB `$inc` (no read-modify-save); mention-based thanks batch ban checks and increments via `bulkWrite`, then send one combined confirmation message
 - Tier role sync uses the rep total from the award step (no second DB read)
 - Keeps a bounded in-memory `processedMessageIds` cache (10k entries, FIFO eviction) to prevent double-processing
 - Uses `utils/assignRepRole.js` for manual rep commands
-- **Message-content opt-out:** messages from members who ran `/privacy message-content off` are skipped before the content is read (no thank/welcome detection, no reply fetch). Those members can still *receive* rep from other people's thank-yous. The opt-out IDs are held in an in-memory `Set` (`utils/contentOptOut.js`), loaded at startup from `UserPrivacy` and updated by the command, so there's no DB query per message
+- **Message-content opt-out:** messages from members who ran `/privacy message-content off` are skipped before the content is read (no thank/welcome detection, no reply fetch). Those members can still *receive* rep from other people's thank-yous, and can give and receive rep with Give Rep, which never reads message text. The opt-out IDs are held in an in-memory `Set` (`utils/contentOptOut.js`), loaded at startup from `UserPrivacy` and updated by the command, so there's no DB query per message
 
 **Verification:** `npm run verify:reputation`
 
-**Dependencies:** MongoDB (`Reputation`, `RepBan`), tier role env vars, optional channel/category blocklist
+**Dependencies:** MongoDB (`Reputation`, `RepBan`, `RepGrant`), tier role env vars, optional channel/category blocklist
 
 ---
 

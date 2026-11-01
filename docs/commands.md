@@ -1,6 +1,6 @@
 # Commands
 
-All 75 slash commands in the r/alevel bot. There are **no prefix/text commands** — every user-facing command is a Discord slash command (`/`).
+All 75 slash commands in the r/alevel bot, plus one message context menu ([Give Rep](#give-rep-message-context-menu)). There are **no prefix/text commands**.
 
 Commands are loaded at runtime from `commands/` and registered to Discord via `scripts/deploy-commands.js`.
 
@@ -690,6 +690,27 @@ Shows the definition with subject, board, chapter/topic and credits (author plus
 | **Discord permissions** | `ManageRoles` |
 | **Role access** | hlpHead, admin |
 
+### Give Rep (message context menu)
+
+| | |
+|---|---|
+| **File** | `commands/reputation/give-rep.js` |
+| **How to use** | Right-click (or long-press) a message → **Apps → Give Rep** |
+| **Description** | Gives +1 reputation to the message's author. The reply to the giver is ephemeral by default (dashboard toggle) |
+| **Discord permissions** | None |
+| **Role access** | Public |
+| **Dependencies** | `utils/repAwards.js` (shared with thank-you detection), `RepGrant` model, `isReputationDisabled` from `systems/messageRouter.js` |
+
+Same rules as automatic thank-you rep:
+
+- No self-rep and no rep to bots. The author must still be in the server.
+- Refused when `features.reputation` is off, or in a channel / category listed in the reputation disabled channels or categories.
+- Rep-banned members (`RepBan`) can't receive it.
+- One award per giver per message, shared with thank-you detection: a "thanks" reply to a message and Give Rep on that message from the same member count as the same award. Recorded in `RepGrant`, which expires after 30 days, so Give Rep only works on messages from the last 30 days.
+- Awards use the same tier-role sync and the same public `+1 Rep → @user (N)` announcement in the message's channel as automatic rep.
+
+Give Rep never reads the message text, so the `/privacy message-content` opt-out doesn't apply: opted-out members can still give and receive rep through it. The dashboard lists it under **Settings → Commands** and **Command visibility** without a `/`. It can't be renamed or given a description there (Discord context menus have none).
+
 ### `/leaderboard`
 
 | | |
@@ -959,9 +980,9 @@ Task commands are channel-scoped — they only work in `GRAPHIC_CHANNEL`, `DEV_C
 | **Role access** | Public |
 | **Dependencies** | `UserPrivacy` model, `utils/contentOptOut.js`, `utils/deleteUserData.js`; links to `https://ralevel.com/legal/ralevel-bot/privacy-policy` |
 
-- **`status`** — shows the opt-out setting and what the bot stores about the member: XP and message count (including pending XP in Redis), reputation, poll votes and their privacy preferences.
+- **`status`** — shows the opt-out setting and what the bot stores about the member: XP and message count (including pending XP in Redis), reputation, rep-grant records, poll votes and their privacy preferences.
 - **`message-content`** — `off` opts the member out: the bot stops reading the member's message text for reputation thank-you detection and sticky line counting (see [Systems](systems.md#4-reputation-system)). It does not apply to modmail / moderator DM relays (the member or staff is explicitly sending that message through the bot) or moderation tools such as `/purge` filters. XP counting never reads message text. `on` turns reading back on.
-- **`delete-my-data`** — Confirm / Cancel buttons scoped to the member, expiring after 60 seconds. On confirm, deletes the member's `User` document (XP, message count), `Reputation` document, `PollVote` documents (and legacy votes embedded on `Poll`), `XpFlushGrant` ledger rows and pending XP in Redis (`HDEL` from `xp:pending:<guildId>`, `xp:boosters:<guildId>` and any orphaned `xp:draining*` hashes). Removes rank and reputation tier roles when those features are on. Keeps the `UserPrivacy` preference. Does **not** delete moderation records, modmail tickets, confessions, certificates, XP bans or rep bans. Members are pointed to modmail for those.
+- **`delete-my-data`** — Confirm / Cancel buttons scoped to the member, expiring after 60 seconds. On confirm, deletes the member's `User` document (XP, message count), `Reputation` document, `RepGrant` records they gave or received, `PollVote` documents (and legacy votes embedded on `Poll`), `XpFlushGrant` ledger rows and pending XP in Redis (`HDEL` from `xp:pending:<guildId>`, `xp:boosters:<guildId>` and any orphaned `xp:draining*` hashes). Removes rank and reputation tier roles when those features are on. Keeps the `UserPrivacy` preference. Does **not** delete moderation records, modmail tickets, confessions, certificates, XP bans or rep bans. Members are pointed to modmail for those.
   - Once per 24 hours per member (`UserPrivacy.dataDeletedAt`)
   - Takes the XP flush lock while deleting. If a flush is running, nothing is deleted and the member is asked to retry in a minute
   - Logs one line to the console: user ID and counts of what was deleted, no content. It deliberately skips `logModAction`, which would write a `ModLog` entry into the member's moderation history

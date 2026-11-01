@@ -14,6 +14,7 @@ type CatalogCommand = {
   fileDefault: string | null;
   saved: string | null | undefined;
   effective: string | null;
+  contextMenu: boolean;
 };
 
 type PermissionOption = {
@@ -202,7 +203,11 @@ export default function CommandVisibilityPage() {
                   <tr key={command.name}>
                     <td>
                       <div className="stack" style={{ gap: "0.15rem" }}>
-                        <span className="mono">/{command.effectiveName}</span>
+                        <span className="mono">
+                          {command.contextMenu
+                            ? command.effectiveName
+                            : `/${command.effectiveName}`}
+                        </span>
                         {command.displayName ? (
                           <span className="muted" style={{ fontSize: "0.8rem" }}>
                             default: /{command.name}

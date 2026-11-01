@@ -2,13 +2,14 @@ const redis = require("../redis");
 const {
   User,
   Reputation,
+  RepGrant,
   Poll,
   PollVote,
   XpFlushGrant,
   UserPrivacy,
 } = require("@ralevel/db");
 const { getRanks } = require("../systems/rankSystem");
-const { ensureTierRoleAndCheckAdded } = require("../systems/reputation");
+const { ensureTierRoleAndCheckAdded } = require("./repAwards");
 const { getPendingXpOverlay } = require("./xpFlush");
 const { getRoleId, tryGetGuildConfig } = require("./guildConfigStore");
 const {
@@ -110,8 +111,8 @@ async function removeEngagementRoles(guild, userId) {
 }
 
 /**
- * Deletes the member's engagement data: XP/message count, reputation, poll
- * votes and pending XP. Never touches moderation records, modmail, confessions,
+ * Deletes the member's engagement data: XP/message count, reputation, rep
+ * grants they gave or received, poll votes and pending XP. Never touches moderation records, modmail, confessions,
  * certificates or xp/rep bans. Keeps the UserPrivacy preference.
  * Holds the XP flush lock so a running flush can't recreate the User doc.
  */
@@ -129,9 +130,10 @@ async function deleteUserData({ guild, guildId, userId }) {
   let deleted;
   try {
     const pendingXp = await clearPendingXp(guildId, userId);
-    const [user, rep, votes, legacyVotes, grants] = await Promise.all([
+    const [user, rep, repGrants, votes, legacyVotes, grants] = await Promise.all([
       User.deleteOne({ _id: userId }),
       Reputation.deleteOne({ userId }),
+      RepGrant.deleteMany({ $or: [{ giverId: userId }, { receiverId: userId }] }),
       PollVote.deleteMany({ userId }),
       Poll.updateMany(
         { "votes.userId": userId },
@@ -148,6 +150,7 @@ async function deleteUserData({ guild, guildId, userId }) {
     deleted = {
       user: user.deletedCount || 0,
       reputation: rep.deletedCount || 0,
+      repGrants: repGrants.deletedCount || 0,
       pollVotes: (votes.deletedCount || 0) + (legacyVotes.modifiedCount || 0),
       xpGrants: grants.deletedCount || 0,
       pendingXp,
@@ -159,7 +162,7 @@ async function deleteUserData({ guild, guildId, userId }) {
   const roles = await removeEngagementRoles(guild, userId);
 
   console.log(
-    `[privacy] delete-my-data user=${userId} userDoc=${deleted.user} reputation=${deleted.reputation} pollVotes=${deleted.pollVotes} xpGrants=${deleted.xpGrants} pendingXp=${deleted.pendingXp} rankRoles=${roles.rankRoles} repRoles=${roles.repRoles}`
+    `[privacy] delete-my-data user=${userId} userDoc=${deleted.user} reputation=${deleted.reputation} repGrants=${deleted.repGrants} pollVotes=${deleted.pollVotes} xpGrants=${deleted.xpGrants} pendingXp=${deleted.pendingXp} rankRoles=${roles.rankRoles} repRoles=${roles.repRoles}`
   );
 
   return { busy: false, deleted, roles };

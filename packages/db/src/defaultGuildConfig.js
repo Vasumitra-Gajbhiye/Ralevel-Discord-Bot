@@ -301,6 +301,7 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   xp: "ManageMessages",
   "my-xp": "",
   privacy: "",
+  "Give Rep": "",
 };
 
 /**
@@ -402,6 +403,7 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   xp: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   "my-xp": [],
   privacy: [],
+  "Give Rep": [],
 };
 
 /**
@@ -469,6 +471,7 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   ping: false,
   poll: true,
   privacy: true,
+  "Give Rep": true,
   "privacy-policy": false,
   purge: true,
   purgeuser: false,

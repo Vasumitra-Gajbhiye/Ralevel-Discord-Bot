@@ -5,6 +5,14 @@ const CHOICE_NAME_MAX = 100;
 const SUBCOMMAND_TYPE = 1;
 const SUBCOMMAND_GROUP_TYPE = 2;
 
+const CHAT_INPUT_COMMAND_TYPE = 1;
+
+// Context menu commands (user / message) have no description or options, and
+// their names may contain spaces and capitals.
+function isChatInputPayload(payload) {
+  return !payload?.type || payload.type === CHAT_INPUT_COMMAND_TYPE;
+}
+
 function normalizeMetadataOverrides(overrides = {}) {
   if (overrides instanceof Map) {
     return Object.fromEntries(overrides);
@@ -84,6 +92,9 @@ function mergeOptionOverrides(baseOptions = [], overrideOptions = []) {
 
 function applyMetadataOverride(basePayload, override) {
   if (!override || typeof override !== "object") {
+    return basePayload;
+  }
+  if (!isChatInputPayload(basePayload)) {
     return basePayload;
   }
 
@@ -315,6 +326,13 @@ function validateSingleMetadataOverride(catalogCommand, override, commandName) {
     return { ok: false, errors: [`Unknown command: ${commandName}`] };
   }
 
+  if (!isChatInputPayload(catalogCommand.payload)) {
+    return {
+      ok: false,
+      errors: [`${commandName}: context menu commands have no description to edit`],
+    };
+  }
+
   const editable = extractEditableMetadata(catalogCommand.payload);
   if (override.description !== undefined) {
     editable.description = override.description;
@@ -414,6 +432,7 @@ function normalizeCommandMetadataOverridesForSave(
 
 module.exports = {
   DESCRIPTION_MAX,
+  isChatInputPayload,
   normalizeMetadataOverrides,
   applyMetadataOverride,
   extractEditableMetadata,

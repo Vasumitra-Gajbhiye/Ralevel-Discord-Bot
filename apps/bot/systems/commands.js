@@ -106,7 +106,11 @@ module.exports = (client) => {
       return;
     }
 
-    if (!interaction.isChatInputCommand()) return;
+    // Slash commands and context menus (e.g. "Give Rep") share the role gate,
+    // ephemeral setting and error handling below.
+    if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) {
+      return;
+    }
 
     const canonicalName = resolveCanonicalCommandName(interaction.commandName);
     const command = client.commands.get(canonicalName);
