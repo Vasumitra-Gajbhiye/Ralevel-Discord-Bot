@@ -37,6 +37,7 @@ export declare const DashboardAccess: Model<any>;
 export declare const ExamSession: Model<any>;
 export declare const ExamPaper: Model<any>;
 export declare const ChannelDirectory: Model<any>;
+export declare const UserPrivacy: Model<any>;
 export declare const TIME_UTC_RE: RegExp;
 export declare const DATE_RE: RegExp;
 export declare function combineDateAndUtcTime(

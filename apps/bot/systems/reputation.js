@@ -6,6 +6,7 @@ const { Reputation, RepBan } = require("@ralevel/db");
 
 const { PermissionsBitField } = require("discord.js");
 const { createBoundedSet } = require("../utils/boundedSet.js");
+const { isContentOptedOut } = require("../utils/contentOptOut");
 const {
   getGuildConfig,
   getRoleId,
@@ -145,6 +146,8 @@ function reputationSystem(client) {
     try {
       const cfg = tryGetGuildConfig();
       if (cfg?.features?.reputation === false) return;
+      // Opted-out authors' text is never read; they can still receive rep.
+      if (isContentOptedOut(message.author.id)) return;
 
       const thankWords = cfg?.reputation?.thankWords || [];
       const welcomeWords = cfg?.reputation?.welcomeWords || [];

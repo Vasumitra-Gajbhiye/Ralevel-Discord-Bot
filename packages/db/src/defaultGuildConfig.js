@@ -300,6 +300,7 @@ const DEFAULT_COMMAND_DISCORD_PERMISSIONS = {
   "xp-ban-list": "ManageGuild",
   xp: "ManageMessages",
   "my-xp": "",
+  privacy: "",
 };
 
 /**
@@ -400,6 +401,7 @@ const DEFAULT_COMMAND_PERMISSIONS = {
   "xp-ban-list": ["admin", "dcHead", "hlpHead", "srHelper", "jrMods"],
   xp: ["admin", "dcHead", "srMods", "jrMods", "trialMods"],
   "my-xp": [],
+  privacy: [],
 };
 
 /**
@@ -466,6 +468,7 @@ const DEFAULT_COMMAND_EPHEMERAL = {
   pin: true,
   ping: false,
   poll: true,
+  privacy: true,
   "privacy-policy": false,
   purge: true,
   purgeuser: false,

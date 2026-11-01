@@ -32,6 +32,7 @@
     "verify:definitions": "node scripts/verify-definitions.js",
     "verify:exam-subjects": "node scripts/verify-exam-subjects.js",
     "verify:privileged-intents": "node scripts/verify-privileged-intents.js",
+    "verify:privacy": "node scripts/verify-privacy.js",
     "seed:guild-config": "node scripts/seed-guild-config.js",
     "seed:definitions": "node scripts/seed-definitions.js",
     "deploy-commands": "node scripts/deploy-commands.js",

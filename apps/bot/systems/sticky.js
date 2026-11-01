@@ -1,5 +1,6 @@
 const { Sticky } = require("@ralevel/db");
 const { tryGetGuildConfig } = require("../utils/guildConfigStore");
+const { isContentOptedOut } = require("../utils/contentOptOut");
 
 const FLUSH_DEBOUNCE_MS = 5000;
 
@@ -100,7 +101,10 @@ function stickySystem(client) {
         stickyState.set(message.channel.id, state);
       }
 
-      const linesAdded = message.content?.split("\n").length || 1;
+      // Opted-out authors count as one line so their text is never read.
+      const linesAdded = isContentOptedOut(message.author?.id)
+        ? 1
+        : message.content?.split("\n").length || 1;
       state.lineCount += linesAdded;
 
       if (state.lineCount < lineThreshold) return;
