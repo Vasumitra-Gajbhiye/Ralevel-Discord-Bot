@@ -7,7 +7,8 @@ const {
 } = require("discord.js");
 
 // PRIVILEGED_INTENTS controls the Server Members + Message Content intents:
-//   auto  (default) — request only what Discord has granted this application
+//   auto  (default) — request only what Discord has granted this application;
+//                     if login still fails with 4014, retry without them
 //   true            — always request both (login fails with 4014 if not granted)
 //   false           — never request them; dependent features degrade
 const MODES = new Set(["auto", "true", "false"]);
@@ -77,7 +78,7 @@ async function resolveIntents({
   return { mode, granted, intents: buildIntents(granted) };
 }
 
-function describeIntents({ mode, granted }) {
+function describeIntents({ mode, granted, refused = false }) {
   const onOff = (value) => (value ? "on" : "off");
   const degraded = [];
   if (!granted.members) degraded.push("welcome messages");
@@ -89,7 +90,9 @@ function describeIntents({ mode, granted }) {
     );
   }
 
-  const summary = `[intents] mode=${mode} members=${onOff(granted.members)} messageContent=${onOff(granted.messageContent)}`;
+  const summary =
+    `[intents] mode=${mode} members=${onOff(granted.members)} messageContent=${onOff(granted.messageContent)}` +
+    (refused ? " (Discord refused the privileged intents with 4014)" : "");
   return degraded.length ? `${summary} — degraded: ${degraded.join(", ")}` : summary;
 }
 
@@ -98,6 +101,21 @@ function isDisallowedIntentsError(err) {
     err?.code === GatewayCloseCodes.DisallowedIntents ||
     /disallowed intents/i.test(err?.message ?? "")
   );
+}
+
+// Only auto mode falls back: with PRIVILEGED_INTENTS=true the operator asked for
+// the intents explicitly. If none were requested, a retry would be identical.
+function shouldRetryWithoutPrivilegedIntents(err, { mode, granted }) {
+  return (
+    mode === "auto" &&
+    (granted.members || granted.messageContent) &&
+    isDisallowedIntentsError(err)
+  );
+}
+
+function withoutPrivilegedIntents({ mode }) {
+  const granted = { members: false, messageContent: false };
+  return { mode, granted, intents: buildIntents(granted), refused: true };
 }
 
 function explainDisallowedIntents({ mode, granted }) {
@@ -136,6 +154,8 @@ module.exports = {
   resolveIntents,
   describeIntents,
   isDisallowedIntentsError,
+  shouldRetryWithoutPrivilegedIntents,
+  withoutPrivilegedIntents,
   explainDisallowedIntents,
   hasMessageContent,
   hasGuildMembers,
