@@ -266,8 +266,28 @@ Renaming a command **in code** (changing `setName()`) is different: update permi
 
 | Export | Type | Required |
 |--------|------|----------|
-| `data` | `SlashCommandBuilder` | Yes |
+| `data` | `SlashCommandBuilder` or `ContextMenuCommandBuilder` | Yes |
 | `execute` | `async (interaction) => void` | Yes |
+
+### Context menu commands
+
+A message or user context menu (right-click → **Apps**) uses the same contract with a `ContextMenuCommandBuilder`, e.g. `commands/reputation/give-rep.js`:
+
+```javascript
+const { ContextMenuCommandBuilder, ApplicationCommandType } = require('discord.js');
+
+module.exports = {
+  data: new ContextMenuCommandBuilder()
+    .setName('Give Rep')
+    .setType(ApplicationCommandType.Message),
+  async execute(interaction) {
+    const message = interaction.targetMessage;
+    // ...
+  },
+};
+```
+
+It's loaded, exported to the catalog and registered like a slash command, and goes through the same role gate and ephemeral setting (keyed by its name, spaces and capitals included, so add it to the `DEFAULT_COMMAND_*` maps in `packages/db/src/defaultGuildConfig.js` as `"Give Rep"`). Context menus have no description or options, so the dashboard shows them without a `/` and doesn't let admins rename them or edit descriptions.
 
 Files missing either export are skipped with a warning during deploy.
 

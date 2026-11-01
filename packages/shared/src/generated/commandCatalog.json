@@ -1040,6 +1040,16 @@
       }
     },
     {
+      "category": "reputation",
+      "name": "Give Rep",
+      "fileDefault": null,
+      "payload": {
+        "name": "Give Rep",
+        "type": 3,
+        "dm_permission": false
+      }
+    },
+    {
       "category": "helper",
       "name": "helper",
       "fileDefault": null,

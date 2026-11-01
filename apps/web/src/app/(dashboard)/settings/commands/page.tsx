@@ -23,6 +23,7 @@ type CatalogCommand = {
   description: string;
   defaultDescription: string;
   editableMetadata: EditableMetadata;
+  contextMenu: boolean;
   defaultEphemeral: boolean;
 };
 
@@ -474,7 +475,9 @@ export default function CommandsPage() {
                               gap: "0.35rem",
                             }}
                           >
-                            /{command.effectiveName}
+                            {command.contextMenu
+                              ? command.effectiveName
+                              : `/${command.effectiveName}`}
                             <button
                               type="button"
                               className="btn btn-icon"
@@ -503,6 +506,11 @@ export default function CommandsPage() {
                               default: /{cmd}
                             </span>
                           ) : null}
+                          {command.contextMenu ? (
+                            <span className="muted" style={{ fontSize: "0.8rem" }}>
+                              Message menu (right-click a message → Apps)
+                            </span>
+                          ) : null}
                           {command.description ? (
                             <span
                               className="muted"
@@ -522,15 +530,17 @@ export default function CommandsPage() {
                         />
                       </td>
                       <td style={{ width: "3rem", textAlign: "right" }}>
-                        <button
-                          type="button"
-                          className="btn btn-icon"
-                          aria-label={`Edit /${cmd}`}
-                          onClick={() => setEditingCommandName(cmd)}
-                          disabled={saving || modalSaving}
-                        >
-                          <EditCommandIcon />
-                        </button>
+                        {command.contextMenu ? null : (
+                          <button
+                            type="button"
+                            className="btn btn-icon"
+                            aria-label={`Edit /${cmd}`}
+                            onClick={() => setEditingCommandName(cmd)}
+                            disabled={saving || modalSaving}
+                          >
+                            <EditCommandIcon />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

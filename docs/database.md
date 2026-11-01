@@ -130,6 +130,27 @@ Idempotent ledger of each XP flush batch per user.
 
 ---
 
+### `repgrants` — RepGrant
+
+**Model:** `models/repGrant.js`
+
+One document per reputation award tied to a message: a thank-you reply, a "yw" reply, or the **Give Rep** context menu. Used only to stop the same member awarding the same message twice. No message content.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `messageId` | String | Message the rep was given for |
+| `giverId` | String | Member who gave the rep |
+| `receiverId` | String | Member who received it |
+| `createdAt` | Date | Award time; TTL index deletes the document after 30 days (`REP_GRANT_TTL_SEC`) |
+
+**Indexes:** `{ messageId: 1, giverId: 1 }` unique, `{ giverId: 1 }`, `{ receiverId: 1 }`, `{ createdAt: 1 }` TTL
+
+**Written by:** `utils/repAwards.js` (`claimRepGrant`, inserted before the rep `$inc`; a duplicate-key error means "already given")
+
+**Deleted by:** TTL after 30 days; `/privacy delete-my-data` removes grants the member gave or received
+
+---
+
 ### `stickies` — Sticky
 
 **Model:** `models/sticky.js`
@@ -683,8 +704,10 @@ flowchart LR
 ```mermaid
 flowchart LR
     MSG[Thank-you message] --> REP[reputation system]
+    MENU[Give Rep context menu] --> CHECK
     REP --> CHECK{RepBan?}
-    CHECK -->|No| MONGO["MongoDB: atomic rep $inc or bulkWrite"]
+    CHECK -->|No| GRANT{"RepGrant insert (per-message awards; skipped for thank @mentions)"}
+    GRANT -->|New| MONGO["MongoDB: atomic rep $inc or bulkWrite"]
     MONGO --> TIER[Assign tier role if threshold crossed]
 ```
 

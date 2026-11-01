@@ -56,13 +56,14 @@ async function handleStatus(interaction) {
         value: [
           `• XP: **${data.xp}** (messages counted: **${data.messages}**)`,
           `• Reputation: **${data.rep}**`,
+          "• Which messages you gave or received rep for (kept 30 days)",
           `• Poll votes: **${data.pollVotes}**`,
           "• Your privacy preferences",
         ].join("\n"),
       },
       {
         name: "Deleting your data",
-        value: `\`/privacy delete-my-data\` removes your XP, message count, reputation and poll votes.\n${NOT_DELETED}`,
+        value: `\`/privacy delete-my-data\` removes your XP, message count, reputation (and rep records) and poll votes.\n${NOT_DELETED}`,
       },
       { name: "Privacy policy", value: PRIVACY_POLICY_URL },
     )
@@ -78,7 +79,7 @@ async function handleMessageContent(interaction) {
 
   return interaction.reply({
     content: optOut
-      ? `✅ Message-content processing is **off**. The bot will no longer read the text of your messages for reputation or sticky counting. You can still receive rep from others.\n-# ${OPT_OUT_SCOPE}`
+      ? `✅ Message-content processing is **off**. The bot will no longer read the text of your messages for reputation or sticky counting. You can still receive rep from others and give it with **Apps → Give Rep** on a message.\n-# ${OPT_OUT_SCOPE}`
       : "✅ Message-content processing is **on**. Your thank-you messages can award reputation again.",
   });
 }
@@ -109,7 +110,7 @@ async function handleDeleteMyData(interaction) {
     content: [
       "⚠️ **Delete your data?** This can't be undone.",
       "",
-      "This permanently deletes your **XP and message count**, **reputation** and **poll votes**, and removes rank / reputation roles they earned you.",
+      "This permanently deletes your **XP and message count**, **reputation** (and records of rep you gave or received) and **poll votes**, and removes rank / reputation roles they earned you.",
       "Your message-content setting is kept.",
       "",
       NOT_DELETED,

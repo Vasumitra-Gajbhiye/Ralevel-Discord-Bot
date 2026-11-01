@@ -1,5 +1,9 @@
 export declare const DESCRIPTION_MAX: number;
 
+export declare function isChatInputPayload(
+  payload: Record<string, unknown> | null | undefined,
+): boolean;
+
 export interface EditableChoice {
   value: string;
   defaultName: string;

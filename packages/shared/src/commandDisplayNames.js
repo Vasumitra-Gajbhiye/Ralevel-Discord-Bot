@@ -1,3 +1,5 @@
+const { isChatInputPayload } = require("./commandMetadataOverrides");
+
 const DISPLAY_NAME_PATTERN = /^[a-z0-9_-]{1,32}$/;
 
 function normalizeNameOverrides(overrides = {}) {
@@ -79,12 +81,12 @@ function normalizeCommandDisplayNamesForSave(
 
 function validateCommandDisplayNames(catalogCommands, overrides = {}) {
   const normalized = normalizeNameOverrides(overrides);
-  const catalogNames = catalogCommands.map((command) => command.name);
-  const catalogSet = new Set(catalogNames);
+  const catalogSet = new Set(catalogCommands.map((command) => command.name));
   const effectiveNames = new Map();
   const errors = [];
 
-  for (const canonical of catalogNames) {
+  for (const command of catalogCommands) {
+    const canonical = command.name;
     const raw = normalized[canonical];
     if (raw === undefined || raw === null || raw === "") continue;
 
@@ -95,6 +97,11 @@ function validateCommandDisplayNames(catalogCommands, overrides = {}) {
 
     const trimmed = raw.trim();
     if (!trimmed || trimmed === canonical) continue;
+
+    if (!isChatInputPayload(command.payload)) {
+      errors.push(`${canonical}: context menu commands can't be renamed`);
+      continue;
+    }
 
     const formatError = validateDisplayName(trimmed);
     if (formatError) {
