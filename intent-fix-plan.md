@@ -97,6 +97,18 @@ Match existing code style and comment density. Work on a new branch from main. D
 
 **Why:** Discord's guide says context menus are the preferred alternative to reading message content. Having one lets the application say: "We offer the interaction alternative, but most thank-yous happen naturally in chat, which is why we still need Message Content."
 
+**Status: done** on branch `feat/give-rep-context-menu` (merge before starting Phase 4). What was built, and what later phases must describe accurately:
+
+- **Command:** right-click a message → **Apps → Give Rep** gives +1 rep to the author. Public (no role gate), reply to the giver ephemeral by default (dashboard toggle, like `/privacy`). The public `+1 Rep → @user (N)` announcement and tier-role update are the same as automatic rep.
+- **Rules:** no self-rep, no rep to bots, author must still be in the server; respects rep-bans, `features.reputation` and the reputation disabled channels/categories. Only works on messages from the last 30 days.
+- **One award per giver per message,** shared with thank-you detection: a "thanks" reply to a message and Give Rep on that message from the same member are the same award, in either order. Thank-you replies now also skip bots and repeat "thanks" replies to the same message (both used to award).
+- **Message content:** Give Rep never reads message text, so the `/privacy` opt-out doesn't apply; opted-out members can still give and receive rep through it.
+- **New stored data:** a `RepGrant` record per message-based award (message ID, giver ID, receiver ID, time; no content). Deleted automatically after 30 days (TTL index) and by `/privacy delete-my-data` (grants given or received). The privacy policy should mention it (added to the Phase 4 prompt).
+- **Code:** award logic moved from `systems/reputation.js` into `utils/repAwards.js` and shared by both paths. The command loader accepts context menu interactions. The dashboard shows context menus without a `/` and blocks renaming / description edits for them.
+- **Verify:** `pnpm --filter @ralevel/bot verify:reputation` (Give Rep checks added there; `verify:privacy` covers the new deletion).
+
+The original prompt is kept below for reference.
+
 ```text
 In the ralevel-discord-bot repo, add a message context menu command "Give Rep" (right-click a message → Apps → Give Rep) that gives +1 reputation to the message's author.
 
@@ -152,6 +164,7 @@ Changes to the r/alevel Bot policy (not the Application Bot policy in the same f
 2. Add a "Data retention" section:
    - Message text: not stored.
    - Pending XP counters: deleted automatically after 7 days.
+   - Reputation award records (which member gave rep for which message, no message text): deleted automatically after 30 days, or with /privacy delete-my-data.
    - XP, message counts, rank, reputation, poll votes: kept until you delete them with /privacy delete-my-data or ask us.
    - Your /privacy settings (message-content opt-out and the time of your last data deletion): kept so the opt-out keeps working after a deletion. Ask us to remove them.
    - Moderation records (warnings, verbal warnings, notes, moderation logs, kicks, bans, moderation points) and modmail / moderator-DM ticket records: kept permanently, including after you leave the server, so that moderation history carries over if you rejoin. This is necessary for community safety. /privacy delete-my-data does not remove them; you can still ask us, and staff will review the request.
