@@ -135,6 +135,65 @@ function testDescribeAndErrors() {
   assert(!intents.isDisallowedIntentsError(new Error("Invalid token")), "other errors should not match");
 }
 
+function testFallbackDecision() {
+  const disallowed = { code: 4014 };
+  const both = { members: true, messageContent: true };
+  const none = { members: false, messageContent: false };
+
+  assert(
+    intents.shouldRetryWithoutPrivilegedIntents(disallowed, { mode: "auto", granted: both }),
+    "auto should retry when Discord refuses granted intents"
+  );
+  assert(
+    intents.shouldRetryWithoutPrivilegedIntents(
+      new Error("Used disallowed intents"),
+      { mode: "auto", granted: { members: false, messageContent: true } }
+    ),
+    "auto should retry when only one privileged intent was requested"
+  );
+  assert(
+    !intents.shouldRetryWithoutPrivilegedIntents(disallowed, { mode: "true", granted: both }),
+    "true should not retry (operator asked for the intents)"
+  );
+  assert(
+    !intents.shouldRetryWithoutPrivilegedIntents(disallowed, { mode: "auto", granted: none }),
+    "should not retry when no privileged intents were requested"
+  );
+  assert(
+    !intents.shouldRetryWithoutPrivilegedIntents(new Error("Invalid token"), {
+      mode: "auto",
+      granted: both,
+    }),
+    "other login errors should not trigger a retry"
+  );
+
+  const fallback = intents.withoutPrivilegedIntents({ mode: "auto", granted: both });
+  assert(
+    fallback.mode === "auto" && !fallback.granted.members && !fallback.granted.messageContent,
+    "fallback should grant no privileged intents"
+  );
+  assert(
+    !fallback.intents.includes(GatewayIntentBits.MessageContent) &&
+      !fallback.intents.includes(GatewayIntentBits.GuildMembers) &&
+      fallback.intents.includes(GatewayIntentBits.Guilds),
+    "fallback should request only base intents"
+  );
+  assert(
+    !intents.shouldRetryWithoutPrivilegedIntents(disallowed, fallback),
+    "fallback config should never retry again"
+  );
+
+  const summary = intents.describeIntents(fallback);
+  assert(
+    summary.includes("refused") && summary.includes("4014") && summary.includes("degraded"),
+    "fallback summary should say Discord refused the intents"
+  );
+  assert(
+    !intents.describeIntents({ mode: "auto", granted: none }).includes("refused"),
+    "normal summary should not mention a refusal"
+  );
+}
+
 function testClientIntentChecks() {
   assert(!intents.hasMessageContent(RESTRICTED), "restricted client lacks content");
   assert(!intents.hasGuildMembers(RESTRICTED), "restricted client lacks members");
@@ -237,6 +296,7 @@ async function main() {
   testGrantedFromFlags();
   await testResolveIntents();
   testDescribeAndErrors();
+  testFallbackDecision();
   testClientIntentChecks();
   testMessageText();
   await testContentWarning();

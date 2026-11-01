@@ -60,7 +60,9 @@ Without the intents:
 - **Server Members off:** welcome messages are paused (no member-join events).
 - **Message Content off:** rep from thank-you messages stops, `/purge` content filters (`links`, `keyword`, `attachments`, `embeds`, `images`) return an error, and sticky reposts count messages instead of lines. Staff replies in modmail / mod-DM threads must **@mention the bot** to be relayed; other staff messages get a "Not delivered" notice (throttled to once per thread every 10 minutes).
 
-With `true` and the intents not granted, login fails with 4014 and the bot exits with an explanation (see [Troubleshooting](troubleshooting.md#error-used-disallowed-intents)).
+The app flags can show an intent as granted (including the *Limited* flags) while Discord still refuses it at login, for example when the app is over the 10,000-user threshold without approved intent review. In `auto` mode the bot then logs a warning, rebuilds the client without privileged intents and logs in again, so it keeps running in degraded mode instead of crash-looping. The startup line then reads `[intents] mode=auto members=off messageContent=off (Discord refused the privileged intents with 4014) — degraded: ...`.
+
+With `true` and the intents not granted, login fails with 4014 and the bot exits with an explanation; it does not fall back, because you asked for the intents explicitly (see [Troubleshooting](troubleshooting.md#error-used-disallowed-intents)).
 
 Used in: `utils/privilegedIntents.js` → `index.js`
 

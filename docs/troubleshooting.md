@@ -45,14 +45,14 @@ Error: REDIS_URL is required
 
 ### `Error: Used disallowed intents`
 
-**Symptom:** Bot exits on login with `[intents] Discord rejected the gateway connection (4014: disallowed intents)`.
+**Symptom:** With `PRIVILEGED_INTENTS=true`, the bot exits on login with `[intents] Discord rejected the gateway connection (4014: disallowed intents)`. With `auto` (the default) it doesn't exit: it logs `[intents] Discord refused the privileged intents (4014) despite the application flags; retrying without them.`, logs in again without them, and the startup line ends with `(Discord refused the privileged intents with 4014) — degraded: ...`.
 
 **Cause:** The bot requested Server Members / Message Content, but Discord hasn't granted them to this application. Either the toggles are off, or the app is over Discord's 10,000-user threshold and doesn't have approved access through Privileged Intent Review. Over the threshold, the portal toggles alone aren't enough.
 
 **Fix:**
 
-1. Check what Discord has actually granted. With `PRIVILEGED_INTENTS=auto` (the default), the startup log line `[intents] mode=auto members=… messageContent=…` shows it.
-2. To get the bot online right away, set `PRIVILEGED_INTENTS=auto` (or `false`) and restart. Dependent features degrade (see [`PRIVILEGED_INTENTS`](environment-variables.md#privileged_intents)).
+1. Check what Discord has actually granted. With `PRIVILEGED_INTENTS=auto` (the default), the startup log line `[intents] mode=auto members=… messageContent=…` shows what the app flags report. If it also says `Discord refused the privileged intents with 4014`, the flags claim access (often only the *Limited* flags) but Discord won't allow it at login.
+2. To get the bot online right away, set `PRIVILEGED_INTENTS=auto` (or `false`) and restart. `auto` falls back to no privileged intents on its own if Discord refuses them. Dependent features degrade (see [`PRIVILEGED_INTENTS`](environment-variables.md#privileged_intents)).
 3. Under the threshold: Developer Portal → Your App → Bot → enable **Server Members Intent** and **Message Content Intent**, save, and restart.
 4. Over the threshold: apply for access through Privileged Intent Review in the Developer Portal. Once approved, restart; `auto` re-enables everything.
 

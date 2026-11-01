@@ -33,31 +33,23 @@ const {
   resolveIntents,
   describeIntents,
   isDisallowedIntentsError,
+  shouldRetryWithoutPrivilegedIntents,
+  withoutPrivilegedIntents,
   explainDisallowedIntents,
 } = require("./utils/privilegedIntents");
 
 let client;
 
-async function start() {
-  const { commandCount } = exportCommandCatalog();
-  console.log(`[command-catalog] Exported ${commandCount} commands.`);
-
-  // Built after intent resolution so PRIVILEGED_INTENTS=auto can drop intents
-  // Discord hasn't granted instead of failing login with 4014.
-  const intentConfig = await resolveIntents();
+// Builds a client and wires every client-bound system to it. Kept separate from
+// start() so a refused login can rebuild everything against a new client.
+async function connect(intentConfig) {
   console.log(describeIntents(intentConfig));
   client = new Client({
     intents: intentConfig.intents,
     partials: [Partials.Channel],
   });
 
-  await connectDB();
   await loadGuildConfig(client);
-  startGuildConfigWatcher(client);
-  const backfilled = await modPoints.backfillExpiry();
-  if (backfilled > 0) {
-    console.log(`[modPoints] Set expiresAt on ${backfilled} older warnings/point entries.`);
-  }
   deployCommandsOnReady(client);
 
   loadCommands(client);
@@ -82,19 +74,49 @@ async function start() {
     handleModDmUserMessage,
     handleModDmStaffReply,
   });
+  channelDirectorySystem(client);
+
+  await client.login(process.env.TOKEN);
+
+  // These start timers immediately rather than on "ready", so they wait for a
+  // successful login and never keep running against a refused client.
+  startGuildConfigWatcher(client);
   xpFlushSystem(client);
   pollSystem(client);
   examLockSystem(client);
-  channelDirectorySystem(client);
-  startCommandSyncServer();
+}
 
+async function connectWithFallback(intentConfig) {
   try {
-    await client.login(process.env.TOKEN);
+    await connect(intentConfig);
   } catch (err) {
+    if (shouldRetryWithoutPrivilegedIntents(err, intentConfig)) {
+      console.warn(
+        "[intents] Discord refused the privileged intents (4014) despite the application flags; retrying without them."
+      );
+      client.destroy();
+      return connectWithFallback(withoutPrivilegedIntents(intentConfig));
+    }
     if (!isDisallowedIntentsError(err)) throw err;
     console.error(explainDisallowedIntents(intentConfig));
     process.exit(1);
   }
+}
+
+async function start() {
+  const { commandCount } = exportCommandCatalog();
+  console.log(`[command-catalog] Exported ${commandCount} commands.`);
+
+  await connectDB();
+  const backfilled = await modPoints.backfillExpiry();
+  if (backfilled > 0) {
+    console.log(`[modPoints] Set expiresAt on ${backfilled} older warnings/point entries.`);
+  }
+  startCommandSyncServer();
+
+  // Resolved before the client is built so PRIVILEGED_INTENTS=auto can drop
+  // intents Discord hasn't granted instead of failing login with 4014.
+  await connectWithFallback(await resolveIntents());
 }
 
 function shutdown(signal) {
