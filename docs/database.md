@@ -603,6 +603,27 @@ One document per guild: the live channel list, so the dashboard can pick real ch
 
 ---
 
+### `userprivacies` — UserPrivacy
+
+**Model:** `models/userPrivacy.js`
+
+One document per member who has used `/privacy message-content` or `/privacy delete-my-data`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | String | Discord user ID (unique) |
+| `contentOptOut` | Boolean | `true` = the bot doesn't read this member's message text for reputation or sticky counting (default `false`) |
+| `dataDeletedAt` | Date | Last `/privacy delete-my-data` run, used for the 24-hour cooldown (default `null`) |
+| `createdAt` / `updatedAt` | Date | Auto timestamps |
+
+**Indexes:** `{ userId: 1 }` unique, `{ contentOptOut: 1 }`
+
+**Written by:** `/privacy` (`utils/contentOptOut.js`, `utils/deleteUserData.js`). Not removed by `delete-my-data`, so the opt-out survives a data deletion.
+
+**Read by:** bot startup (`loadContentOptOuts` loads every opted-out ID into memory), `/privacy status`
+
+---
+
 ## Redis keys
 
 Redis is used **only** for high-frequency message counting and XP flush locking. No general-purpose caching.

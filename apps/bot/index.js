@@ -6,6 +6,7 @@ const {
   startGuildConfigWatcher,
 } = require("./utils/loadGuildConfig");
 const modPoints = require("./utils/modPoints");
+const { loadContentOptOuts } = require("./utils/contentOptOut");
 const loadCommands = require("./systems/commands.js");
 const reputationSystem = require("./systems/reputation.js");
 const certificateSystem = require("./systems/certificates.js");
@@ -108,6 +109,8 @@ async function start() {
   console.log(`[command-catalog] Exported ${commandCount} commands.`);
 
   await connectDB();
+  // Before login so the message handlers never see a half-loaded opt-out set.
+  await loadContentOptOuts();
   const backfilled = await modPoints.backfillExpiry();
   if (backfilled > 0) {
     console.log(`[modPoints] Set expiresAt on ${backfilled} older warnings/point entries.`);

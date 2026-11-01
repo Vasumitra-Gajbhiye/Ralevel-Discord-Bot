@@ -36,6 +36,7 @@ const DashboardAccess = require("./src/models/dashboardAccess");
 const ExamSession = require("./src/models/examSession");
 const ExamPaper = require("./src/models/examPaper");
 const ChannelDirectory = require("./src/models/channelDirectory");
+const UserPrivacy = require("./src/models/userPrivacy");
 const {
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
@@ -120,6 +121,7 @@ module.exports = {
   ExamSession,
   ExamPaper,
   ChannelDirectory,
+  UserPrivacy,
   buildDefaultGuildConfig,
   buildDefaultCertPanel,
   buildDefaultModmail,

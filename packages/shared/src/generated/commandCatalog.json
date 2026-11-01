@@ -1689,6 +1689,53 @@
       }
     },
     {
+      "category": "utility",
+      "name": "privacy",
+      "fileDefault": null,
+      "payload": {
+        "options": [
+          {
+            "type": 1,
+            "name": "status",
+            "description": "See your privacy settings and what the bot stores about you.",
+            "options": []
+          },
+          {
+            "type": 1,
+            "name": "message-content",
+            "description": "Turn off (or back on) the bot reading your message text.",
+            "options": [
+              {
+                "type": 3,
+                "choices": [
+                  {
+                    "name": "on",
+                    "value": "on"
+                  },
+                  {
+                    "name": "off",
+                    "value": "off"
+                  }
+                ],
+                "name": "setting",
+                "description": "Off = the bot stops reading your message text",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": 1,
+            "name": "delete-my-data",
+            "description": "Delete your XP, message count, reputation and poll votes.",
+            "options": []
+          }
+        ],
+        "name": "privacy",
+        "description": "View or change what the bot stores about you.",
+        "type": 1
+      }
+    },
+    {
       "category": "web",
       "name": "privacy-policy",
       "fileDefault": null,
