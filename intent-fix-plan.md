@@ -22,6 +22,8 @@ On permanent mod records: Developer ToS §5(b) allows keeping data while it's ne
 
 ## Phase 0 — Keep the bot online until approval
 
+**Status: done** (merged in #9, "Fix/intent fallback").
+
 **Why:** The Developer Portal says the app holds the *limited* version of all three intents. In `PRIVILEGED_INTENTS=auto` mode, [privilegedIntents.js](apps/bot/utils/privilegedIntents.js) treats limited flags as granted and requests both intents. If Discord refuses (close code 4014, because the app is over 10,000 users), [index.js](apps/bot/index.js) exits. The bot then crash-loops instead of running in degraded mode.
 
 **Manual check first:** look at the production startup log. If it shows `members=on messageContent=on` followed by the 4014 message, set `PRIVILEGED_INTENTS=false` in production now, then do this phase.
@@ -46,6 +48,18 @@ Match the existing code style. Work on a new branch from main. Don't push or ope
 ## Phase 1 — `/privacy` command: opt-out and self-serve deletion
 
 **Why:** The form asks "Can users opt out of having their message content tracked?" and "How do users request deletion of their activity data?". This phase makes the answers **Yes** and **`/privacy delete-my-data`**.
+
+**Status: done** on branch `feat/privacy-command` (merge before starting Phase 2). What was built, and what later phases must describe accurately:
+
+- **Opt-out syntax:** `/privacy message-content on` turns the opt-out **on**, so the bot stops reading the member's text. `off` turns reading back on. (Earlier drafts of these plans said `off` for opting out. That's wrong for the command as built.)
+- **Opt-out scope:** reputation thank-you detection is skipped for the member's own messages (they can still *receive* rep), and sticky counts their messages as 1 line. Modmail / mod-DM relays and `/purge` filters are not affected. XP counting never reads text. Opted-out IDs are held in memory (loaded at startup), so there's no DB query per message.
+- **`delete-my-data` deletes:** XP and message count (`User`), reputation (`Reputation`), poll votes (`PollVote` plus legacy votes embedded on `Poll`), the XP sync ledger (`XpFlushGrant`) and pending XP in Redis. It also removes rank and reputation tier roles, including any a mod gave by hand. It keeps moderation records, modmail tickets, confessions, certificates, XP bans and rep bans. Once per 24 hours per member, Confirm / Cancel buttons expire after 60 s.
+- **New stored data:** a `UserPrivacy` record per member who uses `/privacy` (opt-out flag and last deletion time). It survives `delete-my-data`. The privacy policy should mention it.
+- **Logging:** one console line per deletion (user ID and counts, no content). Not written to the mod log, so it doesn't appear in the member's moderation history.
+- **Ephemeral replies:** on by default, but admins can change it per command in the dashboard. Leave `privacy` ephemeral.
+- **Verify:** `pnpm --filter @ralevel/bot verify:privacy`.
+
+The original prompt is kept below for reference.
 
 ```text
 In the ralevel-discord-bot repo, add a /privacy slash command that lets members opt out of message-content processing and delete their own engagement data. This is for Discord's Privileged Intent Review: the form asks whether users can opt out of message content tracking and how they request deletion of their data.
@@ -87,6 +101,8 @@ Match existing code style and comment density. Work on a new branch from main. D
 In the ralevel-discord-bot repo, add a message context menu command "Give Rep" (right-click a message → Apps → Give Rep) that gives +1 reputation to the message's author.
 
 First read: apps/bot/systems/reputation.js (incrementReputation, tier role logic, RepBan checks, processed-message dedupe), apps/bot/systems/messageRouter.js (isReputationDisabled and the per-channel/category disabled lists), apps/bot/systems/commands.js (it may only handle chat-input commands), apps/bot/scripts/deploy-commands.js, apps/bot/scripts/export-command-catalog.js, apps/bot/systems/deployCommandsOnReady.js, and docs/adding-commands.md. Also check apps/web for anything that lists or configures commands from the exported catalog (role permissions, ephemeral settings) and make sure a context-menu command doesn't break it.
+
+Note: Give Rep doesn't read message text, so the /privacy message-content opt-out (apps/bot/utils/contentOptOut.js) doesn't apply to it. Opted-out members can still give and receive rep through it.
 
 Rules, the same as automatic thank-you rep:
 - No self-rep, no rep to bots.
@@ -137,13 +153,14 @@ Changes to the r/alevel Bot policy (not the Application Bot policy in the same f
    - Message text: not stored.
    - Pending XP counters: deleted automatically after 7 days.
    - XP, message counts, rank, reputation, poll votes: kept until you delete them with /privacy delete-my-data or ask us.
+   - Your /privacy settings (message-content opt-out and the time of your last data deletion): kept so the opt-out keeps working after a deletion. Ask us to remove them.
    - Moderation records (warnings, verbal warnings, notes, moderation logs, kicks, bans, moderation points) and modmail / moderator-DM ticket records: kept permanently, including after you leave the server, so that moderation history carries over if you rejoin. This is necessary for community safety. /privacy delete-my-data does not remove them; you can still ask us, and staff will review the request.
    - Confessions and certificate details: kept until you ask us to delete them.
    - Leaving the server does not delete your data automatically; use /privacy delete-my-data or contact us.
 
 3. In "Data storage and security": state that data at rest is encrypted (MongoDB Atlas encryption at rest) and that dashboard access is limited to authorized staff through Clerk. Only mention Redis encryption if I confirm it; ask me.
 
-4. In "Your rights": add the /privacy command — `/privacy message-content off` stops the Bot from reading your messages for reputation and sticky timing (it still relays modmail you send it and still applies moderator /purge filters); `/privacy delete-my-data` deletes your XP, reputation and poll votes immediately. Keep the email contact for everything else.
+4. In "Your rights": add the /privacy command — `/privacy message-content on` turns on the opt-out, so the Bot stops reading your messages for reputation and sticky timing (it still relays modmail you send it and still applies moderator /purge filters; `off` turns reading back on); `/privacy delete-my-data` immediately deletes your XP, message count, reputation and poll votes and removes rank and reputation roles they earned, at most once every 24 hours; `/privacy status` shows what the Bot stores about you. Keep the email contact for everything else.
 
 5. Bump the "Last updated" date to today.
 
