@@ -501,6 +501,26 @@ function testCommandRegistration() {
   assert(realDb.DEFAULT_COMMAND_EPHEMERAL.privacy === true, "privacy replies should be ephemeral");
 }
 
+async function testMessageContentOffOptsOut() {
+  const tracker = createTracker();
+  const { optOut, privacyCommand } = loadWithMocks(tracker, createMockRedis());
+
+  const run = (setting) =>
+    privacyCommand.execute({
+      user: { id: "member" },
+      options: {
+        getSubcommand: () => "message-content",
+        getString: () => setting,
+      },
+      reply: async () => {},
+    });
+
+  await run("off");
+  assert(optOut.isContentOptedOut("member"), "message-content off should opt the member out");
+  await run("on");
+  assert(!optOut.isContentOptedOut("member"), "message-content on should opt the member back in");
+}
+
 async function main() {
   setupTestGuildConfig();
   await testLoadAndToggleOptOut();
@@ -511,6 +531,7 @@ async function main() {
   await testDeleteWaitsForRunningFlush();
   await testDeletionCooldown();
   testCommandRegistration();
+  await testMessageContentOffOptsOut();
 
   console.log("verify-privacy: all checks passed");
   // sticky.js registers SIGINT/SIGTERM flush handlers.

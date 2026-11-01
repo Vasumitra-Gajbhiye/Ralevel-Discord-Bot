@@ -178,7 +178,7 @@ On tier-up, removes old tier roles and announces in channel.
 - Tier role sync uses the rep total from the award step (no second DB read)
 - Keeps a bounded in-memory `processedMessageIds` cache (10k entries, FIFO eviction) to prevent double-processing
 - Uses `utils/assignRepRole.js` for manual rep commands
-- **Message-content opt-out:** messages from members who ran `/privacy message-content on` are skipped before the content is read (no thank/welcome detection, no reply fetch). Those members can still *receive* rep from other people's thank-yous. The opt-out IDs are held in an in-memory `Set` (`utils/contentOptOut.js`), loaded at startup from `UserPrivacy` and updated by the command, so there's no DB query per message
+- **Message-content opt-out:** messages from members who ran `/privacy message-content off` are skipped before the content is read (no thank/welcome detection, no reply fetch). Those members can still *receive* rep from other people's thank-yous. The opt-out IDs are held in an in-memory `Set` (`utils/contentOptOut.js`), loaded at startup from `UserPrivacy` and updated by the command, so there's no DB query per message
 
 **Verification:** `npm run verify:reputation`
 
@@ -201,7 +201,7 @@ On tier-up, removes old tier roles and announces in channel.
 3. When counter ≥ `lineThreshold`: delete old sticky bot message, repost content, reset counter
 4. Queue `lastMessageId` write to MongoDB (debounced 5 seconds)
 
-**Message-content opt-out:** a message from a member with `/privacy message-content on` counts as 1 line without reading its content (same in-memory `Set` as the reputation system).
+**Message-content opt-out:** a message from a member with `/privacy message-content off` counts as 1 line without reading its content (same in-memory `Set` as the reputation system).
 
 **Cache structure:**
 

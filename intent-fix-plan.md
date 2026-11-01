@@ -51,7 +51,7 @@ Match the existing code style. Work on a new branch from main. Don't push or ope
 
 **Status: done** on branch `feat/privacy-command` (merge before starting Phase 2). What was built, and what later phases must describe accurately:
 
-- **Opt-out syntax:** `/privacy message-content on` turns the opt-out **on**, so the bot stops reading the member's text. `off` turns reading back on. (Earlier drafts of these plans said `off` for opting out. That's wrong for the command as built.)
+- **Opt-out syntax:** `/privacy message-content off` opts the member out, so the bot stops reading their text. `on` turns reading back on.
 - **Opt-out scope:** reputation thank-you detection is skipped for the member's own messages (they can still *receive* rep), and sticky counts their messages as 1 line. Modmail / mod-DM relays and `/purge` filters are not affected. XP counting never reads text. Opted-out IDs are held in memory (loaded at startup), so there's no DB query per message.
 - **`delete-my-data` deletes:** XP and message count (`User`), reputation (`Reputation`), poll votes (`PollVote` plus legacy votes embedded on `Poll`), the XP sync ledger (`XpFlushGrant`) and pending XP in Redis. It also removes rank and reputation tier roles, including any a mod gave by hand. It keeps moderation records, modmail tickets, confessions, certificates, XP bans and rep bans. Once per 24 hours per member, Confirm / Cancel buttons expire after 60 s.
 - **New stored data:** a `UserPrivacy` record per member who uses `/privacy` (opt-out flag and last deletion time). It survives `delete-my-data`. The privacy policy should mention it.
@@ -160,7 +160,7 @@ Changes to the r/alevel Bot policy (not the Application Bot policy in the same f
 
 3. In "Data storage and security": state that data at rest is encrypted (MongoDB Atlas encryption at rest) and that dashboard access is limited to authorized staff through Clerk. Only mention Redis encryption if I confirm it; ask me.
 
-4. In "Your rights": add the /privacy command — `/privacy message-content on` turns on the opt-out, so the Bot stops reading your messages for reputation and sticky timing (it still relays modmail you send it and still applies moderator /purge filters; `off` turns reading back on); `/privacy delete-my-data` immediately deletes your XP, message count, reputation and poll votes and removes rank and reputation roles they earned, at most once every 24 hours; `/privacy status` shows what the Bot stores about you. Keep the email contact for everything else.
+4. In "Your rights": add the /privacy command — `/privacy message-content off` stops the Bot from reading your messages for reputation and sticky timing (it still relays modmail you send it and still applies moderator /purge filters; `on` turns reading back on); `/privacy delete-my-data` immediately deletes your XP, message count, reputation and poll votes and removes rank and reputation roles they earned, at most once every 24 hours; `/privacy status` shows what the Bot stores about you. Keep the email contact for everything else.
 
 5. Bump the "Last updated" date to today.
 

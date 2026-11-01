@@ -48,8 +48,8 @@ async function handleStatus(interaction) {
     .setColor("#00AEEF")
     .addFields(
       {
-        name: "Message-content opt-out",
-        value: `${data.contentOptOut ? "**On**" : "**Off**"}\n${OPT_OUT_SCOPE}`,
+        name: "Message-content processing",
+        value: `${data.contentOptOut ? "**Off** (you've opted out)" : "**On**"}\n${OPT_OUT_SCOPE}`,
       },
       {
         name: "What the bot stores about you",
@@ -72,13 +72,14 @@ async function handleStatus(interaction) {
 }
 
 async function handleMessageContent(interaction) {
-  const optOut = interaction.options.getString("setting", true) === "on";
+  // "off" turns message-content processing off, i.e. opts the member out.
+  const optOut = interaction.options.getString("setting", true) === "off";
   await setContentOptOut(interaction.user.id, optOut);
 
   return interaction.reply({
     content: optOut
-      ? `✅ Message-content opt-out is **on**. The bot will no longer read the text of your messages for reputation or sticky counting. You can still receive rep from others.\n-# ${OPT_OUT_SCOPE}`
-      : "✅ Message-content opt-out is **off**. Your thank-you messages can award reputation again.",
+      ? `✅ Message-content processing is **off**. The bot will no longer read the text of your messages for reputation or sticky counting. You can still receive rep from others.\n-# ${OPT_OUT_SCOPE}`
+      : "✅ Message-content processing is **on**. Your thank-you messages can award reputation again.",
   });
 }
 
@@ -109,7 +110,7 @@ async function handleDeleteMyData(interaction) {
       "⚠️ **Delete your data?** This can't be undone.",
       "",
       "This permanently deletes your **XP and message count**, **reputation** and **poll votes**, and removes rank / reputation roles they earned you.",
-      "Your message-content opt-out setting is kept.",
+      "Your message-content setting is kept.",
       "",
       NOT_DELETED,
       "",
@@ -160,8 +161,8 @@ async function handleDeleteMyData(interaction) {
     content: [
       "🗑️ Your data has been deleted: XP, message count, reputation, poll votes and any pending XP.",
       isContentOptedOut(userId)
-        ? "Your message-content opt-out is still **on**."
-        : "Your message-content opt-out is **off** (`/privacy message-content` to change).",
+        ? "Message-content processing is still **off** for you."
+        : "Message-content processing is **on** (`/privacy message-content off` to opt out).",
       "If you keep chatting, new XP will be counted from zero.",
     ].join("\n"),
     components: [],
@@ -180,11 +181,11 @@ module.exports = {
     .addSubcommand((sub) =>
       sub
         .setName("message-content")
-        .setDescription("Opt out of the bot reading your message text.")
+        .setDescription("Turn off (or back on) the bot reading your message text.")
         .addStringOption((opt) =>
           opt
             .setName("setting")
-            .setDescription("On = the bot stops reading your message text")
+            .setDescription("Off = the bot stops reading your message text")
             .setRequired(true)
             .addChoices(
               { name: "on", value: "on" },

@@ -1703,7 +1703,7 @@
           {
             "type": 1,
             "name": "message-content",
-            "description": "Opt out of the bot reading your message text.",
+            "description": "Turn off (or back on) the bot reading your message text.",
             "options": [
               {
                 "type": 3,
@@ -1718,7 +1718,7 @@
                   }
                 ],
                 "name": "setting",
-                "description": "On = the bot stops reading your message text",
+                "description": "Off = the bot stops reading your message text",
                 "required": true
               }
             ]
