@@ -34,6 +34,10 @@
       "types": "./src/commandPermissions.d.ts",
       "default": "./src/commandPermissions.js"
     },
+    "./commandLimits": {
+      "types": "./src/commandLimits.d.ts",
+      "default": "./src/commandLimits.js"
+    },
     "./commandCatalog": {
       "default": "./src/commandCatalog.js"
     },

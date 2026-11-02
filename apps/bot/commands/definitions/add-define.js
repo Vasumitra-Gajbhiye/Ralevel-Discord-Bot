@@ -1,5 +1,4 @@
 const { DEFINITION_LIMITS, normalizeTermKey } = require("@ralevel/db");
-const { SlashCommandBuilder } = require("discord.js");
 const {
   getDefinitionsConfig,
   getSubject,
@@ -20,8 +19,9 @@ const {
 } = require("../../utils/definitionActions");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("add-define")
+  // Mounted as /definition add by definition.js
+  subcommand: (subcommand) => subcommand
+    .setName("add")
     .setDescription("Add a definition (helpers add directly; others are reviewed).")
     .addStringOption((opt) =>
       opt

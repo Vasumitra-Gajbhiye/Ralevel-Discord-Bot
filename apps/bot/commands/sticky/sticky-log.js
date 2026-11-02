@@ -1,8 +1,6 @@
 const { StickyLog } = require("@ralevel/db");
 const {
-  SlashCommandBuilder,
   EmbedBuilder,
-  PermissionFlagsBits,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -81,12 +79,10 @@ function formatLogLine(log) {
 }
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("sticky-log")
-    .setDescription("View recent sticky moderation actions")
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageMessages
-    ),
+  // Mounted as /sticky log by sticky.js
+  subcommand: (subcommand) => subcommand
+    .setName("log")
+    .setDescription("View recent sticky moderation actions"),
 
   async execute(interaction) {
     const guildId = interaction.guildId;

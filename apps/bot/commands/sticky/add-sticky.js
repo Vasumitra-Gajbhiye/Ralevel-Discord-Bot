@@ -1,6 +1,5 @@
 const { Sticky } = require("@ralevel/db");
 const {
-  SlashCommandBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
 
@@ -13,8 +12,9 @@ function formatSticky(content) {
 }
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("add-sticky")
+  // Mounted as /sticky add by sticky.js
+  subcommand: (subcommand) => subcommand
+    .setName("add")
     .setDescription("Add or replace a sticky message in a channel")
     .addStringOption(option =>
       option
@@ -37,9 +37,6 @@ module.exports = {
         .setMinValue(1)
         .setMaxValue(1000)
         .setRequired(false)
-    )
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageMessages
     ),
 
   async execute(interaction) {

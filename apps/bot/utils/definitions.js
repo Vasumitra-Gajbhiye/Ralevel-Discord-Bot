@@ -1,7 +1,7 @@
 /**
  * Definitions (glossary) helpers: config access, permissions, search and the
- * embeds/components shared by /define, /add-define, /edit-define,
- * /delete-define and the review system.
+ * embeds/components shared by /define, /definition add | edit | delete and
+ * the review system.
  */
 const {
   EmbedBuilder,
@@ -603,7 +603,7 @@ function contentInputs(content) {
   ];
 }
 
-/** Used by /edit-define and the "Suggest improvement" button. */
+/** Used by /definition edit and the "Suggest improvement" button. */
 function buildEditModal(def) {
   return new ModalBuilder()
     .setCustomId(`definition:edit-modal:${def.definitionId}:${def.revision ?? 1}`)

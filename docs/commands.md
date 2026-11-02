@@ -1,6 +1,6 @@
 # Commands
 
-All 75 slash commands in the r/alevel bot, plus one message context menu ([Give Rep](#give-rep-message-context-menu)). There are **no prefix/text commands**.
+All 97 slash commands in the r/alevel bot, plus one message context menu ([Give Rep](#give-rep-message-context-menu)). There are **no prefix/text commands**.
 
 Commands are loaded at runtime from `commands/` and registered to Discord via `scripts/deploy-commands.js`.
 
@@ -11,7 +11,7 @@ Commands are loaded at runtime from `commands/` and registered to Discord via `s
 Three layers apply before a command executes:
 
 1. **Discord `setDefaultMemberPermissions`** — hides commands from users lacking Discord permission bits (e.g. `BanMembers`). Configurable per command in the dashboard under **Settings → Command visibility**; apply changes with **Sync to Discord**.
-2. **Custom role gate** (`GuildConfig.commandPermissions`) — user must have at least one listed role ID. Edited under **Settings → Commands**. Commands **not listed** are public (any member can use).
+2. **Custom role gate** (`GuildConfig.commandPermissions`) — user must have at least one listed role ID. Edited under **Settings → Commands**. Commands **not listed** are public (any member can use). [`/sticky`](#sticky), [`/xp-admin`](#xp-admin), [`/rep-admin`](#rep-admin) and [`/definition`](#definition) have a role gate and ephemeral setting **per subcommand** (keys like `sticky add`); their Discord permission bits apply to the whole command.
 3. **Role hierarchy** (`systems/commands.js`) — moderation commands cannot target users with equal or higher roles.
 
 ### Role group abbreviations
@@ -263,35 +263,20 @@ Settings, subjects and exam boards live on **Settings → Definitions**. See [Sy
 
 Shows the definition with subject, board, chapter/topic and credits (author plus everyone whose improvement was applied), and a **Suggest improvement** button that opens the edit form.
 
-### `/add-define`
+### `/definition`
 
 | | |
 |---|---|
-| **File** | `commands/definitions/add-define.js` |
-| **Description** | Add a definition. `subject` (required) and `board` autocomplete from the dashboard lists; `chapter` / `topic` suggest values already used in the subject |
+| **File** | `commands/definitions/definition.js` (routes to the files below) |
 | **Discord permissions** | None |
-| **Role access** | Public — approvers and the subject's helpers add directly, everyone else is reviewed |
-| **Dependencies** | `Definition`, `DefinitionRequest`, `utils/definitionActions.js` |
+| **Role access** | Public, set per subcommand |
+| **Dependencies** | `Definition`, `DefinitionRequest`, `utils/definitionActions.js`, `systems/definitions.js` (edit form) |
 
-### `/edit-define`
-
-| | |
-|---|---|
-| **File** | `commands/definitions/edit-define.js` |
-| **Description** | Opens a pre-filled form to improve a definition (same form as the **Suggest improvement** button) |
-| **Discord permissions** | None |
-| **Role access** | Public — direct for approvers and the helper who wrote it, otherwise reviewed |
-| **Dependencies** | `systems/definitions.js` handles the form |
-
-### `/delete-define`
-
-| | |
-|---|---|
-| **File** | `commands/definitions/delete-define.js` |
-| **Description** | Delete a definition (with a confirm button), or request its removal with a `reason` |
-| **Discord permissions** | None |
-| **Role access** | Public — direct for approvers and the helper who wrote it, otherwise reviewed |
-| **Dependencies** | `Definition`, `DefinitionRequest`, `utils/definitionActions.js` |
+| Subcommand | File | Description | Who changes directly |
+|---|---|---|---|
+| `/definition add` | `add-define.js` | Add a definition. `subject` (required) and `board` autocomplete from the dashboard lists; `chapter` / `topic` suggest values already used in the subject | Approvers and the subject's helpers; everyone else is reviewed |
+| `/definition edit` | `edit-define.js` | Opens a pre-filled form to improve a definition (same form as the **Suggest improvement** button) | Approvers and the helper who wrote it; otherwise reviewed |
+| `/definition delete` | `delete-define.js` | Delete a definition (with a confirm button), or request its removal with a `reason` | Approvers and the helper who wrote it; otherwise reviewed |
 
 ---
 
@@ -681,15 +666,6 @@ Shows the definition with subject, board, chapter/topic and credits (author plus
 
 ## Reputation
 
-### `/add-rep`
-
-| | |
-|---|---|
-| **File** | `commands/reputation/addrep.js` |
-| **Description** | Add reputation to a user |
-| **Discord permissions** | `ManageRoles` |
-| **Role access** | hlpHead, admin |
-
 ### Give Rep (message context menu)
 
 | | |
@@ -756,6 +732,20 @@ Give Rep never reads the message text, so the `/privacy message-content` opt-out
 | **Discord permissions** | None |
 | **Role access** | Public |
 
+### `/rep-admin`
+
+| | |
+|---|---|
+| **File** | `commands/reputation/rep-admin.js` (routes to the files below) |
+| **Discord permissions** | `ManageRoles` |
+| **Role access** | Set per subcommand; all default to hlpHead, admin |
+
+| Subcommand | File | Description |
+|---|---|---|
+| `/rep-admin add` | `addrep.js` | Add reputation to a user |
+| `/rep-admin set` | `setrep.js` | Set a user's reputation to a value |
+| `/rep-admin subtract` | `subrep.js` | Subtract reputation from a user (never below 0) |
+
 ### `/rep-ban`
 
 | | |
@@ -773,24 +763,6 @@ Give Rep never reads the message text, so the `/privacy message-content` opt-out
 | **Description** | Allow a user to receive reputation again |
 | **Discord permissions** | `ManageRoles` |
 | **Role access** | admin, dcHead, hlpHead, srMods |
-
-### `/set-rep`
-
-| | |
-|---|---|
-| **File** | `commands/reputation/setrep.js` |
-| **Description** | Set a user's reputation to a value |
-| **Discord permissions** | `ManageRoles` |
-| **Role access** | hlpHead, admin |
-
-### `/sub-rep`
-
-| | |
-|---|---|
-| **File** | `commands/reputation/subrep.js` |
-| **Description** | Subtract reputation from a user |
-| **Discord permissions** | `ManageRoles` |
-| **Role access** | hlpHead, admin |
 
 ---
 
@@ -824,59 +796,22 @@ Give Rep never reads the message text, so the `/privacy message-content` opt-out
 
 ## Sticky
 
-### `/add-sticky`
+### `/sticky`
 
 | | |
 |---|---|
-| **File** | `commands/sticky/add-sticky.js` |
-| **Description** | Add or replace a sticky message in a channel |
+| **File** | `commands/sticky/sticky.js` (routes to the files below) |
 | **Discord permissions** | `ManageMessages` |
-| **Role access** | admin, dcHead, srMods, jrMods |
+| **Role access** | Set per subcommand (defaults below) |
 
-### `/edit-sticky`
-
-| | |
-|---|---|
-| **File** | `commands/sticky/edit-sticky.js` |
-| **Description** | Edit the sticky message in a channel |
-| **Discord permissions** | `ManageMessages` |
-| **Role access** | admin, dcHead, srMods |
-
-### `/remove-sticky`
-
-| | |
-|---|---|
-| **File** | `commands/sticky/remove-sticky.js` |
-| **Description** | Remove the sticky message from a channel |
-| **Discord permissions** | `ManageMessages` |
-| **Role access** | admin, dcHead, srMods |
-
-### `/sticky-list`
-
-| | |
-|---|---|
-| **File** | `commands/sticky/sticky-list.js` |
-| **Description** | List all sticky messages in this server |
-| **Discord permissions** | `ManageMessages` |
-| **Role access** | admin, dcHead, srMods |
-
-### `/sticky-log`
-
-| | |
-|---|---|
-| **File** | `commands/sticky/sticky-log.js` |
-| **Description** | View recent sticky moderation actions |
-| **Discord permissions** | `ManageMessages` |
-| **Role access** | admin, dcHead |
-
-### `/sticky-resend`
-
-| | |
-|---|---|
-| **File** | `commands/sticky/sticky-resend.js` |
-| **Description** | Force resend the sticky message |
-| **Discord permissions** | `ManageMessages` |
-| **Role access** | admin, dcHead, srMods |
+| Subcommand | File | Description | Default role access |
+|---|---|---|---|
+| `/sticky add` | `add-sticky.js` | Add or replace a sticky message in a channel | admin, dcHead, srMods, jrMods |
+| `/sticky edit` | `edit-sticky.js` | Edit the sticky message in a channel | admin, dcHead, srMods |
+| `/sticky remove` | `remove-sticky.js` | Remove the sticky message from a channel | admin, dcHead, srMods |
+| `/sticky list` | `sticky-list.js` | List all sticky messages in this server | admin, dcHead, srMods |
+| `/sticky log` | `sticky-log.js` | View recent sticky moderation actions | admin, dcHead |
+| `/sticky resend` | `sticky-resend.js` | Force resend the sticky message | admin, dcHead, srMods |
 
 ---
 
@@ -1020,6 +955,26 @@ Task commands are channel-scoped — they only work in `GRAPHIC_CHANNEL`, `DEV_C
 | **Discord permissions** | None |
 | **Role access** | Public |
 | **Dependencies** | Links to `https://ralevel.com/legal/ralevel-bot/terms-of-service` |
+
+---
+
+## XP
+
+### `/xp-admin`
+
+| | |
+|---|---|
+| **File** | `commands/xp/xp-admin.js` (routes to the files below) |
+| **Discord permissions** | `Administrator` |
+| **Role access** | Set per subcommand; all default to admin |
+| **Dependencies** | `utils/xp.js` |
+
+| Subcommand | File | Description |
+|---|---|---|
+| `/xp-admin add` | `add-xp.js` | Add XP to a user |
+| `/xp-admin set` | `set-xp.js` | Set a user's XP to an exact amount |
+| `/xp-admin subtract` | `subtract-xp.js` | Subtract XP from a user |
+| `/xp-admin set-msg-count` | `set-msg-count.js` | Set a user's message count to an exact amount |
 
 ---
 

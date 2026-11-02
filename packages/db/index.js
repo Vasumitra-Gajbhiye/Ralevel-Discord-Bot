@@ -69,6 +69,7 @@ const {
   normalizeExamLockingConfig,
 } = require("./src/examLockingConfig");
 const {
+  MERGED_SUBCOMMAND_KEYS,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
   normalizeIdLabels,
@@ -149,6 +150,7 @@ module.exports = {
   normalizeExamLockingConfig,
   DEFAULT_QOTD_REMINDER_TEMPLATE,
   DEFAULT_MODMAIL_CATEGORIES,
+  MERGED_SUBCOMMAND_KEYS,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
   normalizeIdLabels,

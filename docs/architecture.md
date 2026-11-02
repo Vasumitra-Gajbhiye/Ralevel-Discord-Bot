@@ -40,7 +40,7 @@ r-alevel bot code/
 ├── Dockerfile
 ├── .env.example
 │
-├── commands/                # 72 slash commands in 13 category folders
+├── commands/                # 97 slash commands + 1 context menu in 16 category folders
 │   ├── applications/
 │   ├── certificates/
 │   ├── confessions/
@@ -265,7 +265,7 @@ Three permission layers:
 
 Commands **not listed** in `permissions.config.js` are accessible to all members (subject to Discord permission bits).
 
-Slash commands are registered to **one guild** via `scripts/deploy-commands.js` — not globally.
+Slash commands are registered to **one guild** via `scripts/deploy-commands.js` — not globally. Discord allows 100 slash commands and 15 each of user / message context menus per guild; registration fails before calling Discord if we go over (`packages/shared/src/commandLimits.js`).
 
 ---
 
@@ -314,6 +314,6 @@ Unused in code (likely accidental): `next-themes`, direct `mongodb` driver impor
 ## Related docs
 
 - [Systems](systems.md) — detailed breakdown of each system module
-- [Commands](commands.md) — all 72 slash commands
+- [Commands](commands.md) — all 97 slash commands
 - [Database](database.md) — MongoDB and Redis reference
 - [Deployment](deployment.md) — production setup

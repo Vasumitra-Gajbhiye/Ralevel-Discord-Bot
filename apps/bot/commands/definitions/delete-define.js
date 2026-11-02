@@ -1,6 +1,5 @@
 const { DEFINITION_LIMITS } = require("@ralevel/db");
 const {
-  SlashCommandBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -83,8 +82,9 @@ async function confirmAndDelete(interaction, definition, reason) {
 }
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("delete-define")
+  // Mounted as /definition delete by definition.js
+  subcommand: (subcommand) => subcommand
+    .setName("delete")
     .setDescription("Delete a definition (or request its removal for review).")
     .addStringOption((opt) =>
       opt

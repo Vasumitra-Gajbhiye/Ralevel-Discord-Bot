@@ -213,9 +213,11 @@ Requires `TOKEN`, `CLIENT_ID`, and `GUILD_ID` in `.env`.
 Expected startup log:
 
 ```
-[command-catalog] Exported 73 commands.
-[deploy-commands] Registered 73 guild slash commands.
+[command-catalog] Exported 98 commands.
+[deploy-commands] Registered 98 guild slash commands.
 ```
+
+Discord allows at most **100 slash commands** and **15 user / 15 message context menus** per guild. Registration is one bulk request, so going over the limit rejects every change, not just the new command. `registerGuildCommands` and the dashboard's **Sync to Discord** check the counts first and fail with a clear error; `pnpm --filter @ralevel/bot verify:command-limits` checks the same thing locally. When you're close to the limit, add a subcommand to an existing command (see [Grouping commands as subcommands](#grouping-commands-as-subcommands)) instead of a new top-level command.
 
 Commands appear in Discord immediately (guild-scoped, not global).
 
@@ -234,7 +236,7 @@ Commands appear in Discord immediately (guild-scoped, not global).
 |---------|------------|---------|
 | Category folder | lowercase, single word | `moderation`, `reputation` |
 | Filename | kebab-case preferred | `add-sticky.js`, `delwarn.js` |
-| Slash name (`setName`) | lowercase, kebab-case for multi-word | `add-sticky`, `delete-warning` |
+| Slash name (`setName`) | lowercase, kebab-case for multi-word | `my-xp`, `delete-warning` |
 | Filename vs slash name | Often differ | `delwarn.js` → `/delete-warning` |
 
 Discord slash command names must be lowercase, 1–32 characters, `a-z`, `0-9`, `-`, `_`.
@@ -258,7 +260,7 @@ Workflow:
 
 Clearing a custom name reverts to the default from `setName()`. Subcommand names (e.g. `/poll create`) cannot be renamed from the dashboard.
 
-Renaming a command **in code** (changing `setName()`) is different: update permission defaults, hierarchy maps, and redeploy. Dashboard display-name overrides are pruned automatically when the canonical name changes.
+Renaming a command **in code** (changing `setName()`) is different: update permission defaults, hierarchy maps, and redeploy. Dashboard display-name overrides are pruned automatically when the canonical name changes, and so are role gates, visibility and ephemeral settings saved under the old name. Move those first if admins have changed them; `scripts/migrate-merged-command-settings.js` is an example.
 
 ---
 
@@ -326,6 +328,31 @@ async execute(interaction) {
 }
 ```
 
+### Grouping commands as subcommands
+
+`/sticky`, `/xp-admin`, `/rep-admin` and `/definition` are built from one file per subcommand with `utils/subcommandCommand.js`. Each subcommand file exports `subcommand` (instead of `data`), `execute` and optionally `autocomplete`, so the loaders skip it; the parent file mounts them:
+
+```javascript
+// commands/sticky/sticky.js
+module.exports = buildSubcommandCommand(
+  new SlashCommandBuilder()
+    .setName('sticky')
+    .setDescription('Manage sticky messages')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  [require('./add-sticky'), require('./edit-sticky') /* ... */],
+);
+
+// commands/sticky/add-sticky.js
+module.exports = {
+  subcommand: (subcommand) => subcommand
+    .setName('add')
+    .setDescription('Add or replace a sticky message in a channel'),
+  async execute(interaction) { /* ... */ },
+};
+```
+
+Commands built this way have their **role gate and ephemeral setting per subcommand**, keyed `"<command> <subcommand>"` (e.g. `"sticky add"`) in `DEFAULT_COMMAND_PERMISSIONS`, `DEFAULT_COMMAND_EPHEMERAL` and the dashboard. Discord permission bits (`DEFAULT_COMMAND_DISCORD_PERMISSIONS`), display names and visibility stay on the top-level command, because Discord only supports those per command. A plain `addSubcommand` command like `/poll` keeps one setting for the whole command.
+
 ### Using models and utils
 
 ```javascript
@@ -348,6 +375,7 @@ Before opening a PR with a new command:
 - [ ] Role restrictions added to `DEFAULT_COMMAND_PERMISSIONS` in `packages/db/src/defaultGuildConfig.js` (if restricted — used as initial defaults for new commands)
 - [ ] Hierarchy mapping added to `systems/commands.js` (if moderation)
 - [ ] Discord permission bits set on the SlashCommandBuilder (if should be hidden from non-mods)
+- [ ] Still under 100 slash commands (`verify:command-limits`)
 - [ ] Restart bot — catalog export and Discord registration happen automatically
 - [ ] Confirm new command appears on **Settings → Commands** and **Settings → Command visibility**
 - [ ] If using a custom display name, save and **Sync to Discord** from **Settings → Commands**

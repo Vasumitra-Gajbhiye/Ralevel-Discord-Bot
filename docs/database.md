@@ -108,7 +108,7 @@ Idempotent ledger of each XP flush batch per user.
 
 **Indexes:** `{ userId: 1 }` unique, `{ rep: -1 }`
 
-**Written by:** `systems/reputation.js` (automatic via atomic `$inc` / `bulkWrite`), rep commands (`/add-rep`, `/set-rep`, etc.)
+**Written by:** `systems/reputation.js` (automatic via atomic `$inc` / `bulkWrite`), rep commands (`/rep-admin add`, `/rep-admin set`, `/rep-admin subtract`)
 
 **Read by:** Rep commands, `/leaderboard`
 
@@ -576,7 +576,7 @@ Live (approved) glossary entries. Pending changes are in `definitionrequests`.
 
 **Indexes:** `{ subjectId: 1, boardId: 1, termKey: 1 }` (unique), `{ termKey: 1 }`, `{ views: -1 }`, `{ authorId: 1 }`
 
-**Written by:** `/add-define`, `/edit-define`, `/delete-define`, `systems/definitions.js`, dashboard **Operations → Definitions**
+**Written by:** `/definition add`, `/definition edit`, `/definition delete`, `systems/definitions.js`, dashboard **Operations → Definitions**
 
 ---
 

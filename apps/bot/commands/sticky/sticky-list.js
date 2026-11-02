@@ -1,17 +1,13 @@
 const { Sticky } = require("@ralevel/db");
 const {
-  SlashCommandBuilder,
   EmbedBuilder,
-  PermissionFlagsBits,
 } = require("discord.js");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("sticky-list")
-    .setDescription("List all sticky messages in this server")
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageMessages
-    ),
+  // Mounted as /sticky list by sticky.js
+  subcommand: (subcommand) => subcommand
+    .setName("list")
+    .setDescription("List all sticky messages in this server"),
 
   async execute(interaction) {
     const stickies = await Sticky.find({

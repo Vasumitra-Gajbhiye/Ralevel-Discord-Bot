@@ -59,6 +59,7 @@ export declare function buildDefaultGuildConfig(guildId: string): Record<string,
 export declare const DEFAULT_COMMAND_PERMISSIONS: Record<string, string[]>;
 export declare const DEFAULT_COMMAND_DISCORD_PERMISSIONS: Record<string, string>;
 export declare const DEFAULT_COMMAND_EPHEMERAL: Record<string, boolean>;
+export declare const MERGED_SUBCOMMAND_KEYS: Record<string, string>;
 export declare const DEFAULT_BAN_MESSAGES: {
   appealUrl: string;
   banAppealable: string;

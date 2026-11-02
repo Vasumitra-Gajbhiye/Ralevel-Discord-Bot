@@ -1,4 +1,3 @@
-const { SlashCommandBuilder } = require("discord.js");
 const {
   getDefinitionsConfig,
   searchDefinitions,
@@ -8,8 +7,9 @@ const {
 } = require("../../utils/definitions");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("edit-define")
+  // Mounted as /definition edit by definition.js
+  subcommand: (subcommand) => subcommand
+    .setName("edit")
     .setDescription("Improve a definition (your change is reviewed unless you wrote it as a helper).")
     .addStringOption((opt) =>
       opt

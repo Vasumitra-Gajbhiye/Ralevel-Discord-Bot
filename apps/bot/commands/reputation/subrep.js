@@ -1,12 +1,11 @@
 const { Reputation } = require("@ralevel/db");
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { assignRepRoleById } = require("../../utils/assignRepRole.js");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("sub-rep")
+  // Mounted as /rep-admin subtract by rep-admin.js
+  subcommand: (subcommand) => subcommand
+    .setName("subtract")
     .setDescription("Subtract reputation from a user.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addUserOption((option) =>
       option
         .setName("user")

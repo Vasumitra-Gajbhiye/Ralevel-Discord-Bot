@@ -16,7 +16,7 @@ Complete developer documentation for the r/alevel Discord bot.
 | [Setup](setup.md) | Local development setup and first run |
 | [Environment Variables](environment-variables.md) | All configuration variables |
 | [Architecture](architecture.md) | Project structure, startup flow, design decisions |
-| [Commands](commands.md) | All 72 slash commands with permissions |
+| [Commands](commands.md) | All 97 slash commands with permissions |
 | [Systems](systems.md) | Background systems, event listeners, schedulers |
 | [Adding Commands](adding-commands.md) | How to create and deploy new slash commands |
 | [GitHub Workflow](github-workflow.md) | Branches, commits, pull requests, and fixing Git mistakes |

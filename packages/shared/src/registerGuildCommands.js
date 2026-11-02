@@ -16,6 +16,7 @@ const {
   applyMetadataOverride,
   normalizeMetadataOverrides,
 } = require("./commandMetadataOverrides");
+const { assertCommandLimits } = require("./commandLimits");
 
 function resolveCommandsRoot(explicitRoot) {
   if (explicitRoot) return path.resolve(explicitRoot);
@@ -139,6 +140,7 @@ async function registerGuildCommands({
     metadataOverrides,
   );
   const body = entries.map((entry) => entry.payload);
+  assertCommandLimits(body);
   const rest = new REST().setToken(token);
 
   const data = await rest.put(

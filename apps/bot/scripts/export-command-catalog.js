@@ -1,6 +1,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const { PermissionFlagsBits } = require("discord.js");
+const { PermissionFlagsBits, ApplicationCommandOptionType } = require("discord.js");
+
+const SUBCOMMAND_TYPE = ApplicationCommandOptionType.Subcommand;
 
 const commandsRoot = path.resolve(__dirname, "..", "commands");
 const generatedDir = path.resolve(
@@ -42,12 +44,21 @@ function exportCommandCatalog() {
         ? bitToName[payload.default_member_permissions] || null
         : null;
 
-      commands.push({
+      const entry = {
         category: folder,
         name: payload.name,
         fileDefault,
         payload,
-      });
+      };
+
+      // Role gate / ephemeral keys for commands configured per subcommand.
+      if (command.subcommandSettings) {
+        entry.subcommandSettings = payload.options
+          .filter((option) => option.type === SUBCOMMAND_TYPE)
+          .map((option) => `${payload.name} ${option.name}`);
+      }
+
+      commands.push(entry);
     }
   }
 

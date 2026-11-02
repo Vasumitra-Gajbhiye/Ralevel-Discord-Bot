@@ -66,6 +66,15 @@ const HIERARCHY_ROLE_OPTIONS = {
   "remove-role": "role",
 };
 
+// Commands built with buildSubcommandCommand (utils/subcommandCommand.js)
+// store role gates and ephemeral settings per subcommand, e.g. "sticky add".
+function getCommandSettingKey(command, canonicalName, interaction) {
+  if (!command.subcommandSettings || !interaction.isChatInputCommand()) {
+    return canonicalName;
+  }
+  return `${canonicalName} ${interaction.options.getSubcommand()}`;
+}
+
 module.exports = (client) => {
   client.commands = new Collection();
 
@@ -115,11 +124,12 @@ module.exports = (client) => {
     const canonicalName = resolveCanonicalCommandName(interaction.commandName);
     const command = client.commands.get(canonicalName);
     if (!command) return;
+    const settingKey = getCommandSettingKey(command, canonicalName, interaction);
 
     // ==========================================
     // 🛡️ GLOBAL ROLE ACCESS CHECK
     // ==========================================
-    const allowedRoles = getCommandAllowedRoleIds(canonicalName);
+    const allowedRoles = getCommandAllowedRoleIds(settingKey);
 
     if (allowedRoles && allowedRoles.length > 0) {
       // Prevent crashes if someone tries to use a restricted command in a DM
@@ -197,7 +207,7 @@ module.exports = (client) => {
     const originalReply = interaction.reply.bind(interaction);
 
     try {
-      const ephemeral = isCommandEphemeral(canonicalName);
+      const ephemeral = isCommandEphemeral(settingKey);
 
       interaction.deferReply = (options = {}) =>
         originalDeferReply({ ...options, ephemeral });

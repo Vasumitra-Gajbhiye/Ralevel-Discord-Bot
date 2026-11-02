@@ -47,13 +47,13 @@ Match the existing code style. Work on a new branch from main. Don't push or ope
 
 ## Phase 1 — `/privacy` command: opt-out and self-serve deletion
 
-**Why:** The form asks "Can users opt out of having their message content tracked?" and "How do users request deletion of their activity data?". This phase makes the answers **Yes** and **`/privacy delete-my-data`**.
+**Why:** The form asks "Can users opt out of having their message content tracked?" and "How do users request deletion of their activity data?". This phase makes the answers **Yes** and `/privacy delete-my-data`.
 
 **Status: done** on branch `feat/privacy-command` (merge before starting Phase 2). What was built, and what later phases must describe accurately:
 
 - **Opt-out syntax:** `/privacy message-content off` opts the member out, so the bot stops reading their text. `on` turns reading back on.
 - **Opt-out scope:** reputation thank-you detection is skipped for the member's own messages (they can still *receive* rep), and sticky counts their messages as 1 line. Modmail / mod-DM relays and `/purge` filters are not affected. XP counting never reads text. Opted-out IDs are held in memory (loaded at startup), so there's no DB query per message.
-- **`delete-my-data` deletes:** XP and message count (`User`), reputation (`Reputation`), poll votes (`PollVote` plus legacy votes embedded on `Poll`), the XP sync ledger (`XpFlushGrant`) and pending XP in Redis. It also removes rank and reputation tier roles, including any a mod gave by hand. It keeps moderation records, modmail tickets, confessions, certificates, XP bans and rep bans. Once per 24 hours per member, Confirm / Cancel buttons expire after 60 s.
+- `delete-my-data` **deletes:** XP and message count (`User`), reputation (`Reputation`), poll votes (`PollVote` plus legacy votes embedded on `Poll`), the XP sync ledger (`XpFlushGrant`) and pending XP in Redis. It also removes rank and reputation tier roles, including any a mod gave by hand. It keeps moderation records, modmail tickets, confessions, certificates, XP bans and rep bans. Once per 24 hours per member, Confirm / Cancel buttons expire after 60 s.
 - **New stored data:** a `UserPrivacy` record per member who uses `/privacy` (opt-out flag and last deletion time). It survives `delete-my-data`. The privacy policy should mention it.
 - **Logging:** one console line per deletion (user ID and counts, no content). Not written to the mod log, so it doesn't appear in the member's moderation history.
 - **Ephemeral replies:** on by default, but admins can change it per command in the dashboard. Leave `privacy` ephemeral.
@@ -137,10 +137,10 @@ Match existing code style. Work on a new branch from main. Don't push or open a 
 
 Do these yourself; no prompt needed.
 
-- [ ] **MongoDB Atlas:** confirm encryption at rest is on (it is by default on all Atlas clusters; check the cluster's Security settings).
-- [ ] **Production Redis (Coolify):** check whether persistence (AOF/RDB) is on. If it is, confirm the server's disk is encrypted, or turn persistence off; the data is only 7-day XP counters, so losing it on restart costs at most a few unflushed messages of XP. The form's "encrypting data at rest" answer must be true for everything you store.
-- [ ] **Developer Portal → General Information:** Privacy Policy URL = `https://ralevel.com/legal/ralevel-bot/privacy-policy`, Terms of Service URL = the bot's ToS page.
-- [ ] **Bot profile "About Me":** add the privacy policy link and "Use /privacy to opt out or delete your data". The form asks *where* users can find the policy.
+- [x] **MongoDB Atlas:** confirm encryption at rest is on (it is by default on all Atlas clusters; check the cluster's Security settings).
+- [x] **Production Redis (Coolify):** check whether persistence (AOF/RDB) is on. If it is, confirm the server's disk is encrypted, or turn persistence off; the data is only 7-day XP counters, so losing it on restart costs at most a few unflushed messages of XP. The form's "encrypting data at rest" answer must be true for everything you store.
+- [x] **Developer Portal → General Information:** Privacy Policy URL = `https://ralevel.com/legal/ralevel-bot/privacy-policy`, Terms of Service URL = the bot's ToS page.
+- [x] **Bot profile "About Me":** add the privacy policy link and "Use /privacy to opt out or delete your data". The form asks *where* users can find the policy.
 - [ ] **Rules or info channel:** add a line linking the privacy policy and mentioning `/privacy`.
 
 ---
