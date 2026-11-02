@@ -1,24 +1,18 @@
 const { Sticky } = require("@ralevel/db");
-const {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-} = require("discord.js");
 
 const logStickyAction = require("../../utils/logStickyAction");
 const { removeStickyCache } = require("../../systems/sticky");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("remove-sticky")
+  // Mounted as /sticky remove by sticky.js
+  subcommand: (subcommand) => subcommand
+    .setName("remove")
     .setDescription("Remove the sticky message from a channel")
     .addChannelOption(option =>
       option
         .setName("channel")
         .setDescription("Channel (defaults to current)")
         .setRequired(false)
-    )
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageMessages
     ),
 
   async execute(interaction) {

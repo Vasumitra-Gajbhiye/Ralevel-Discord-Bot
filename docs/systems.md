@@ -510,9 +510,9 @@ sweepExpiredPolls → close expired polls in parallel (concurrency 5)
 
 **Files:** `systems/definitions.js` (buttons/modals), `utils/definitions.js` (config, permissions, search, embeds), `utils/definitionActions.js` (writes, review requests, decisions)
 
-**Purpose:** A subject glossary. `/define` looks terms up; `/add-define`, `/edit-define`, `/delete-define` and the **Suggest improvement** button change it, with a review queue for anyone without rights.
+**Purpose:** A subject glossary. `/define` looks terms up; `/definition add`, `/definition edit`, `/definition delete` and the **Suggest improvement** button change it, with a review queue for anyone without rights.
 
-**Dashboard:** **Settings → Definitions** (GuildConfig `definitions` + `features.definitions`): subjects (name, stable ID, helper role keys, enabled), exam boards, review channel, optional log channel, approver roles, ping roles and the per-member pending cap. **Operations → Definitions** lists definitions (inline edit/delete) and the request history. Subjects/boards that still have definitions can't be removed — disable them instead (hidden from `/add-define`, still searchable).
+**Dashboard:** **Settings → Definitions** (GuildConfig `definitions` + `features.definitions`): subjects (name, stable ID, helper role keys, enabled), exam boards, review channel, optional log channel, approver roles, ping roles and the per-member pending cap. **Operations → Definitions** lists definitions (inline edit/delete) and the request history. Subjects/boards that still have definitions can't be removed — disable them instead (hidden from `/definition add`, still searchable).
 
 **Who changes what directly:**
 

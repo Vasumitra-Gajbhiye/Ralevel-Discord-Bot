@@ -1,11 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const { getOrCreateUser, applyXpChange } = require("../../utils/xp");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("add-xp")
+  // Mounted as /xp-admin add by xp-admin.js
+  subcommand: (subcommand) => subcommand
+    .setName("add")
     .setDescription("Add XP to a user.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addUserOption((option) =>
       option
         .setName("user")

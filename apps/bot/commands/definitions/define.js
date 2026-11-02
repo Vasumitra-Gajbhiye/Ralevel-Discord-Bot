@@ -75,7 +75,7 @@ module.exports = {
         ? `\nDid you mean: ${suggestions.map((d) => `**${d.term}** (${definitionScopeLabel(d)})`).join(", ")}?`
         : "";
       return interaction.reply({
-        content: `❌ No definition found for **${typed}**.${hint}\nYou can add one with \`/add-define\`.`,
+        content: `❌ No definition found for **${typed}**.${hint}\nYou can add one with \`/definition add\`.`,
         allowedMentions: { parse: [] },
       });
     }

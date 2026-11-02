@@ -264,7 +264,7 @@ Restart the bot.
 
 **Fix:**
 
-1. Verify sticky exists: `/sticky-list`
+1. Verify sticky exists: `/sticky list`
 2. Check bot loaded cache on startup: log should show `Loaded N stickies into cache`
 3. Ensure sticky is `enabled: true` in MongoDB
 4. Default threshold is 8 messages — send enough messages in the channel
@@ -276,7 +276,7 @@ Restart the bot.
 
 **Symptom:** Edited sticky still shows old content.
 
-**Fix:** Use `/edit-sticky` (updates MongoDB + cache). If cache is stale, restart the bot to reload from MongoDB.
+**Fix:** Use `/sticky edit` (updates MongoDB + cache). If cache is stale, restart the bot to reload from MongoDB.
 
 ---
 

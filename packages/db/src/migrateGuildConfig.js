@@ -22,7 +22,31 @@ const CATALOG_PATH = path.resolve(
   "../../shared/src/generated/commandCatalog.json",
 );
 
-const PRESERVED_ORPHAN_COMMAND_KEYS = new Set([]);
+// Commands merged into subcommands to stay under Discord's 100 slash command
+// limit. Old name -> new per-subcommand setting key. Their saved settings are
+// kept until scripts/migrate-merged-command-settings.js moves them.
+const MERGED_SUBCOMMAND_KEYS = {
+  "add-sticky": "sticky add",
+  "edit-sticky": "sticky edit",
+  "remove-sticky": "sticky remove",
+  "sticky-list": "sticky list",
+  "sticky-log": "sticky log",
+  "sticky-resend": "sticky resend",
+  "add-xp": "xp-admin add",
+  "set-xp": "xp-admin set",
+  "subtract-xp": "xp-admin subtract",
+  "set-msg-count": "xp-admin set-msg-count",
+  "add-rep": "rep-admin add",
+  "set-rep": "rep-admin set",
+  "sub-rep": "rep-admin subtract",
+  "add-define": "definition add",
+  "edit-define": "definition edit",
+  "delete-define": "definition delete",
+};
+
+const PRESERVED_ORPHAN_COMMAND_KEYS = new Set(
+  Object.keys(MERGED_SUBCOMMAND_KEYS),
+);
 
 const DEFAULT_BAN_APPEAL_APPROVER_ROLE_KEYS = ["admin", "dcHead"];
 
@@ -85,10 +109,20 @@ function getCatalogCommandNames(catalog) {
   return (catalog.commands || []).map((cmd) => cmd.name);
 }
 
+/**
+ * Keys for commandPermissions / commandEphemeral: "command subcommand" for
+ * commands configured per subcommand, otherwise the command name.
+ */
+function getCatalogSettingKeys(catalog) {
+  return (catalog.commands || []).flatMap((cmd) =>
+    cmd.subcommandSettings?.length ? cmd.subcommandSettings : [cmd.name],
+  );
+}
+
 function buildCatalogRoleDefaults(catalog) {
   const defaults = {};
-  for (const cmd of catalog.commands || []) {
-    defaults[cmd.name] = DEFAULT_COMMAND_PERMISSIONS[cmd.name] ?? [];
+  for (const key of getCatalogSettingKeys(catalog)) {
+    defaults[key] = DEFAULT_COMMAND_PERMISSIONS[key] ?? [];
   }
   return defaults;
 }
@@ -104,8 +138,8 @@ function buildCatalogDiscordDefaults(catalog) {
 
 function buildCatalogEphemeralDefaults(catalog) {
   const defaults = {};
-  for (const cmd of catalog.commands || []) {
-    defaults[cmd.name] = DEFAULT_COMMAND_EPHEMERAL[cmd.name] ?? false;
+  for (const key of getCatalogSettingKeys(catalog)) {
+    defaults[key] = DEFAULT_COMMAND_EPHEMERAL[key] ?? false;
   }
   return defaults;
 }
@@ -479,6 +513,7 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
 
   const catalog = loadCommandCatalog();
   const catalogNames = getCatalogCommandNames(catalog);
+  const settingKeys = getCatalogSettingKeys(catalog);
   const roleDefaults =
     catalogNames.length > 0
       ? buildCatalogRoleDefaults(catalog)
@@ -525,7 +560,7 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
     const syncedEphemeral = syncCommandPermissionMap(
       raw.commandEphemeral,
       ephemeralDefaults,
-      catalogNames,
+      settingKeys,
     );
     if (syncedEphemeral.changed) {
       $set.commandEphemeral = syncedEphemeral.map;
@@ -535,7 +570,7 @@ async function migrateGuildConfigDocument(GuildConfig, guildId) {
   const syncedCommandPerms = syncCommandPermissionMap(
     raw.commandPermissions,
     roleDefaults,
-    catalogNames,
+    settingKeys,
   );
   if (syncedCommandPerms.changed) {
     $set.commandPermissions = syncedCommandPerms.map;
@@ -692,6 +727,7 @@ function migrateGuildConfigInPlace(doc) {
 
   const catalog = loadCommandCatalog();
   const catalogNames = getCatalogCommandNames(catalog);
+  const settingKeys = getCatalogSettingKeys(catalog);
   const roleDefaults =
     catalogNames.length > 0
       ? buildCatalogRoleDefaults(catalog)
@@ -705,12 +741,12 @@ function migrateGuildConfigInPlace(doc) {
       ? buildCatalogEphemeralDefaults(catalog)
       : DEFAULT_COMMAND_EPHEMERAL;
 
-  for (const [field, defaults] of [
-    ["commandPermissions", roleDefaults],
-    ["commandDiscordPermissions", discordDefaults],
-    ["commandEphemeral", ephemeralDefaults],
+  for (const [field, defaults, keys] of [
+    ["commandPermissions", roleDefaults, settingKeys],
+    ["commandDiscordPermissions", discordDefaults, catalogNames],
+    ["commandEphemeral", ephemeralDefaults, settingKeys],
   ]) {
-    const synced = syncCommandPermissionMap(doc[field], defaults, catalogNames);
+    const synced = syncCommandPermissionMap(doc[field], defaults, keys);
     if (synced.changed) {
       doc[field] = synced.map;
       doc.markModified(field);
@@ -731,6 +767,7 @@ function migrateGuildConfigInPlace(doc) {
 }
 
 module.exports = {
+  MERGED_SUBCOMMAND_KEYS,
   migrateGuildConfigDocument,
   migrateGuildConfigInPlace,
   normalizeIdLabels,

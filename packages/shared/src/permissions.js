@@ -128,12 +128,12 @@ const commands = {
   // HELPER COMMANDS
 
   // REPUTATION COMMANDS
-  "add-rep": [hlpHead, admin],
   "list-rep-ban": [admin, dcHead, hlpHead, srHelper, jrMods], //yellow
   "rep-ban": [admin, dcHead, hlpHead, srMods], //yellow
   "rep-unban": [admin, dcHead, hlpHead, srMods], //yellow
-  "set-rep": [hlpHead, admin],
-  "sub-rep": [hlpHead, admin],
+  "rep-admin add": [hlpHead, admin],
+  "rep-admin set": [hlpHead, admin],
+  "rep-admin subtract": [hlpHead, admin],
 
   // SECOND WEB COMMANDS
 
@@ -141,12 +141,12 @@ const commands = {
   "set-helper": [admin, hlpHead, dcHead],
 
   // STICKY
-  "add-sticky": [admin, dcHead, srMods, jrMods],
-  "edit-sticky": [admin, dcHead, srMods],
-  "remove-sticky": [admin, dcHead, srMods],
-  "sticky-list": [admin, dcHead, srMods],
-  "sticky-log": [admin, dcHead],
-  "sticky-resend": [admin, dcHead, srMods],
+  "sticky add": [admin, dcHead, srMods, jrMods],
+  "sticky edit": [admin, dcHead, srMods],
+  "sticky remove": [admin, dcHead, srMods],
+  "sticky list": [admin, dcHead, srMods],
+  "sticky log": [admin, dcHead],
+  "sticky resend": [admin, dcHead, srMods],
 
   // TASK COMMANDS
   "add-task": [admin, gfxHead],

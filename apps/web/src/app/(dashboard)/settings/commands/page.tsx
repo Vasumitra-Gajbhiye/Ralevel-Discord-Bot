@@ -25,7 +25,23 @@ type CatalogCommand = {
   editableMetadata: EditableMetadata;
   contextMenu: boolean;
   defaultEphemeral: boolean;
+  subcommands: CatalogSubcommand[];
 };
+
+/** Subcommand with its own role gate and ephemeral setting ("sticky add"). */
+type CatalogSubcommand = {
+  key: string;
+  name: string;
+  description: string;
+  defaultEphemeral: boolean;
+};
+
+/** Keys for commandPermissions / commandEphemeral rows. */
+function getSettingKeys(command: CatalogCommand) {
+  return command.subcommands.length
+    ? command.subcommands.map((sub) => sub.key)
+    : [command.name];
+}
 
 function truncateDescription(text: string, maxLength = DESCRIPTION_PREVIEW_LENGTH) {
   if (text.length <= maxLength) return text;
@@ -191,6 +207,9 @@ export default function CommandsPage() {
     const defaults: Record<string, boolean> = {};
     for (const cmd of catalog) {
       defaults[cmd.name] = cmd.defaultEphemeral ?? false;
+      for (const sub of cmd.subcommands) {
+        defaults[sub.key] = sub.defaultEphemeral ?? false;
+      }
     }
     return defaults;
   }, [catalog]);
@@ -227,7 +246,7 @@ export default function CommandsPage() {
   }, [editableCommands, editingCommandName]);
 
   const commandNames = useMemo(() => {
-    return editableCommands.map((cmd) => cmd.name).sort();
+    return editableCommands.flatMap(getSettingKeys).sort();
   }, [editableCommands]);
 
   const permissions = useMemo(() => {
@@ -459,11 +478,73 @@ export default function CommandsPage() {
               {editableCommands
                 .slice()
                 .sort((a, b) => a.effectiveName.localeCompare(b.effectiveName))
-                .map((command) => {
+                .flatMap((command) => {
                   const cmd = command.name;
                   const isEphemeral = ephemeral[cmd] ?? false;
+                  const perSubcommand = command.subcommands.length > 0;
 
-                  return (
+                  const subcommandRows = command.subcommands.map((sub) => {
+                    const subEphemeral = ephemeral[sub.key] ?? false;
+                    return (
+                      <tr key={sub.key}>
+                        <td style={{ paddingLeft: "1.5rem" }}>
+                          <div className="stack" style={{ gap: "0.15rem" }}>
+                            <span
+                              className="mono"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.35rem",
+                              }}
+                            >
+                              {`/${command.effectiveName} ${sub.name}`}
+                              <button
+                                type="button"
+                                className="btn btn-icon"
+                                aria-label={
+                                  subEphemeral
+                                    ? "Visible only to user (click to show to everyone)"
+                                    : "Visible to everyone (click to show only to user)"
+                                }
+                                title={
+                                  subEphemeral
+                                    ? "Visible only to user"
+                                    : "Visible to everyone"
+                                }
+                                onClick={() => toggleCommandEphemeral(sub.key)}
+                                disabled={saving || modalSaving}
+                              >
+                                {subEphemeral ? (
+                                  <EyeClosedIcon />
+                                ) : (
+                                  <EyeOpenIcon />
+                                )}
+                              </button>
+                            </span>
+                            {sub.description ? (
+                              <span
+                                className="muted"
+                                style={{ fontSize: "0.8rem", lineHeight: 1.4 }}
+                                title={sub.description}
+                              >
+                                {truncateDescription(sub.description)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td>
+                          <RolePicker
+                            roles={roles}
+                            selectedKeys={permissions[sub.key] || []}
+                            onChange={(keys) => setCommandRoles(sub.key, keys)}
+                          />
+                        </td>
+                        <td />
+                      </tr>
+                    );
+                  });
+
+                  return [
                     <tr key={cmd}>
                       <td>
                         <div className="stack" style={{ gap: "0.15rem" }}>
@@ -478,28 +559,30 @@ export default function CommandsPage() {
                             {command.contextMenu
                               ? command.effectiveName
                               : `/${command.effectiveName}`}
-                            <button
-                              type="button"
-                              className="btn btn-icon"
-                              aria-label={
-                                isEphemeral
-                                  ? "Visible only to user (click to show to everyone)"
-                                  : "Visible to everyone (click to show only to user)"
-                              }
-                              title={
-                                isEphemeral
-                                  ? "Visible only to user"
-                                  : "Visible to everyone"
-                              }
-                              onClick={() => toggleCommandEphemeral(cmd)}
-                              disabled={saving || modalSaving}
-                            >
-                              {isEphemeral ? (
-                                <EyeClosedIcon />
-                              ) : (
-                                <EyeOpenIcon />
+                            {perSubcommand ? null : (
+                              <button
+                                type="button"
+                                className="btn btn-icon"
+                                aria-label={
+                                  isEphemeral
+                                    ? "Visible only to user (click to show to everyone)"
+                                    : "Visible to everyone (click to show only to user)"
+                                }
+                                title={
+                                  isEphemeral
+                                    ? "Visible only to user"
+                                    : "Visible to everyone"
+                                }
+                                onClick={() => toggleCommandEphemeral(cmd)}
+                                disabled={saving || modalSaving}
+                              >
+                                {isEphemeral ? (
+                                  <EyeClosedIcon />
+                                ) : (
+                                  <EyeOpenIcon />
                               )}
                             </button>
+                            )}
                           </span>
                           {command.displayName ? (
                             <span className="muted" style={{ fontSize: "0.8rem" }}>
@@ -523,11 +606,17 @@ export default function CommandsPage() {
                         </div>
                       </td>
                       <td>
-                        <RolePicker
-                          roles={roles}
-                          selectedKeys={permissions[cmd] || []}
-                          onChange={(keys) => setCommandRoles(cmd, keys)}
-                        />
+                        {perSubcommand ? (
+                          <span className="muted" style={{ fontSize: "0.8rem" }}>
+                            Set per subcommand below
+                          </span>
+                        ) : (
+                          <RolePicker
+                            roles={roles}
+                            selectedKeys={permissions[cmd] || []}
+                            onChange={(keys) => setCommandRoles(cmd, keys)}
+                          />
+                        )}
                       </td>
                       <td style={{ width: "3rem", textAlign: "right" }}>
                         {command.contextMenu ? null : (
@@ -542,8 +631,9 @@ export default function CommandsPage() {
                           </button>
                         )}
                       </td>
-                    </tr>
-                  );
+                    </tr>,
+                    ...subcommandRows,
+                  ];
                 })}
             </tbody>
           </table>

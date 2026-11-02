@@ -10,6 +10,7 @@ const {
   applyMetadataOverride,
   normalizeMetadataOverrides,
 } = require("./commandMetadataOverrides");
+const { assertCommandLimits } = require("./commandLimits");
 
 const PERMISSION_LABELS = {
   Administrator: "Administrator",
@@ -180,6 +181,7 @@ async function registerGuildCommandsFromCatalog({
     metadataOverrides,
   );
   const body = entries.map((entry) => entry.payload);
+  assertCommandLimits(body);
 
   const response = await fetch(
     `https://discord.com/api/v10/applications/${clientId}/guilds/${guildId}/commands`,

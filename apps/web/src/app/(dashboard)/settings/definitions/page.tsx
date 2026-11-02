@@ -174,7 +174,7 @@ export default function DefinitionsSettingsPage() {
     <>
       <PageHeader
         title="Definitions"
-        description="Subjects, exam boards, reviewers and channels for /define, /add-define, /edit-define and /delete-define."
+        description="Subjects, exam boards, reviewers and channels for /define and /definition add, edit and delete."
       />
       <RestartBanner />
       {error ? <p className="status err">{error}</p> : null}
@@ -265,7 +265,7 @@ export default function DefinitionsSettingsPage() {
               helper roles add definitions there without review, and can edit or
               delete the ones they wrote. Add helper roles on the Roles page
               first. Subjects that already have definitions can&apos;t be
-              removed — disable them to hide them from /add-define.
+              removed — disable them to hide them from /definition add.
             </p>
           </div>
 

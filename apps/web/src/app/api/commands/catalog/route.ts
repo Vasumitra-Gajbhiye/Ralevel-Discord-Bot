@@ -80,6 +80,21 @@ export async function GET() {
           // Context menus ("Give Rep") have no slash, description or options.
           contextMenu: !isChatInputPayload(catalogCommand?.payload),
           defaultEphemeral: DEFAULT_COMMAND_EPHEMERAL[name] ?? false,
+          // Role gates and ephemeral settings stored per subcommand ("sticky add").
+          subcommands: (catalogCommand?.subcommandSettings ?? []).map((key) => {
+            const subName = key.slice(name.length + 1);
+            const option = (
+              catalogCommand?.payload?.options as
+                | Array<{ name: string; description?: string }>
+                | undefined
+            )?.find((opt) => opt.name === subName);
+            return {
+              key,
+              name: subName,
+              description: option?.description ?? "",
+              defaultEphemeral: DEFAULT_COMMAND_EPHEMERAL[key] ?? false,
+            };
+          }),
         };
       },
     );

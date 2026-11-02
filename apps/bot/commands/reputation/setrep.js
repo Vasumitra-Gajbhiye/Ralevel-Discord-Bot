@@ -1,13 +1,12 @@
 const { Reputation } = require("@ralevel/db");
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { assignRepRoleById } = require("../../utils/assignRepRole");
 require("../../loadEnv");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("set-rep")
+  // Mounted as /rep-admin set by rep-admin.js
+  subcommand: (subcommand) => subcommand
+    .setName("set")
     .setDescription("Set a user's reputation to a specific value.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addUserOption((o) =>
       o.setName("user").setDescription("The user.").setRequired(true),
     )

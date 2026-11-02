@@ -1,16 +1,13 @@
 const { Sticky } = require("@ralevel/db");
-const {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-} = require("discord.js");
 
 const logStickyAction = require("../../utils/logStickyAction");
 const { upsertStickyCache } = require("../../systems/sticky");
 const { getGuildConfig } = require("../../utils/guildConfigStore");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("edit-sticky")
+  // Mounted as /sticky edit by sticky.js
+  subcommand: (subcommand) => subcommand
+    .setName("edit")
     .setDescription("Edit the sticky message in a channel")
     .addStringOption(option =>
       option
@@ -33,9 +30,6 @@ module.exports = {
         .setMinValue(1)
         .setMaxValue(1000)
         .setRequired(false)
-    )
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageMessages
     ),
 
   async execute(interaction) {

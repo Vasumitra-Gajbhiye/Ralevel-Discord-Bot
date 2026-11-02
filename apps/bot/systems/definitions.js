@@ -1,6 +1,6 @@
 /**
  * Definitions buttons and modals:
- *  - "Suggest improvement" on /define results (and the /edit-define modal)
+ *  - "Suggest improvement" on /define results (and the /definition edit modal)
  *  - Approve / Edit & approve / Reject on review requests
  * Custom IDs carry the IDs they act on, so buttons keep working after restarts.
  */
@@ -50,7 +50,7 @@ async function openEditModal(interaction, definitionId) {
 }
 
 /**
- * Handles the edit modal from /edit-define and "Suggest improvement".
+ * Handles the edit modal from /definition edit and "Suggest improvement".
  * Approvers and the helper who wrote it edit directly; everyone else's
  * change goes to review.
  */

@@ -1,24 +1,18 @@
 const { Sticky } = require("@ralevel/db");
-const {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-} = require("discord.js");
 
 const logStickyAction = require("../../utils/logStickyAction");
 const { upsertStickyCache } = require("../../systems/sticky");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("sticky-resend")
+  // Mounted as /sticky resend by sticky.js
+  subcommand: (subcommand) => subcommand
+    .setName("resend")
     .setDescription("Force resend the sticky message")
     .addChannelOption(option =>
       option
         .setName("channel")
         .setDescription("Channel (defaults to current)")
         .setRequired(false)
-    )
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageMessages
     ),
 
   async execute(interaction) {

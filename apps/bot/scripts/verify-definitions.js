@@ -260,7 +260,7 @@ function testRefsAndChoices() {
   const subjects = definitions.subjectChoices("");
   assert(
     subjects.length === 2 && !subjects.some((c) => c.value === "latin"),
-    "disabled subjects are hidden from /add-define",
+    "disabled subjects are hidden from /definition add",
   );
   assert(
     definitions.subjectChoices("", { enabledOnly: false }).length === 3,

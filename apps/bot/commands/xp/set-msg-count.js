@@ -1,11 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const { applyMessageCountChange } = require("../../utils/xp");
 
 module.exports = {
-  data: new SlashCommandBuilder()
+  // Mounted as /xp-admin set-msg-count by xp-admin.js
+  subcommand: (subcommand) => subcommand
     .setName("set-msg-count")
     .setDescription("Set a user's message count to an exact amount.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addUserOption((option) =>
       option
         .setName("user")

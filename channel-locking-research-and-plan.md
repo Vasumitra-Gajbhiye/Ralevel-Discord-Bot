@@ -644,7 +644,7 @@ All times use `<t:unix:F> (<t:unix:R>)` so every member sees their own local tim
 - If the channel has **no sticky of its own**:
   - The engine creates a `Sticky` with a new `owner: "exam-lock"` field and updates the cache through `upsertStickyCache`. The existing sticky system then re-posts it after N messages.
   - When nothing is pending, the engine deletes the sticky **and its last posted message**, then calls `removeStickyCache`.
-  - `/add-sticky` (and the dashboard sticky page) must **set `owner: "human"` on every upsert**. Otherwise a mod who later replaces the reminder with their own sticky would have it deleted by the engine. The engine only ever deletes stickies with `owner: "exam-lock"`.
+  - `/sticky add` (and the dashboard sticky page) must **set `owner: "human"` on every upsert**. Otherwise a mod who later replaces the reminder with their own sticky would have it deleted by the engine. The engine only ever deletes stickies with `owner: "exam-lock"`.
 - In these cases the reminder appears only in the reopen notice and in `/exam-schedule`:
   - the channel already has a human-configured sticky (the model allows one per channel)
   - the channel is a **forum**: stickies never fire there, because messages arrive in threads, not in the forum itself
