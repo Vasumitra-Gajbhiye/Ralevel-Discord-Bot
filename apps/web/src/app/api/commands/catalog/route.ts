@@ -8,7 +8,7 @@ import {
   extractEditableMetadata,
   isChatInputPayload,
 } from "@ralevel/shared/commandMetadataOverrides";
-import { DEFAULT_COMMAND_EPHEMERAL } from "@ralevel/db";
+import { DEFAULT_COMMAND_EPHEMERAL, MERGED_SUBCOMMAND_KEYS } from "@ralevel/db";
 import { getOrCreateGuildConfig, guildConfigToJson } from "@/lib/db";
 import { requireAllowlistedAuth } from "@/lib/auth";
 
@@ -102,6 +102,9 @@ export async function GET() {
     return NextResponse.json({
       commands,
       permissionOptions: DISCORD_PERMISSION_OPTIONS,
+      // Old command names whose saved settings haven't been migrated yet;
+      // saving the Commands page must not drop them.
+      preservedKeys: Object.keys(MERGED_SUBCOMMAND_KEYS),
     });
   } catch (err) {
     console.error("[GET /api/commands/catalog]", err);

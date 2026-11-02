@@ -69,13 +69,13 @@ function testLimitGuard() {
   assertCommandLimits(fakePayloads(COMMAND_LIMITS.chatInput, ApplicationCommandType.ChatInput));
   assertCommandLimits(fakePayloads(100, undefined));
   assertCommandLimits([
-    ...fakePayloads(5, ApplicationCommandType.User),
-    ...fakePayloads(5, ApplicationCommandType.Message),
+    ...fakePayloads(15, ApplicationCommandType.User),
+    ...fakePayloads(15, ApplicationCommandType.Message),
   ]);
 
   expectLimitError(fakePayloads(101, ApplicationCommandType.ChatInput), "101 slash commands (limit 100)");
-  expectLimitError(fakePayloads(6, ApplicationCommandType.Message), "6 message context menus (limit 5)");
-  expectLimitError(fakePayloads(6, ApplicationCommandType.User), "6 user context menus (limit 5)");
+  expectLimitError(fakePayloads(16, ApplicationCommandType.Message), "16 message context menus (limit 15)");
+  expectLimitError(fakePayloads(16, ApplicationCommandType.User), "16 user context menus (limit 15)");
 }
 
 async function testDashboardSyncChecksBeforeDiscord() {
@@ -210,6 +210,51 @@ function testOneOffMigrationPlan() {
   assert("commandMetadataOverrides.remove-sticky" in $unset, "old metadata key should be removed");
 }
 
+function testOneOffMigrationKeepsNewerSettings() {
+  const raw = {
+    commandPermissions: {
+      // Admin narrowed /sticky add after the deploy; the old open gate must not win.
+      "add-sticky": [],
+      "sticky add": ["admin"],
+      // Still on its default, so the old value replaces it.
+      "edit-sticky": ["admin"],
+      "sticky edit": [...realDb.DEFAULT_COMMAND_PERMISSIONS["sticky edit"]],
+      // Already equal: just drop the old key.
+      "sticky-log": ["admin", "dcHead"],
+      "sticky log": ["admin", "dcHead"],
+    },
+    commandDiscordPermissions: {
+      // Only one old sticky command has a saved value: not a group agreement.
+      "add-sticky": "",
+      sticky: "ManageMessages",
+      // Whole rep group agrees, but /rep-admin was changed after the deploy.
+      "add-rep": "ManageRoles",
+      "set-rep": "ManageRoles",
+      "sub-rep": "ManageRoles",
+      "rep-admin": "Administrator",
+      // Whole define group agrees and /definition is still on its default.
+      "add-define": "ManageMessages",
+      "edit-define": "ManageMessages",
+      "delete-define": "ManageMessages",
+      definition: "",
+    },
+  };
+
+  const { $set, $unset, notes } = planMergedCommandMigration(raw);
+
+  assert(!("commandPermissions.sticky add" in $set), "a changed subcommand gate must be kept");
+  assert(!("commandPermissions.add-sticky" in $unset), "the conflicting old gate is kept for review");
+  assert(notes.some((note) => note.startsWith("CONFLICT commandPermissions") && note.includes("sticky add")), "gate conflict should be reported");
+  assert(JSON.stringify($set["commandPermissions.sticky edit"]) === '["admin"]', "a default destination should take the old value");
+  assert(!("commandPermissions.sticky log" in $set) && "commandPermissions.sticky-log" in $unset, "equal values just drop the old key");
+
+  assert(!("commandDiscordPermissions.sticky" in $set), "one saved value must not change /sticky visibility");
+  assert(notes.some((note) => note.includes("/sticky: no saved value")), "partial group should be reported");
+  assert(!("commandDiscordPermissions.rep-admin" in $set), "a changed parent visibility must be kept");
+  assert(notes.some((note) => note.includes("/rep-admin was changed")), "parent conflict should be reported");
+  assert($set["commandDiscordPermissions.definition"] === "ManageMessages", "an agreeing group should move to a default parent");
+}
+
 async function testDispatcherUsesSubcommandSettings() {
   const config = realDb.buildDefaultGuildConfig("guild1");
   for (const role of config.roles) {
@@ -285,6 +330,7 @@ async function main() {
   testDefaultsUseSubcommandKeys();
   testStartupMigrationKeepsLegacyKeys();
   testOneOffMigrationPlan();
+  testOneOffMigrationKeepsNewerSettings();
   await testDispatcherUsesSubcommandSettings();
 
   console.log(

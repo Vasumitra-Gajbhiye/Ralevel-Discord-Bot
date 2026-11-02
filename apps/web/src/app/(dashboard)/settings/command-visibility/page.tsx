@@ -34,9 +34,10 @@ function formatPermissionLabel(
 }
 
 export default function CommandVisibilityPage() {
-  const { loading: configLoading, error, saving, status, save } =
+  const { config, loading: configLoading, error, saving, status, save } =
     useGuildConfig();
   const [catalog, setCatalog] = useState<CatalogCommand[]>([]);
+  const [preservedKeys, setPreservedKeys] = useState<string[]>([]);
   const [permissionOptions, setPermissionOptions] = useState<PermissionOption[]>(
     [],
   );
@@ -57,8 +58,10 @@ export default function CommandVisibilityPage() {
       const data = (await res.json()) as {
         commands: CatalogCommand[];
         permissionOptions: PermissionOption[];
+        preservedKeys?: string[];
       };
       setCatalog(data.commands);
+      setPreservedKeys(data.preservedKeys ?? []);
       setPermissionOptions(data.permissionOptions);
     } catch (e) {
       setCatalogError(
@@ -108,7 +111,12 @@ export default function CommandVisibilityPage() {
   }
 
   async function onSave() {
-    await save({ commandDiscordPermissions: permissions });
+    // Keep old-name values the merged-command migration hasn't moved yet.
+    const saved = config?.commandDiscordPermissions ?? {};
+    const preserved = Object.fromEntries(
+      preservedKeys.filter((key) => key in saved).map((key) => [key, saved[key]]),
+    );
+    await save({ commandDiscordPermissions: { ...preserved, ...permissions } });
     setDraft(null);
     await loadCatalog();
   }

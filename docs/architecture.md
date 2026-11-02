@@ -265,7 +265,7 @@ Three permission layers:
 
 Commands **not listed** in `permissions.config.js` are accessible to all members (subject to Discord permission bits).
 
-Slash commands are registered to **one guild** via `scripts/deploy-commands.js` — not globally. Discord allows 100 slash commands and 5 each of user / message context menus per guild; registration fails before calling Discord if we go over (`packages/shared/src/commandLimits.js`).
+Slash commands are registered to **one guild** via `scripts/deploy-commands.js` — not globally. Discord allows 100 slash commands and 15 each of user / message context menus per guild; registration fails before calling Discord if we go over (`packages/shared/src/commandLimits.js`).
 
 ---
 

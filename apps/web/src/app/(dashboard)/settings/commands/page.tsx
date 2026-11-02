@@ -52,8 +52,9 @@ function buildPermissionsToSave(
   catalogNames: string[],
   current: Record<string, string[]>,
   saved: Record<string, string[]>,
+  preservedKeys: string[],
 ) {
-  const catalogSet = new Set(catalogNames);
+  const catalogSet = new Set([...catalogNames, ...preservedKeys]);
   const merged = { ...saved };
 
   for (const cmd of catalogNames) {
@@ -74,8 +75,9 @@ function buildEphemeralToSave(
   current: Record<string, boolean>,
   saved: Record<string, boolean>,
   defaults: Record<string, boolean>,
+  preservedKeys: string[],
 ) {
-  const catalogSet = new Set(catalogNames);
+  const catalogSet = new Set([...catalogNames, ...preservedKeys]);
   const merged = { ...saved };
 
   for (const cmd of catalogNames) {
@@ -172,6 +174,7 @@ export default function CommandsPage() {
     boolean
   > | null>(null);
   const [catalog, setCatalog] = useState<CatalogCommand[]>([]);
+  const [preservedKeys, setPreservedKeys] = useState<string[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [pendingDiscordSync, setPendingDiscordSync] = useState(false);
@@ -220,8 +223,12 @@ export default function CommandsPage() {
     try {
       const res = await fetch("/api/commands/catalog");
       if (!res.ok) throw new Error(await res.text());
-      const data = (await res.json()) as { commands: CatalogCommand[] };
+      const data = (await res.json()) as {
+        commands: CatalogCommand[];
+        preservedKeys?: string[];
+      };
       setCatalog(data.commands);
+      setPreservedKeys(data.preservedKeys ?? []);
     } catch (e) {
       setCatalogError(e instanceof Error ? e.message : "Failed to load catalog");
     } finally {
@@ -332,6 +339,7 @@ export default function CommandsPage() {
         commandNames,
         permissions,
         savedPermissions,
+        preservedKeys,
       );
     }
     if (isEphemeralDirty) {
@@ -340,6 +348,7 @@ export default function CommandsPage() {
         ephemeral,
         savedEphemeral,
         ephemeralDefaults,
+        preservedKeys,
       );
     }
 

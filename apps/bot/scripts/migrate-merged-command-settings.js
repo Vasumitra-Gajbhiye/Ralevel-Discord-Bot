@@ -2,9 +2,11 @@
  * One-off: move dashboard settings saved under the old sticky / XP / rep /
  * definition command names onto the merged subcommand commands.
  *
- *   commandPermissions, commandEphemeral  "add-sticky" -> "sticky add"
+ *   commandPermissions, commandEphemeral  "add-sticky" -> "sticky add" (unless
+ *                                         "sticky add" was already changed)
  *   commandDiscordPermissions             "add-sticky" -> "sticky" (only if
- *                                         the whole group agrees)
+ *                                         every old command in the group has
+ *                                         the same value)
  *   commandMetadataOverrides              "add-sticky" -> "sticky" option "add"
  *   commandDisplayNames                   dropped (subcommands can't be renamed)
  *
@@ -15,7 +17,14 @@
 require("../loadEnv");
 
 const mongoose = require("mongoose");
-const { connectDB, GuildConfig, MERGED_SUBCOMMAND_KEYS } = require("@ralevel/db");
+const {
+  connectDB,
+  GuildConfig,
+  MERGED_SUBCOMMAND_KEYS,
+  DEFAULT_COMMAND_PERMISSIONS,
+  DEFAULT_COMMAND_DISCORD_PERMISSIONS,
+  DEFAULT_COMMAND_EPHEMERAL,
+} = require("@ralevel/db");
 const { getCommandCatalog } = require("@ralevel/shared/commandCatalog");
 const {
   validateCommandMetadataOverrides,
@@ -24,6 +33,10 @@ const {
 function toPlain(map) {
   if (!map) return {};
   return map instanceof Map ? Object.fromEntries(map) : { ...map };
+}
+
+function sameValue(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function splitKey(settingKey) {
@@ -37,37 +50,76 @@ function planMergedCommandMigration(raw, catalog = getCommandCatalog()) {
   const $unset = {};
   const notes = [];
 
-  for (const field of ["commandPermissions", "commandEphemeral"]) {
+  // Startup fills the new keys with defaults, so a destination that still
+  // holds its default is safe to replace. Anything else was set by an admin
+  // after the deploy and is kept.
+  const settingDefaults = {
+    commandPermissions: (key) => DEFAULT_COMMAND_PERMISSIONS[key] ?? [],
+    commandEphemeral: (key) => DEFAULT_COMMAND_EPHEMERAL[key] ?? false,
+  };
+  for (const [field, getDefault] of Object.entries(settingDefaults)) {
     const map = toPlain(raw[field]);
     for (const [oldName, newKey] of Object.entries(MERGED_SUBCOMMAND_KEYS)) {
       if (!(oldName in map)) continue;
-      $set[`${field}.${newKey}`] = map[oldName];
+      const legacy = map[oldName];
+      const current = map[newKey];
+      if (
+        newKey in map &&
+        !sameValue(current, legacy) &&
+        !sameValue(current, getDefault(newKey))
+      ) {
+        notes.push(
+          `CONFLICT ${field}: "${newKey}" was changed to ${JSON.stringify(current)}, ` +
+            `${oldName} has ${JSON.stringify(legacy)}. Kept "${newKey}"; check it on Settings -> Commands.`,
+        );
+        continue;
+      }
+      if (!sameValue(current, legacy)) {
+        $set[`${field}.${newKey}`] = legacy;
+      }
       $unset[`${field}.${oldName}`] = "";
-      notes.push(`${field}: ${oldName} -> "${newKey}" = ${JSON.stringify(map[oldName])}`);
+      notes.push(`${field}: ${oldName} -> "${newKey}" = ${JSON.stringify(legacy)}`);
     }
   }
 
   const discordPerms = toPlain(raw.commandDiscordPermissions);
-  const discordByParent = {};
+  const groups = {};
   for (const [oldName, newKey] of Object.entries(MERGED_SUBCOMMAND_KEYS)) {
-    if (!(oldName in discordPerms)) continue;
-    const { parent } = splitKey(newKey);
-    (discordByParent[parent] ??= []).push([oldName, discordPerms[oldName]]);
+    (groups[splitKey(newKey).parent] ??= []).push(oldName);
   }
-  for (const [parent, entries] of Object.entries(discordByParent)) {
-    const values = new Set(entries.map(([, value]) => value));
-    if (values.size > 1) {
+  for (const [parent, oldNames] of Object.entries(groups)) {
+    const saved = oldNames.filter((name) => name in discordPerms);
+    if (!saved.length) continue;
+
+    const describe = (name) => `${name}=${discordPerms[name] || "Everyone"}`;
+    const missing = oldNames.filter((name) => !(name in discordPerms));
+    const values = new Set(saved.map((name) => discordPerms[name]));
+    const [value] = values;
+    const current = discordPerms[parent];
+    const parentDefault =
+      DEFAULT_COMMAND_DISCORD_PERMISSIONS[parent] ??
+      catalog.find((cmd) => cmd.name === parent)?.fileDefault ??
+      "";
+
+    let conflict = null;
+    if (missing.length) {
+      conflict = `no saved value for ${missing.join(", ")}`;
+    } else if (values.size > 1) {
+      conflict = saved.map(describe).join(", ");
+    } else if (current !== undefined && current !== value && current !== parentDefault) {
+      conflict = `/${parent} was changed to ${current || "Everyone"}, old commands have ${value || "Everyone"}`;
+    }
+    if (conflict) {
       notes.push(
-        `CONFLICT commandDiscordPermissions for /${parent}: ` +
-          `${entries.map(([name, value]) => `${name}=${value || "Everyone"}`).join(", ")}. ` +
+        `CONFLICT commandDiscordPermissions for /${parent}: ${conflict}. ` +
           "Left unchanged; pick one on Settings -> Command visibility.",
       );
       continue;
     }
-    const [value] = values;
+
     $set[`commandDiscordPermissions.${parent}`] = value;
-    for (const [oldName] of entries) {
-      $unset[`commandDiscordPermissions.${oldName}`] = "";
+    for (const name of saved) {
+      $unset[`commandDiscordPermissions.${name}`] = "";
     }
     notes.push(`commandDiscordPermissions: /${parent} = ${value || "Everyone"}`);
   }

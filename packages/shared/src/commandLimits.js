@@ -2,8 +2,8 @@
 // them is rejected whole, and the guild stays on its last registered set.
 const COMMAND_LIMITS = {
   chatInput: 100,
-  user: 5,
-  message: 5,
+  user: 15,
+  message: 15,
 };
 
 const TYPE_KEYS = { 1: "chatInput", 2: "user", 3: "message" };

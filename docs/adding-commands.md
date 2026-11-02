@@ -217,7 +217,7 @@ Expected startup log:
 [deploy-commands] Registered 98 guild slash commands.
 ```
 
-Discord allows at most **100 slash commands** and **5 user / 5 message context menus** per guild. Registration is one bulk request, so going over the limit rejects every change, not just the new command. `registerGuildCommands` and the dashboard's **Sync to Discord** check the counts first and fail with a clear error; `pnpm --filter @ralevel/bot verify:command-limits` checks the same thing locally. When you're close to the limit, add a subcommand to an existing command (see [Grouping commands as subcommands](#grouping-commands-as-subcommands)) instead of a new top-level command.
+Discord allows at most **100 slash commands** and **15 user / 15 message context menus** per guild. Registration is one bulk request, so going over the limit rejects every change, not just the new command. `registerGuildCommands` and the dashboard's **Sync to Discord** check the counts first and fail with a clear error; `pnpm --filter @ralevel/bot verify:command-limits` checks the same thing locally. When you're close to the limit, add a subcommand to an existing command (see [Grouping commands as subcommands](#grouping-commands-as-subcommands)) instead of a new top-level command.
 
 Commands appear in Discord immediately (guild-scoped, not global).
 
